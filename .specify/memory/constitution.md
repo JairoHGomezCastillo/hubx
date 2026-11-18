@@ -1,133 +1,116 @@
-<!--
-SYNC IMPACT REPORT (material temporal de revisión; eliminar antes de confirmar el commit)
-=========================================================================================
-Version change: (sin versión / plantilla sin completar) → 1.0.0
-
-Modified principles (título anterior → nuevo):
-- Principio 1 de la plantilla (sin título) → I. Ledger Inmutable como Fuente de Verdad
-- Principio 2 de la plantilla (sin título) →
-  II. Arquitectura de Tres Piezas y Gateway Obligatorio
-- Principio 3 de la plantilla (sin título) → III. Stack Tecnológico y Prohibiciones
-- Principio 4 de la plantilla (sin título) → IV. Diseño Modular e Inyección por Constructores
-- Principio 5 de la plantilla (sin título) → V. Test-First (NO NEGOCIABLE)
-
-Added sections:
-- VI. Seguridad No Negociable (nuevo principio)
-- Proceso de Desarrollo (sección 2 de la plantilla, antes sin nombre)
-- Integración y Despliegue (sección 3 de la plantilla, antes sin nombre)
-- Procedimiento de enmienda, política de versionado y revisión de cumplimiento en Governance
-
-Removed sections: Ninguna
-
-Follow-up TODOs: Ninguno. La fecha de ratificación se fija en 2026-11-17 asumiendo
-  adopción inicial, porque no existía una constitución previa. Confirmar si la adopción
-  original ocurrió en una fecha anterior y corregir el metadato si es necesario.
--->
-
-# hubx Constitution
+# Hubx Constitution
 
 ## Core Principles
 
-### I. Ledger Inmutable como Fuente de Verdad
-El sistema es una plataforma de trazabilidad de carga aérea con aliados terrestres cuyo
-estado canónico es un ledger de eventos encadenados por hash SHA-256 y firmados por el
-actor que los emite. Todo evento DEBE ser inmutable: NO se actualiza ni se elimina; las
-correcciones se registran como eventos nuevos. El sistema DEBE usar un ledger verificable
-en lugar de blockchain on-chain durante el alcance temporal definido, y TODO acceso al
-ledger DEBE realizarse a través de la interfaz LedgerRepository para permitir la
-migración futura a una red real.
+### I. Immutable Ledger as a Source of Truth
+The system is an air cargo traceability platform with ground partners whose
+canonical state is a ledger of events chained via SHA-256 hashes and signed by the
+party that issues them. Each event MUST include the SHA-256 hash of the preceding event,
+so that the chain is verifiable from end to end. Every event MUST be immutable:
+it is NOT updated or deleted; corrections are recorded as new events. The
+system MUST use a verifiable ledger instead of an on-chain blockchain during the
+current scope of the project, and ALL access to the ledger MUST be performed through the
+LedgerRepository interface to enable future migration to a live network.
 
-*Rationale*: la inmutabilidad y la firma por actor garantizan la auditabilidad de extremo
-a extremo; la abstracción del repositorio evita acoplar el dominio a una tecnología de
-persistencia concreta.
+*Rationale*: Immutability and per-actor signing ensure end-to-end
+auditability; the repository abstraction prevents coupling the domain to a specific
+persistence technology.
 
-### II. Arquitectura de Tres Piezas y Gateway Obligatorio
-El sistema DEBE estar compuesto por hubx-gw (gateway), hubx-api (API base) y hubx-mfe
-(frontend). El frontend NO DEBE comunicarse directamente con la API: TODO el tráfico
-DEBE pasar por el gateway. La API DEBE exigir el secreto compartido del gateway y DEBE
-validar el JWT por sí misma, de forma independiente.
+### II. Three-Tier Architecture and Mandatory Gateway
+The system MUST consist of hubx-gw (gateway), hubx-api (base API), and hubx-mfe
+(frontend). The frontend MUST NOT communicate directly with the API: ALL traffic
+MUST pass through the gateway. The API MUST require the gateway’s shared secret and MUST
+validate the JWT on its own, independently. The hubx-bender automation workspace
+MUST remain outside the three components: it is a QA tool, not a
+running component.
 
-*Rationale*: el gateway concentra el control perimetral; la validación propia del JWT en
-la API evita delegar la autenticación en un único punto de fallo.
+*Rationale*: the gateway concentrates the perimeter control; the own JWT validation in
+the API avoids delegating the authentication to a single point of failure.
 
-### III. Stack Tecnológico y Prohibiciones
-El backend DEBE implementarse en la versión estable más reciente de Go usando la
-biblioteca estándar (net/http con ServeMux) para el enrutamiento; NO se DEBEN introducir
-frameworks web externos. La persistencia DEBE ser MySQL. El frontend DEBE ser React con
-TypeScript en modo estricto. La configuración DEBE gestionarse en el archivo
-application.properties.
+### III. Technology Stack and Restrictions
+The backend MUST be implemented using the most recent stable version of Go with the
+standard library (net/http with ServeMux) for routing; external web frameworks MUST NOT be
+introduced. Data persistence MUST use MySQL. The frontend MUST use React with
+TypeScript in strict mode. Configuration MUST be managed in the
+application.properties file, with environment-specific values as outlined in the Integration and
+Deployment section. External dependencies unrelated to routing MUST be limited to those
+required by this specification (MySQL driver, bcrypt, JWT) and MUST be justified.
 
-*Rationale*: restringir el stack reduce la superficie de dependencias y homogeniza el
-mantenimiento, las pruebas y la incorporación de nuevos agentes.
+*Rationale*: Limiting the stack reduces the scope of dependencies and standardizes
+maintenance, testing, and the integration of new agents.
 
-### IV. Diseño Modular e Inyección por Constructores
-El código Go DEBE organizarse en un módulo por funcionalidad bajo internal/<modulo>,
-exponiendo una función Register(mux) que registre sus rutas. Las dependencias DEBEN
-inyectarse manualmente mediante constructores que devuelven interfaces. Los errores
-centinela del dominio DEBEN traducirse a respuestas HTTP en los handlers. El logging
-DEBE realizarse con log/slog en formato JSON.
+### IV. Modular Design and Constructor Injection
+Go code MUST be organized into modules by functionality under internal/<module>,
+exposing a Register(mux) function that registers its routes. Dependencies MUST
+be injected manually through constructors that return interfaces. Domain sentinel errors MUST
+be translated to HTTP responses in the handlers. Logging MUST be performed with log/slog in JSON format.
 
-*Rationale*: la inversión de dependencias mediante interfaces hace el dominio testeable y
-desacopla el transporte HTTP de la lógica de negocio.
+*Rationale*: the inversion of dependencies through interfaces makes the domain testable and
+decouples the HTTP transport from the business logic.
 
 ### V. Test-First (NO NEGOCIABLE)
-TDD es obligatorio para las pruebas unitarias, centradas en el comportamiento observable
-del componente; el ciclo rojo-verde-refactorizar DEBE respetarse. Cada escenario Gherkin
-(exitoso, borde y error) DEBE tener una prueba de integración contra la API. Ninguna
-historia se da por terminada sin pruebas automatizadas de extremo a extremo con Playwright
-en TypeScript, y todas DEBEN pasar en verde.
+TDD is mandatory for unit tests, focused on the observable behavior
+of the component; the red-green-refactor cycle MUST be respected. Unit tests
+for Go DEBEN residir junto al código que prueban, en internal/<modulo>/*_test.go. Cada
+escenario Gherkin (exitoso, borde y error) DEBE tener una prueba de integración contra la
+API. Ninguna historia se da por terminada sin pruebas automatizadas de extremo a extremo
+con Playwright en TypeScript, y todas DEBEN pasar en verde. Las pruebas de integración y
+las pruebas E2E DEBEN residir en el workspace de automatización hubx-bender definido en
+el principio II.
 
-*Rationale*: escribir las pruebas primero fija el comportamiento esperado y evita que la
-cobertura se convierta en una actividad posterior a la entrega.
+*Rationale*: Writing tests first establishes the expected behavior and prevents
+test coverage from becoming an activity that takes place after delivery; a single QA workspace
+keeps Node dependencies isolated from the backend and provides agents with a predictable
+location to write and run tests.
 
-### VI. Seguridad No Negociable
-TODAS las entradas DEBEN validarse en el servidor y TODAS las consultas de datos DEBEN ser
-parametrizadas. La autorización DEBE usar JWT con los roles operador, aliado y cliente, y
-TODO acceso a recursos DEBE restringirse a los recursos propios. Los secretos DEBEN
-suministrarse exclusivamente mediante variables de entorno. Las contraseñas DEBEN
-hashearse con bcrypt. DEBEN aplicarse cabeceras de seguridad, CORS restrictivo y rate
-limiting en el gateway. gosec y govulncheck DEBEN pasar sin hallazgos antes de fusionar.
+### VI. Non-Negotiable Security
+ALL requests MUST be validated on the server, and ALL data queries MUST be
+parameterized. Authorization MUST use JWT with the roles “operator,” “partner,” and “client,” and
+ALL access to resources MUST be restricted to one’s own resources. Secrets MUST
+be provided exclusively via environment variables. Passwords MUST
+be hashed with bcrypt. Security headers, restrictive CORS, and rate
+limiting MUST be applied at the gateway. gosec and govulncheck MUST pass without any findings before merging.
 
-*Rationale*: estos controles cubren las superficies de ataque críticas y su verificación
-automatizada impide regresiones silenciosas.
+*Rationale*: These controls cover critical attack surfaces, and their automated verification prevents silent regressions.
 
-## Proceso de Desarrollo
+## Development Process
 
-Las historias de usuario DEBEN escribirse en formato Como/Quiero/Para, ser lo más
-pequeñas posible manteniendo valor, cumplir las 3C e INVEST e incluir criterios de
-aceptación Gherkin BDD con caso exitoso, borde y error.
+User stories MUST be written in the "How/I Want/To" format, be as
+small as possible while maintaining value, comply with the 3Cs and INVEST, and include
+BDD Gherkin acceptance criteria with success, edge, and error cases.
 
-TODA funcionalidad DEBE recorrer las fases specify, clarify, plan, tasks, implement y
-analyze. Los artefactos DEBEN residir en specs/NNN-nombre/. Las especificaciones DEBEN
-describir el QUÉ y el POR QUÉ, NO el CÓMO.
+ALL functionality MUST go through the phases: specify, clarify, plan, tasks, implement, and
+analyze. Artifacts MUST be located in specs/NNN-name/. Specifications MUST
+describe the WHAT and the WHY, NOT the HOW.
 
-El equipo DEBE organizarse en cinco agentes con carpetas propias: lider/orquestador,
-backend-go, frontend-react, qa-seguridad y devops. Los commits DEBEN etiquetarse
-[agent:rol]. QA DEBE escribir las pruebas de integración antes de la implementación y
-DEBE revisar antes de integrar.
+The team MUST be organized into five agents, each with their own folder: leader/orchestrator,
+backend-go, frontend-react, qa-security, and devops. Commits MUST be tagged
+[agent:role]. QA MUST write the integration tests before implementation and
+MUST review them before integration.
 
-## Integración y Despliegue
+## Integration and Deployment
 
-Cada historia DEBE desarrollarse en una rama propia con PR obligatorio. La CI DEBE estar
-en verde antes de cualquier fusión y master/main DEBE permanecer siempre desplegable.
+Each feature MUST be developed on its own branch with a mandatory pull request. CI MUST be
+green before any merge, and master/main MUST always remain deployable.
 
-El modelo de ramas DEBE seguir: de master sale una release; las funcionalidades van a una
-release; las release se fusionan a master; los hotfix salen y van a master. La
-configuración DEBE gestionarse por entorno.
+The branching model MUST follow this flow: a release branch is created from master; feature
+branches MUST be merged into that release branch; the release branch MUST be merged into master;
+hotfixes MUST originate from master and be merged into master. Configuration MUST differ by
+environment using the application.properties mechanism defined in Principle III.
 
 ## Governance
 
-Esta constitución prevalece sobre cualquier otra práctica del proyecto; en caso de
-conflicto, prevalece lo aquí definido.
+This charter takes precedence over any other project practice; in the event of a
+conflict, the provisions defined here prevail.
 
-Las enmiendas DEBEN documentarse en una propuesta, contar con aprobación e incluir un plan
-de migración; el impacto DEBE registrarse en el Sync Impact Report de este archivo.
+Amendments MUST be documented in a proposal, approved, and include a
+migration plan; the impact MUST be recorded in the Sync Impact Report in this file.
 
-El versionado DEBE seguir Semantic Versioning: MAJOR para eliminaciones o redefiniciones
-incompatibles de principios; MINOR para principios o secciones nuevos y ampliaciones
-materiales; PATCH para aclaraciones, correcciones y refinamientos no semánticos.
+Versioning MUST follow Semantic Versioning: MAJOR for removals or incompatible
+redefinitions of principles; MINOR for new principles or sections and material
+extensions; PATCH for clarifications, corrections, and non-semantic refinements.
 
-TODO PR y revisión DEBEN verificar el cumplimiento de esta constitución. Toda complejidad
-añadida DEBE justificarse explícitamente.
+ALL PRs and reviews MUST verify compliance with this constitution. Any added complexity
+MUST be explicitly justified.
 
-**Version**: 1.0.0 | **Ratified**: 2026-11-17 | **Last Amended**: 2026-11-17
+**Version**: 1.1.0 | **Ratified**: 2026-11-17 | **Last Amended**: 2026-11-17
