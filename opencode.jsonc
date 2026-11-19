@@ -1,4 +1,5 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "default_agent": "hubx-lead"
+  "default_agent": "hubx-lead",
+  "instructions": ["AGENTS.md", "hubx-*/AGENTS.md", "memory.md"]
 }

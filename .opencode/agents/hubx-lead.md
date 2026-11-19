@@ -95,8 +95,13 @@ Si el alcance excede una historia o no está claro, pregunta antes de delegar. C
    b. `backend-go` y `frontend-react` **en paralelo** contra el contrato del plan (solo si no comparten archivos).
    c. `qa-seguridad` (`verify`): suite, seguridad y reporte. Con hallazgos: devuélvelos como `fix` a quien corresponda y repite.
    d. `devops`: CI, arranque y despliegue.
-7. **Tras cada subagente:** exige el JSON de salida (`status`, `summary`, `evidence`, `blockers` son obligatorios);
-   ejecuta `git status` y `git diff --stat` y compáralo con sus `owned_paths`. Cambios fuera de zona: rechaza la entrega.
+7. **Antes y después de cada subagente:**
+   a. Antes de delegar guarda una instantánea: `git status --short` y `git diff --stat`.
+   b. Tras la entrega exige el JSON de salida (`status`, `summary`, `evidence`, `blockers` son obligatorios) y repite ambos comandos.
+   c. Compara con la instantánea: rechaza la entrega si cambió el estado o el número de líneas de archivos fuera de sus
+      `owned_paths` (no basta con comparar nombres de archivo). Informa el `git diff --stat` de la zona permitida.
+   d. Solo tú marcas la tarea en `tasks.md` como `- [x]`, y únicamente si el subagente devolvió `status: ok` con evidencia
+      válida; cita esa evidencia junto a la tarea.
 8. **analyze:** `speckit.analyze`; contrasta spec, plan, tasks y código; registra desviaciones.
 9. **Cierre:** actualiza el estado en `backlog/backlog.md` y `memory.md` (decisiones y lecciones). Propone **un commit por
    entrega de subagente** con etiqueta `[agent:rol] HU-xx ...`, cada uno con confirmación humana.
