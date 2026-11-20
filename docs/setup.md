@@ -112,10 +112,10 @@ HUBX_TEST_DB_URL="postgres://hubx:$(grep POSTGRES_PASSWORD .env | cut -d= -f2)@l
 |---|---|---|
 | 1. Subir lo existente | Hecho (PR #1 fusionado); `promts/` fuera del repo | — |
 | 2. `hubx-bender` con Playwright | Hecho (fusionado) | `hubx-bender/` |
-| 3. `Makefile` y `make test-integration` | Hecho, PR de `feature/foundation-infra` | `Makefile`, `scripts/`, `compose.yaml`, `*/Dockerfile` |
-| 4. PostgreSQL y migraciones | Hecho, mismo PR | `hubx-api/migrations/`, `hubx-api/internal/migrate/`, `hubx-api/cmd/migrate/` |
-| 9. Protección de ramas | **Siguiente** | GitHub, Settings, Rules |
-| 10. README con la guía y el backlog | Pendiente | `README.md` |
+| 3. `Makefile` y `make test-integration` | Hecho (ya en `release/sdd-hubx-system`) | `Makefile`, `scripts/`, `compose.yaml`, `*/Dockerfile` |
+| 4. PostgreSQL y migraciones | Hecho (ya en `release/sdd-hubx-system`) | `hubx-api/migrations/`, `hubx-api/internal/migrate/`, `hubx-api/cmd/migrate/` |
+| 9. Protección de ramas | Hecho: ruleset `protect-main-and-release` (PR + 1 aprobación, sin push directo) | GitHub, Settings, Rules |
+| 10. README con la guía y el backlog | **Siguiente** | `README.md` |
 | HU-01 Sign in | Pendiente (cuando 1 a 4 estén fusionados) | `specs/001-sign-in` |
 | Despliegue | Pendiente (domingo 22) | `deploy/` |
 
@@ -132,5 +132,5 @@ numeración de migraciones y la prueba de manipulación del ledger.
   con título Conventional Commits en inglés y descripción en español. Requiere `gh auth login`.
 - La memoria personal de Claude Code (`~/.claude/`) **no** viaja; el contexto del proyecto está en `AGENTS.md`,
   `memory.md` y este documento. Para retomar, pídele a Claude Code: "lee `docs/setup.md` y `memory.md` y sigamos con el
-  ítem 9 de la guía".
+  ítem 10 de la guía".
 - Los agentes no empujan (`AGENTS.md`): los `git push` los haces tú, por ejemplo con `! git push -u origin <rama>`.
