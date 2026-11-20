@@ -6,3 +6,4 @@ dist/
 *.log
 .idea
 application-local.properties
+promts/
