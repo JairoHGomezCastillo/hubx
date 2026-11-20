@@ -7,3 +7,4 @@ dist/
 .idea
 application-local.properties
 promts/
+.claude/settings.local.json

@@ -1,0 +1,57 @@
+# Local stack: PostgreSQL -> migrate -> hubx-api -> hubx-gw. Use `make up` / `make down`.
+# Secrets come from .env (git-ignored), which `make` generates with random values on first run.
+name: hubx
+
+services:
+  postgres:
+    image: postgres:17.7-alpine
+    environment:
+      POSTGRES_DB: hubx
+      POSTGRES_USER: hubx
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?run make up to generate .env}
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hubx -d hubx"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  migrate:
+    build: ./hubx-api
+    image: hubx-api:local
+    entrypoint: ["/app/migrate"]
+    environment:
+      DB_URL: postgres://hubx:${POSTGRES_PASSWORD}@postgres:5432/hubx?sslmode=disable
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  api:
+    image: hubx-api:local
+    environment:
+      DB_URL: postgres://hubx:${POSTGRES_PASSWORD}@postgres:5432/hubx?sslmode=disable
+      JWT_SECRET: ${JWT_SECRET:?run make up to generate .env}
+      GATEWAY_SECRET: ${GATEWAY_SECRET:?run make up to generate .env}
+    ports:
+      - "127.0.0.1:8081:8081"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  gw:
+    build: ./hubx-gw
+    image: hubx-gw:local
+    environment:
+      API_URL: http://api:8081
+      GATEWAY_SECRET: ${GATEWAY_SECRET}
+    ports:
+      - "127.0.0.1:8080:8080"
+    depends_on:
+      - api
+
+volumes:
+  pgdata:
