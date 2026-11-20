@@ -1,0 +1,58 @@
+# HUBX — System context
+
+Air cargo traceability platform with ground partners. Canonical state is a ledger of updates chained with SHA-256
+fingerprints (verifiable ledger, not an on-chain blockchain). Authority order: **constitution > this file > service
+AGENTS.md > memory.md**. If a service instruction contradicts the constitution, the constitution wins.
+
+Before editing a service, read the `AGENTS.md` in its folder.
+
+## 1. What the system is
+Microservices in one git repository (not a monorepo of shared code). Services never import code from each other and
+talk only over the HTTP contract.
+
+| Service | Role | Stack |
+|---|---|---|
+| `hubx-gw` | Gateway: single entry point, reverse proxy, CORS, security headers, rate limit | Go (stdlib) |
+| `hubx-api` | Domain API, ledger, auth, PostgreSQL access (only service that touches the DB) | Go (stdlib `net/http`) |
+| `hubx-mfe` | Frontend | React + TypeScript strict + Vite |
+| `hubx-bender` | QA workspace: API integration tests via gateway (not a running component) | Playwright Test (API mode) |
+
+Traffic: `MFE -> gateway (/api/*, StripPrefix) -> API -> PostgreSQL`. The MFE never calls the API directly.
+
+## 2. Repository layout
+`hubx-gw/`, `hubx-api/`, `hubx-mfe/`, `hubx-bender/`, `backlog/` (HU-xx, glossary, cross-cutting rules),
+`specs/NNN-name/` (spec, plan, tasks, qa-report, deploy), `contracts/` (HTTP contracts), `.specify/` (Spec Kit),
+`.opencode/` (agents and commands), `go.work`, `Makefile`, `.github/workflows/`, `memory.md`.
+
+## 3. Workflow (SDD with Spec Kit)
+`specify -> clarify -> plan -> tasks -> implement -> analyze`, artifacts in `specs/NNN-name/`. Each spec opens with
+`Source: backlog HU-xx` or `Source: user description`. Implement order: qa-seguridad `red` -> backend-go and
+frontend-react in parallel -> qa-seguridad `verify` -> devops. TDD is mandatory.
+
+## 4. Agents (single entry point: `hubx-lead`)
+`hubx-lead` (orchestrates, edits only specs/backlog/contracts/memory.md), `backend-go` (hubx-api, hubx-gw, config),
+`frontend-react` (hubx-mfe), `qa-seguridad` (hubx-bender, qa-report.md), `devops` (Makefile, Dockerfiles, compose,
+CI, deploy). Each edits only its own paths.
+
+## 5. Commands
+- Unit tests: `go -C hubx-api test ./...`, `go -C hubx-gw test ./...`, `npm --prefix hubx-mfe run test`
+- Integration (PostgreSQL + API + gateway + bender): `make test-integration`
+- Security: `gosec ./...`, `govulncheck -C hubx-api ./...`, `govulncheck -C hubx-gw ./...`
+- Health: `curl -s http://localhost:8080/health` and `curl -s http://localhost:8080/api/health`
+
+## 6. Configuration
+Each service reads its own `application.properties` (no secrets). Precedence: env var > `application-<profile>.properties`
+(`APP_PROFILE`) > `application.properties` > code default. Env var = key uppercased, `.`/`-` -> `_`; `PORT` aliases
+`server.port`. Secrets (`db.url`, `jwt.secret`, gateway shared secret) only via environment. `application-local.properties`
+is git-ignored. Owner: `backend-go`; `devops` only injects env vars.
+
+## 7. Vocabulary (use these terms in code, tests, specs, commits)
+shipment, stage, update, fingerprint, responsible party, ground partner. Roles: `operator`, `ground partner`,
+`customer`. Stages: Created -> In flight -> At destination airport -> Assigned to partner -> Out for delivery -> Delivered.
+Everything in English (backlog, specs, code, commits).
+
+## 8. Never
+No secrets in the repo. No framework beyond the allowed stack; no new Go dependency without human approval (`go get`
+asks). No imports between services. No MFE-to-API calls bypassing the gateway. No `git push` by agents. Commits are
+one per subagent delivery, tagged `[agent:role] HU-xx ...`, proposed by `hubx-lead` and confirmed by a human.
+Unknown business rule, state, role or permission: ask, do not invent.
