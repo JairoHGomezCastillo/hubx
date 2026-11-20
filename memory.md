@@ -15,8 +15,9 @@
 
 ## Lessons
 - Subagent delivery must be compared with `git status --short` and `git diff --stat` before and after, not by file names only.
+- `npm --prefix <dir> init -y` (npm 11) writes `package.json` in the current directory, not in `<dir>`; check with `git status`.
 
 ## Pending
 - hubx-api `main.go` still reads `PORT` directly; wire `internal/config`.
 - hubx-gw has no config reader yet (reads `PORT`/`API_URL`).
-- `Makefile` / `make test-integration` and `hubx-bender` project (npm init + Playwright) not created yet.
+- `Makefile` / `make test-integration` not created yet.
