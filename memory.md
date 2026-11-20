@@ -6,6 +6,7 @@
 - Configuration via `application.properties` per service (constitution Principle III); stdlib reader, one copy per service.
 - Backlog and all artifacts in English; guide and conversation with the team in Spanish.
 - Branching: release/feature/hotfix; the Spec Kit story branch is the feature branch.
+- Integration branch is `release/sdd-hubx-system` (the team guide calls it `release/v1`); story PRs target it, `main` receives it by PR for deploy.
 
 ## Conventions
 - Commit format: `[agent:role] HU-xx short summary`; one commit per subagent delivery; no agent pushes.
