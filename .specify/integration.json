@@ -2,12 +2,22 @@
   "version": "1.4.2.dev0",
   "integration_state_schema": 1,
   "installed_integrations": [
-    "opencode"
+    "opencode",
+    "kiro-cli",
+    "claude"
   ],
   "integration_settings": {
     "opencode": {
       "script": "sh",
       "invoke_separator": "."
+    },
+    "kiro-cli": {
+      "script": "sh",
+      "invoke_separator": "."
+    },
+    "claude": {
+      "script": "sh",
+      "invoke_separator": "-"
     }
   },
   "integration": "opencode",

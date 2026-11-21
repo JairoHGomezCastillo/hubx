@@ -4,7 +4,7 @@
 .DEFAULT_GOAL := help
 COMPOSE := docker compose
 
-.PHONY: help env up down reset logs ps migrate psql test test-integration security
+.PHONY: help env up down reset logs ps migrate psql test test-integration security agents-sync agents-check
 
 help: ## List the targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-18s %s\n", $$1, $$2}'
@@ -47,3 +47,9 @@ security: ## gosec and govulncheck on both Go services
 	cd hubx-gw && gosec ./...
 	govulncheck -C hubx-api ./...
 	govulncheck -C hubx-gw ./...
+
+agents-sync: ## Generate the Kiro and Claude Code agents from .opencode/agents
+	@node scripts/sync-agents.mjs
+
+agents-check: ## Fail if the Kiro or Claude Code agents are out of date with .opencode/agents
+	@node scripts/sync-agents.mjs --check

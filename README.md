@@ -66,6 +66,24 @@ per agent delivery, tagged `[agent:role] HU-xx summary`.
 Single entry point: `hubx-lead` (default agent of [`opencode.jsonc`](opencode.jsonc)). Definitions in
 [`.opencode/agents/`](.opencode/agents/).
 
+The same five agents run in **opencode, Kiro or Claude Code**; use whichever you have credits for.
+
+| | opencode (team default) | Kiro | Claude Code |
+|---|---|---|---|
+| Start | `opencode` (starts on `hubx-lead`) | `kiro-cli chat --agent hubx-lead` or the IDE agent picker | `claude --agent hubx-lead` |
+| Agents | `.opencode/agents/<name>.md` (**source**) | `.kiro/agents/<name>.json` | `.claude/agents/<name>.md` (generated) |
+| Spec Kit | `/speckit.*` (`.opencode/commands/`) | `.kiro/prompts/speckit.*` | `/speckit-*` skills (`.claude/skills/`) |
+| Model per role | none in the repo; optional personal override in `~/.config/opencode/opencode.jsonc` (`"agent": {"backend-go": {"model": "..."}}`) | in the agent JSON: Sonnet 4.5 (1.30x) for lead, QA, backend, frontend; Haiku 4.5 (0.40x) for devops | in the agent: `opus` for the lead, `sonnet` for QA, backend and frontend, `haiku` for devops |
+| Permissions | agent front matter | agent JSON `permissions.rules` (deny-overrides, so "all but X" is a `deny` with `exclude`) | the same Kiro rules, enforced by the `scripts/agent-guard.mjs` hook, plus `deny` rules in `.claude/settings.json` |
+
+- **One source.** Edit agents only in `.opencode/agents/`, then run `make agents-sync`: it writes `.kiro/agent-prompts/`
+  and `.claude/agents/`. `make agents-check` fails if anything drifts. Per-role permissions are edited once, in
+  `.kiro/agents/<name>.json`, and apply to Kiro and Claude Code.
+- **Claude Code trust.** The guard hooks only run after the folder trust dialog is accepted (run `claude` in the repo
+  once and accept it). Bash rules are not a security boundary in Claude Code; the hard barrier against merges is the
+  GitHub ruleset (1 approval on `main` and release).
+- Available models depend on your plan: `opencode models`, `kiro-cli chat --list-models`.
+
 | Agent | Function | Edits only |
 |---|---|---|
 | `hubx-lead` | Orchestrates the Spec Kit flow, delegates, checks evidence and scope, commits, pushes the story branch, opens the PR (never merges) | `specs/`, `backlog/`, `contracts/`, `memory.md` |
