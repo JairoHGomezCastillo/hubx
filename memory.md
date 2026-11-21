@@ -27,6 +27,11 @@
 - GitHub default branch is `main` (the only permanent branch); release and feature branches are deleted after merge
   (repo setting "automatically delete head branches" on, 2026-11-21).
 
+- Kiro support (2026-11-21): the five agents also exist in `.kiro/agents/*.json` (v3 format, IDE 1.0 and CLI v3) with a
+  model per role: Sonnet 4.5 for hubx-lead, qa-seguridad, backend-go and frontend-react; Haiku 4.5 for devops (only
+  Claude models on the current university plan). opencode stays the team default and sets no model, so teammates keep
+  their free model. `.opencode/agents/*.md` is the single source of the instructions; `make agents-sync` copies them.
+
 ## Conventions
 - PR title (2026-11-21): `<type>(<scope>): <gitmoji> <short description> [agent:role]`, scope `HU-xx` or an area;
   mapping in hubx-lead step 10. Commits keep their own format below.
@@ -48,7 +53,13 @@
 - Ledger tamper test: `make psql`, then `BEGIN; SET LOCAL session_replication_role = replica; UPDATE updates ...; COMMIT;`
   (bypasses the immutability trigger on purpose).
 
+- Kiro permission rules are deny-overrides (no rule order): write "everything except X" as a `deny` with `exclude`.
+  Kiro agents in v3 format only load in the v3 engine; `--no-interactive` needs `--agent-engine v3`.
+- Kiro without `resources` loads only the root `AGENTS.md`; service `AGENTS.md` files come in only via `resources`.
+- opencode `.md` agents do not expand `{file:...}`; only `opencode.jsonc` does, and a `.md` agent overrides it.
+
 ## Pending
+- Add `make agents-check` to CI (owner D) so the Kiro prompts never drift from `.opencode/agents`.
 - hubx-api `main.go` still reads `PORT` directly; wire `internal/config`.
 - hubx-gw has no config reader yet (reads `PORT`/`API_URL`).
 - gosec G304 in `hubx-api/internal/config/config.go:102` (owner B, item 5): blocks "gosec without findings".

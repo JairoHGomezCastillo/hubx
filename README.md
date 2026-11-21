@@ -66,6 +66,22 @@ per agent delivery, tagged `[agent:role] HU-xx summary`.
 Single entry point: `hubx-lead` (default agent of [`opencode.jsonc`](opencode.jsonc)). Definitions in
 [`.opencode/agents/`](.opencode/agents/).
 
+The same five agents also run in **Kiro** (optional), each with a Claude model chosen by role:
+
+| Agent | Kiro model | Credits |
+|---|---|---|
+| `hubx-lead`, `qa-seguridad`, `backend-go`, `frontend-react` | `claude-sonnet-4.5` | 1.30x |
+| `devops` | `claude-haiku-4.5` | 0.40x |
+
+- Config: [`.kiro/agents/<name>.json`](.kiro/agents/) (model, permissions, context per role). Kiro rules are
+  deny-overrides, so "everything except the role's paths" is written as a `deny` with `exclude`.
+- Instructions: `.kiro/agent-prompts/<name>.md` is generated from the body of `.opencode/agents/<name>.md`, the single
+  source. After editing an opencode agent run `make agents-sync`; `make agents-check` fails if they drift.
+- Spec Kit commands for Kiro live in `.kiro/prompts/` (`specify integration install kiro-cli`); opencode stays the
+  default integration.
+- Start: `kiro-cli chat --agent hubx-lead` (or pick the agent in the Kiro IDE). Models available depend on the plan;
+  list them with `kiro-cli chat --list-models`.
+
 | Agent | Function | Edits only |
 |---|---|---|
 | `hubx-lead` | Orchestrates the Spec Kit flow, delegates, checks evidence and scope, commits, pushes the story branch, opens the PR (never merges) | `specs/`, `backlog/`, `contracts/`, `memory.md` |

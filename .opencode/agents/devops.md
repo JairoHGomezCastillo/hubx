@@ -17,6 +17,9 @@ permissions:
     resource: "**/Dockerfile*"
     effect: allow
   - action: edit
+    resource: "compose.yaml"
+    effect: allow
+  - action: edit
     resource: "docker-compose*.yml"
     effect: allow
   - action: edit

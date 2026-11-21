@@ -1,0 +1,80 @@
+{
+  "name": "frontend-react",
+  "description": "Implements or repairs ONE view or integration of the MFE (React + strict TypeScript) in hubx-mfe, consuming only /api through the gateway. Call it in implement and fix when tasks.md assigns frontend tasks.",
+  "model": "claude-sonnet-4.5",
+  "prompt": "file://../agent-prompts/frontend-react.md",
+  "tools": [
+    "read",
+    "write",
+    "shell"
+  ],
+  "permissions": {
+    "rules": [
+      {
+        "capability": "fs_read",
+        "match": [
+          "**/.env",
+          "**/.env.*"
+        ],
+        "exclude": [
+          "**/.env.example"
+        ],
+        "effect": "ask"
+      },
+      {
+        "capability": "fs_write",
+        "match": [
+          "**"
+        ],
+        "exclude": [
+          "**/hubx-mfe/**"
+        ],
+        "effect": "deny"
+      },
+      {
+        "capability": "fs_write",
+        "match": [
+          "**/hubx-mfe/**"
+        ],
+        "effect": "allow"
+      },
+      {
+        "capability": "shell",
+        "match": [
+          "npm --prefix hubx-mfe run*",
+          "npm --prefix hubx-mfe test*",
+          "git status*",
+          "git diff*"
+        ],
+        "effect": "allow"
+      },
+      {
+        "capability": "shell",
+        "match": [
+          "npm --prefix hubx-mfe install*"
+        ],
+        "effect": "ask"
+      },
+      {
+        "capability": "shell",
+        "match": [
+          "*"
+        ],
+        "exclude": [
+          "npm --prefix hubx-mfe run*",
+          "npm --prefix hubx-mfe test*",
+          "git status*",
+          "git diff*",
+          "npm --prefix hubx-mfe install*"
+        ],
+        "effect": "deny"
+      }
+    ]
+  },
+  "resources": [
+    "file://AGENTS.md",
+    "file://memory.md",
+    "file://.specify/memory/constitution.md",
+    "file://hubx-mfe/AGENTS.md"
+  ]
+}

@@ -60,6 +60,7 @@ Haz esto en orden y confirma cada punto antes de seguir.
 2. **Clonar.** `git clone <url> hubx`, entrar y `git switch release/v1`.
 3. **opencode.** Instalar y conectar un modelo gratuito (`/connect`). Abrir `opencode` en la raíz: debe arrancar con el agente `hubx-lead`.
 4. **Spec Kit.** `specify check` pasa y los comandos `/speckit.*` aparecen en opencode.
+   - *Opcional, Kiro:* si tienes créditos de Kiro, los mismos agentes están en `.kiro/agents/` con un modelo Claude por rol (ver `README.md`, "Multi-agent architecture"). Arranca con `kiro-cli chat --agent hubx-lead`. Si cambias un agente en `.opencode/agents/`, ejecuta `make agents-sync`.
 5. **Servicios.** `make up`, y después:
    ```bash
    curl -s http://localhost:8080/health
