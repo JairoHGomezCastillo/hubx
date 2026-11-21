@@ -1,5 +1,5 @@
 # hubx-gw image. Build context is hubx-gw/ only: services never share code.
-FROM golang:1.26.5-alpine AS build
+FROM golang:1.27.4-alpine AS build
 WORKDIR /src
 ENV CGO_ENABLED=0 GOWORK=off
 COPY go.mod ./
@@ -10,7 +10,7 @@ RUN go build -trimpath -ldflags="-s -w" -o /out/gw ./cmd/gw
 FROM gcr.io/distroless/static-debian12:nonroot
 WORKDIR /app
 COPY --from=build /out/gw ./
-COPY application.properties ./
+COPY --chmod=0644 application.properties ./
 USER nonroot:nonroot
 EXPOSE 8080
 ENTRYPOINT ["/app/gw"]
