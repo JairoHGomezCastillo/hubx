@@ -20,10 +20,12 @@
 - All files use LF (`.gitattributes`); run `make` from Git Bash on Windows.
 - Branch protection (2026-11-20): ruleset `protect-main` on `main` needs a PR with 1 approval from someone other than
   the last pusher, resolved threads, no force push, no deletion, no bypass (admins included). Ruleset
-  `protect-release-no-approval` on `release/sdd-hubx-system` needs a PR with 0 approvals (same other rules), decided by
+  `protect-release-no-approval` on `release/sdd-hubx-system` needs a PR with 0 approvals (same other rules, except deletion is allowed so the
+  branch can be removed after merge, 2026-11-21), decided by
   A to close the foundation; raise it to 1 approval before story PRs merge (HU-01, 2026-11-21). Add the CI checks as
   required once D's workflows exist (item 8).
-- GitHub default branch is `main` (the only permanent branch); release and feature branches are deleted after merge.
+- GitHub default branch is `main` (the only permanent branch); release and feature branches are deleted after merge
+  (repo setting "automatically delete head branches" on, 2026-11-21).
 
 ## Conventions
 - Commit format: `[agent:role] HU-xx short summary`; one commit per subagent delivery; no agent pushes.
