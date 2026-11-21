@@ -6,8 +6,8 @@ llama `release/v1`.
 
 ## 1. Herramientas
 
-Las versiones son las que funcionaron el 2026-11-20. El repo declara `go 1.26.5`, y cualquier Go igual o más nuevo
-sirve.
+Las versiones son las que funcionaron el 2026-11-20. El repo declara `go 1.27.4` (antes 1.26.5, con 15 vulnerabilidades de la biblioteca estándar); hace falta ese Go o uno más
+nuevo (`brew upgrade go`).
 
 | Herramienta | Versión probada | Para qué |
 |---|---|---|
@@ -45,7 +45,7 @@ go version; node -v; docker --version; docker compose version; make --version | 
 gh --version | head -1; gosec -version; govulncheck -version; opencode --version; specify check
 ```
 
-> Apple Silicon: todas las imágenes (`golang:1.26.5-alpine`, `postgres:17.7-alpine`, `distroless/static`) son
+> Apple Silicon: todas las imágenes (`golang:1.27.4-alpine`, `postgres:17.7-alpine`, `distroless/static`) son
 > multi-arquitectura; no hace falta configurar nada.
 
 ### Windows (lo que se hizo en la máquina prestada)
@@ -105,6 +105,9 @@ HUBX_TEST_DB_URL="postgres://hubx:$(grep POSTGRES_PASSWORD .env | cut -d= -f2)@l
 | `govulncheck: package requires newer Go version` | Reinstala `govulncheck` y `gosec` con tu Go actual |
 | `gosec` reporta G304 en `hubx-api/internal/config/config.go:102` | Hallazgo previo conocido, pendiente de B (ítem 5) |
 | `npm --prefix X init -y` crea `package.json` en la raíz | Bug de npm 11; no uses `init` con `--prefix` |
+| `open application.properties: permission denied` en el contenedor `migrate` | Archivos con permiso `600` en tu disco (pasa en macOS). Los Dockerfile ya copian con `--chmod=0644`; si persiste: `git ls-files -z \| xargs -0 chmod 644` |
+| `govulncheck` reporta vulnerabilidades en `net/http` o `crypto/*` | Tu Go es anterior a 1.27.4: actualízalo y reinstala `gosec` y `govulncheck` |
+| `make security` se detiene en `gosec` y no corre `govulncheck` | Esperado mientras siga el G304 de B; corre `govulncheck -C hubx-api ./...` aparte |
 
 ## 4. Estado de la base (puesto A)
 

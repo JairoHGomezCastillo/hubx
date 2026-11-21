@@ -30,6 +30,10 @@
 - Subagent delivery must be compared with `git status --short` and `git diff --stat` before and after, not by file names only.
 - `npm --prefix <dir> init -y` (npm 11) writes `package.json` in the current directory, not in `<dir>`; check with `git status`.
 - govulncheck must be built with the same Go as the one on PATH; after upgrading Go, reinstall it (and gosec).
+- Go toolchain is 1.27.4 (go.mod, go.work, Docker build images, 2026-11-20): 1.26.5 had 15 stdlib vulnerabilities.
+  Scanning with a newer local Go hides vulnerabilities of the image's Go; keep both versions aligned.
+- On macOS, files can be checked out with mode 600 and the distroless `nonroot` user cannot read them; Dockerfiles
+  copy `application.properties` with `--chmod=0644`.
 - Ledger tamper test: `make psql`, then `BEGIN; SET LOCAL session_replication_role = replica; UPDATE updates ...; COMMIT;`
   (bypasses the immutability trigger on purpose).
 
