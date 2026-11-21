@@ -172,20 +172,16 @@ El script de Spec Kit admite `--number` y `--short-name` (`.specify/scripts/bash
 
 **5. Analyze.** `/speckit.analyze` y corrige las desviaciones.
 
-**6. Commits.** Uno por entrega de subagente, con el formato `[agent:role] HU-0X resumen`. El lead solo los propone; tú los confirmas:
+**6. Commits.** Uno por entrega de subagente, con el formato `[agent:role] HU-0X resumen`. El lead los hace solo, sin pedirte confirmación; los revisas en el PR:
 
 ```
 [agent:qa-seguridad] HU-02 integration tests (red)
 [agent:backend-go] HU-02 create shipment module
 ```
 
-**7. PR hacia `release/v1`** (no hacia `main`). Los agentes no empujan; lo haces tú:
+**7. PR hacia `release/v1`** (no hacia `main`). El PR es el resultado final de la historia. El lead escribe la descripción en `specs/0X-<name>/pr.md` con la evidencia real, empuja la rama de la historia y abre el PR (`gh pr create --base release/v1 --body-file specs/0X-<name>/pr.md`) sin pedirte nada; te da la URL. El título sigue Conventional Commits con gitmoji y la marca del agente al final: `<tipo>(<alcance>): <emoji> <descripción corta> [agent:hubx-lead]`, por ejemplo `feat(HU-02): ✨ create shipment module [agent:hubx-lead]` (tipos y emojis en `.opencode/agents/hubx-lead.md`, paso 10). **Ningún agente fusiona**: fusionar feature → release y release/hotfix → `main` es siempre una decisión humana, y el ruleset de release exige una aprobación. La historia queda en revisión mientras el PR está abierto y se da por terminada cuando se fusiona.
 
-```bash
-git push -u origin <tu-rama>
-```
-
-Plantilla de la descripción del PR:
+Plantilla de la descripción del PR (también en `.github/pull_request_template.md`):
 
 ```
 ## Story
@@ -195,6 +191,7 @@ HU-0X <title>. Spec: specs/0X-<name>/
 - make test-integration: <result>
 - go test / npm test: <result>
 - gosec / govulncheck: <result>
+- speckit.analyze: <deviations or "none">
 - qa-report.md: specs/0X-<name>/qa-report.md
 
 ## Checklist
@@ -206,7 +203,7 @@ HU-0X <title>. Spec: specs/0X-<name>/
 
 **8. Revisión cruzada.** Cada PR lo revisa otra persona: comprueba el checklist y ejecuta la historia en su máquina (`git switch <rama> && make test-integration`). Con CI en verde y aprobación, se fusiona.
 
-**9. Después de fusionar:** borra la rama y sincroniza `release/v1`.
+**9. Después de fusionar:** GitHub borra la rama automáticamente; sincroniza `release/v1` (`git switch release/v1 && git pull`) y borra tu rama local (`git branch -d <tu-rama>`).
 
 ---
 

@@ -52,13 +52,14 @@ in a git-ignored `.env` on first run; nothing has to be configured by hand.
 | [`.specify/memory/constitution.md`](.specify/memory/constitution.md) | Constitution: the highest authority of the project |
 | [`AGENTS.md`](AGENTS.md) | System context for every agent |
 | [`memory.md`](memory.md) | Decisions, conventions, lessons and pending items |
-| [`specs/`](specs/) | One folder per story: `spec.md`, `plan.md`, `tasks.md`, `qa-report.md`, `deploy.md` |
+| [`specs/`](specs/) | One folder per story: `spec.md`, `plan.md`, `tasks.md`, `qa-report.md`, `deploy.md`, `pr.md` |
 
 Authority order: constitution > `AGENTS.md` > service `AGENTS.md` > `memory.md`.
 
-Per story: `specify -> clarify -> plan -> tasks -> implement -> analyze`, on its own branch `NNN-name` with a PR to
-`release/sdd-hubx-system`. `main` receives the release by PR for deployment. Commits are one per agent delivery,
-tagged `[agent:role] HU-xx summary`; agents never push.
+Per story: `specify -> clarify -> plan -> tasks -> implement -> analyze -> pr`, on its own branch `NNN-name`. The story
+ends with a PR to `release/sdd-hubx-system`: `hubx-lead` commits, pushes the story branch and opens the PR with
+`specs/NNN-name/pr.md` as body; you review and merge (agents never merge); the branch is deleted automatically on merge. `main` receives the release by PR for deployment. Commits are one
+per agent delivery, tagged `[agent:role] HU-xx summary`.
 
 ## Multi-agent architecture
 
@@ -67,7 +68,7 @@ Single entry point: `hubx-lead` (default agent of [`opencode.jsonc`](opencode.js
 
 | Agent | Function | Edits only |
 |---|---|---|
-| `hubx-lead` | Orchestrates the Spec Kit flow, delegates, checks evidence and scope, proposes commits | `specs/`, `backlog/`, `contracts/`, `memory.md` |
+| `hubx-lead` | Orchestrates the Spec Kit flow, delegates, checks evidence and scope, commits, pushes the story branch, opens the PR (never merges) | `specs/`, `backlog/`, `contracts/`, `memory.md` |
 | `backend-go` | Implements Go modules with TDD | `hubx-api/`, `hubx-gw/` |
 | `frontend-react` | Implements the frontend with TDD | `hubx-mfe/` |
 | `qa-seguridad` | Integration tests first (red), then verification and security report | `hubx-bender/`, `qa-report.md` |

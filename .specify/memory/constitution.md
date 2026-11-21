@@ -98,7 +98,10 @@ backlog and are referenced, not copied.
 **Agents.** The team MUST be organized into five agents, each with its own folders: hubx-lead (orchestrator),
 backend-go, frontend-react, qa-seguridad and devops. Commits MUST be tagged `[agent:role]`, one per subagent
 delivery. QA MUST write the integration tests before implementation and MUST review before integration. Only
-hubx-lead may propose commits, always with human confirmation; no agent pushes.
+hubx-lead may commit, push the story's feature branch and open its pull request; it does so without asking, because
+the pull request is the human review point. No agent merges: merging a feature branch into the release branch, and a
+release or hotfix branch into master/main, MUST be done by a human after review. No agent force-pushes, deletes
+branches or pushes to master/main, release or hotfix branches.
 
 ## Integration and Deployment
 
@@ -124,9 +127,14 @@ refinements.
 
 ALL PRs and reviews MUST verify compliance with this constitution. Any added complexity MUST be explicitly justified.
 
-**Version**: 1.2.1 | **Ratified**: 2026-11-17 | **Last Amended**: 2026-11-19
+**Version**: 1.3.0 | **Ratified**: 2026-11-17 | **Last Amended**: 2026-11-21
 
-<!-- Sync Impact Report (1.2.0 -> 1.2.1, PATCH): VI now requires the OWASP API Security Top 10 as review checklist.
+<!-- Sync Impact Report (1.2.1 -> 1.3.0, MINOR): Development Process / Agents: hubx-lead commits, pushes the story
+branch and opens the PR without human confirmation; no agent merges (feature -> release, release/hotfix -> main),
+force-pushes, deletes branches or pushes to protected branches. Proposal: PR #7. Migration: hubx-lead permissions,
+AGENTS.md section 8, README, team guide and memory.md updated in the same PR; release ruleset raised to 1 approval so
+GitHub enforces the human merge.
+(1.2.0 -> 1.2.1, PATCH): VI now requires the OWASP API Security Top 10 as review checklist.
 (1.1.0 -> 1.2.0, MINOR)
 - III: MySQL replaced by PostgreSQL; added Database, Dependencies and Configuration subsections.
 - V: translated to English; browser E2E made optional; API integration tests via gateway; make test-integration.

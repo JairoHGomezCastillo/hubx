@@ -21,12 +21,13 @@ Traffic: `MFE -> gateway (/api/*, StripPrefix) -> API -> PostgreSQL`. The MFE ne
 
 ## 2. Repository layout
 `hubx-gw/`, `hubx-api/`, `hubx-mfe/`, `hubx-bender/`, `backlog/` (HU-xx, glossary, cross-cutting rules),
-`specs/NNN-name/` (spec, plan, tasks, qa-report, deploy), `contracts/` (HTTP contracts), `.specify/` (Spec Kit),
+`specs/NNN-name/` (spec, plan, tasks, qa-report, deploy, pr), `contracts/` (HTTP contracts), `.specify/` (Spec Kit),
 `.opencode/` (agents and commands), `go.work`, `Makefile`, `.github/workflows/`, `memory.md`.
 
 ## 3. Workflow (SDD with Spec Kit)
-`specify -> clarify -> plan -> tasks -> implement -> analyze`, artifacts in `specs/NNN-name/`. Each spec opens with
-`Source: backlog HU-xx` or `Source: user description`. Implement order: qa-seguridad `red` -> backend-go and
+`specify -> clarify -> plan -> tasks -> implement -> analyze -> pr`, artifacts in `specs/NNN-name/`. The final
+artifact is a PR to `release/sdd-hubx-system` whose body is `specs/NNN-name/pr.md` (`hubx-lead` pushes the story branch
+and opens it; a human reviews and merges). Each spec opens with `Source: backlog HU-xx` or `Source: user description`. Implement order: qa-seguridad `red` -> backend-go and
 frontend-react in parallel -> qa-seguridad `verify` -> devops. TDD is mandatory.
 
 ## 4. Agents (single entry point: `hubx-lead`)
@@ -53,6 +54,7 @@ Everything in English (backlog, specs, code, commits).
 
 ## 8. Never
 No secrets in the repo. No framework beyond the allowed stack; no new Go dependency without human approval (`go get`
-asks). No imports between services. No MFE-to-API calls bypassing the gateway. No `git push` by agents. Commits are
-one per subagent delivery, tagged `[agent:role] HU-xx ...`, proposed by `hubx-lead` and confirmed by a human.
+asks). No imports between services. No MFE-to-API calls bypassing the gateway. No agent merges, force-pushes, deletes
+branches or pushes to `main`/`release/*`/`hotfix/*`; only `hubx-lead` commits (one per subagent delivery, tagged
+`[agent:role] HU-xx ...`), pushes the story branch and opens the PR. Merging is always a human decision.
 Unknown business rule, state, role or permission: ask, do not invent.
