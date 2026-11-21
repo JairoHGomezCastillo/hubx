@@ -57,9 +57,9 @@ in a git-ignored `.env` on first run; nothing has to be configured by hand.
 Authority order: constitution > `AGENTS.md` > service `AGENTS.md` > `memory.md`.
 
 Per story: `specify -> clarify -> plan -> tasks -> implement -> analyze -> pr`, on its own branch `NNN-name`. The story
-ends with a PR to `release/sdd-hubx-system`: `hubx-lead` writes `specs/NNN-name/pr.md`, you push, `hubx-lead` opens the
-PR; the branch is deleted automatically on merge. `main` receives the release by PR for deployment. Commits are one
-per agent delivery, tagged `[agent:role] HU-xx summary`; agents never push.
+ends with a PR to `release/sdd-hubx-system`: `hubx-lead` commits, pushes the story branch and opens the PR with
+`specs/NNN-name/pr.md` as body; you review and merge (agents never merge); the branch is deleted automatically on merge. `main` receives the release by PR for deployment. Commits are one
+per agent delivery, tagged `[agent:role] HU-xx summary`.
 
 ## Multi-agent architecture
 
@@ -68,7 +68,7 @@ Single entry point: `hubx-lead` (default agent of [`opencode.jsonc`](opencode.js
 
 | Agent | Function | Edits only |
 |---|---|---|
-| `hubx-lead` | Orchestrates the Spec Kit flow, delegates, checks evidence and scope, proposes commits, opens the PR | `specs/`, `backlog/`, `contracts/`, `memory.md` |
+| `hubx-lead` | Orchestrates the Spec Kit flow, delegates, checks evidence and scope, commits, pushes the story branch, opens the PR (never merges) | `specs/`, `backlog/`, `contracts/`, `memory.md` |
 | `backend-go` | Implements Go modules with TDD | `hubx-api/`, `hubx-gw/` |
 | `frontend-react` | Implements the frontend with TDD | `hubx-mfe/` |
 | `qa-seguridad` | Integration tests first (red), then verification and security report | `hubx-bender/`, `qa-report.md` |

@@ -117,7 +117,7 @@ HUBX_TEST_DB_URL="postgres://hubx:$(grep POSTGRES_PASSWORD .env | cut -d= -f2)@l
 | 2. `hubx-bender` con Playwright | Hecho (fusionado) | `hubx-bender/` |
 | 3. `Makefile` y `make test-integration` | Hecho (ya en `release/sdd-hubx-system`) | `Makefile`, `scripts/`, `compose.yaml`, `*/Dockerfile` |
 | 4. PostgreSQL y migraciones | Hecho (ya en `release/sdd-hubx-system`) | `hubx-api/migrations/`, `hubx-api/internal/migrate/`, `hubx-api/cmd/migrate/` |
-| 9. Protección de ramas | Hecho: `protect-main` (PR + 1 aprobación) y `protect-release-no-approval` (PR + 0 aprobaciones hasta HU-01); sin push directo | GitHub, Settings, Rules |
+| 9. Protección de ramas | Hecho: `protect-main` (PR + 1 aprobación) y `protect-release` (PR + 1 aprobación desde 2026-11-21; ningún agente fusiona); sin push directo | GitHub, Settings, Rules |
 | 10. README con la guía y el backlog | Hecho | `README.md`, `docs/GUIA-EQUIPO-HUBX.md` |
 | HU-01 Sign in | **Siguiente** (1 a 4 ya fusionados) | `specs/001-sign-in` |
 | Despliegue | Pendiente (domingo 22) | `deploy/` |

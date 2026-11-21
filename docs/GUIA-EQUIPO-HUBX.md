@@ -172,20 +172,14 @@ El script de Spec Kit admite `--number` y `--short-name` (`.specify/scripts/bash
 
 **5. Analyze.** `/speckit.analyze` y corrige las desviaciones.
 
-**6. Commits.** Uno por entrega de subagente, con el formato `[agent:role] HU-0X resumen`. El lead solo los propone; tú los confirmas:
+**6. Commits.** Uno por entrega de subagente, con el formato `[agent:role] HU-0X resumen`. El lead los hace solo, sin pedirte confirmación; los revisas en el PR:
 
 ```
 [agent:qa-seguridad] HU-02 integration tests (red)
 [agent:backend-go] HU-02 create shipment module
 ```
 
-**7. PR hacia `release/v1`** (no hacia `main`). El PR es el resultado final de la historia. El lead escribe la descripción en `specs/0X-<name>/pr.md` con la evidencia real. Los agentes no empujan; lo haces tú:
-
-```bash
-git push -u origin <tu-rama>
-```
-
-Después el lead abre el PR con tu confirmación (`gh pr create --base release/v1 --body-file specs/0X-<name>/pr.md`) y te da la URL. La historia queda en revisión mientras el PR está abierto y se da por terminada cuando se fusiona.
+**7. PR hacia `release/v1`** (no hacia `main`). El PR es el resultado final de la historia. El lead escribe la descripción en `specs/0X-<name>/pr.md` con la evidencia real, empuja la rama de la historia y abre el PR (`gh pr create --base release/v1 --body-file specs/0X-<name>/pr.md`) sin pedirte nada; te da la URL. **Ningún agente fusiona**: fusionar feature → release y release/hotfix → `main` es siempre una decisión humana, y el ruleset de release exige una aprobación. La historia queda en revisión mientras el PR está abierto y se da por terminada cuando se fusiona.
 
 Plantilla de la descripción del PR (también en `.github/pull_request_template.md`):
 

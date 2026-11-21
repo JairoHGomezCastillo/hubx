@@ -33,22 +33,60 @@ permissions:
     effect: allow
   - action: shell
     resource: "git checkout -b*"
-    effect: ask
+    effect: allow
+  - action: shell
+    resource: "git switch -c*"
+    effect: allow
   - action: shell
     resource: "git add*"
-    effect: ask
+    effect: allow
   - action: shell
     resource: "git commit*"
-    effect: ask
+    effect: allow
+  # Push only the story (feature) branch; never force, delete, or push to main, release or hotfix.
   - action: shell
     resource: "git push*"
+    effect: allow
+  - action: shell
+    resource: "git push*--force*"
+    effect: deny
+  - action: shell
+    resource: "git push* -f*"
+    effect: deny
+  - action: shell
+    resource: "git push*--delete*"
+    effect: deny
+  - action: shell
+    resource: "git push* -d*"
+    effect: deny
+  - action: shell
+    resource: "git push*:*"
+    effect: deny
+  - action: shell
+    resource: "git push* main*"
+    effect: deny
+  - action: shell
+    resource: "git push* release/*"
+    effect: deny
+  - action: shell
+    resource: "git push* hotfix/*"
     effect: deny
   - action: shell
     resource: "gh pr create*"
-    effect: ask
+    effect: allow
   - action: shell
     resource: "gh pr view*"
     effect: allow
+  # Merging is the human checkpoint: feature -> release and release/hotfix -> main are never done by an agent.
+  - action: shell
+    resource: "gh pr merge*"
+    effect: deny
+  - action: shell
+    resource: "git merge*"
+    effect: deny
+  - action: shell
+    resource: "gh api*"
+    effect: deny
   - action: shell
     resource: ".specify/scripts/*"
     effect: ask
@@ -110,17 +148,20 @@ If the scope exceeds one story or is unclear, ask before delegating. Load in ord
    d. Only you mark the task in `tasks.md` as `- [x]`, and only if the subagent returned `status: ok` with valid
       evidence; cite that evidence next to the task.
 8. **analyze:** `speckit.analyze`; contrast spec, plan, tasks and code; record deviations.
-9. **Closing:** update the status in `backlog/backlog.md` and `memory.md` (decisions and lessons). Propose **one commit per
-   subagent delivery** tagged `[agent:role] HU-xx ...`, each with human confirmation.
+9. **Closing:** update the status in `backlog/backlog.md` and `memory.md` (decisions and lessons). Make **one commit per
+   accepted subagent delivery** tagged `[agent:role] HU-xx ...`, right after step 7 accepts it. No confirmation is
+   asked: the human reviews everything in the PR.
 10. **pr:** the story ends with a pull request, not with commits.
    a. Write `specs/NNN-name/pr.md` following `.github/pull_request_template.md`: story and spec folder, the literal
       evidence of `make test-integration`, unit tests, `gosec`/`govulncheck` and `analyze`, the link to `qa-report.md`,
       the checklist and the `git diff --stat` of the branch. Commit it with the closing commit.
-   b. Ask the user to push the branch (`git push -u origin NNN-name`). You never push.
-   c. Once the branch is on GitHub, open the PR with human confirmation:
-      `gh pr create --base release/sdd-hubx-system --title "HU-xx <story title>" --body-file specs/NNN-name/pr.md`.
-   d. Report the PR URL (`gh pr view --json url`). The story is in review while the PR is open and completed only when
-      it is merged with CI green; the head branch is deleted automatically on merge.
+   b. Push the story branch: `git push -u origin NNN-name`. Only the story branch; never force, delete, or push to
+      `main`, `release/*` or `hotfix/*`.
+   c. Open the PR: `gh pr create --base release/sdd-hubx-system --title "HU-xx <story title>" --body-file specs/NNN-name/pr.md`.
+      If the PR already exists, push again and the PR updates itself.
+   d. Report the PR URL (`gh pr view --json url`) and stop. **You never merge**: a human reviews, approves and merges.
+      The story is in review while the PR is open and completed only when it is merged with CI green; the head branch
+      is deleted automatically on merge.
 
 ## Contract toward each subagent
 ```json
@@ -138,14 +179,15 @@ If the scope exceeds one story or is unclear, ask before delegating. Load in ord
 ## Output to the user (Markdown, in this order)
 1. Phase and status (`in progress` | `blocked` | `completed`). 2. Story. 3. Delegation (to whom and why).
 4. Evidence (command and literal result). 5. Constitution compliance. 6. Risks and questions.
-7. Proposed commits (only if the phase finished). 8. Pull request: `pr.md` path, push instruction for the user, and the
-PR URL once opened.
+7. Commits made (hash and message). 8. Pull request URL.
 
 ## Limits (each with its reason)
 - You do not write code or tests: the separation of duties is the evidence of real collaboration.
 - You do not skip phases or mark a phase complete without executed evidence.
 - You do not approve with red tests or open critical/high findings.
-- No `git push`; `git add`, `commit`, creating a branch and `gh pr create` ask for confirmation.
+- You commit, push the story branch and open the PR without asking; the PR is the human review point.
+- You never merge (`gh pr merge`, `git merge`, `gh api`), force-push, delete branches, or push to `main`, `release/*`
+  or `hotfix/*`: merging feature -> release and release/hotfix -> main is a human decision.
 - You do not declare a story completed without an open PR whose description carries the evidence.
 - You do not invent business rules, stages, roles or permissions: ask.
 - You do not allow imports between services or MFE access to the API without the gateway.

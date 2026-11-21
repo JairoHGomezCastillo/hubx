@@ -20,15 +20,16 @@
 - All files use LF (`.gitattributes`); run `make` from Git Bash on Windows.
 - Branch protection (2026-11-20): ruleset `protect-main` on `main` needs a PR with 1 approval from someone other than
   the last pusher, resolved threads, no force push, no deletion, no bypass (admins included). Ruleset
-  `protect-release-no-approval` on `release/sdd-hubx-system` needs a PR with 0 approvals (same other rules, except deletion is allowed so the
-  branch can be removed after merge, 2026-11-21), decided by
-  A to close the foundation; raise it to 1 approval before story PRs merge (HU-01, 2026-11-21). Add the CI checks as
-  required once D's workflows exist (item 8).
+  `protect-release` (formerly `protect-release-no-approval`) on `release/sdd-hubx-system` needs a PR with 1 approval
+  from someone other than the last pusher (raised from 0 on 2026-11-21 so GitHub enforces that no agent merges,
+  constitution 1.3.0), resolved threads, no force push; deletion is allowed so the branch is removed after merge.
+  Add the CI checks as required once D's workflows exist (item 8).
 - GitHub default branch is `main` (the only permanent branch); release and feature branches are deleted after merge
   (repo setting "automatically delete head branches" on, 2026-11-21).
 
 ## Conventions
-- Commit format: `[agent:role] HU-xx short summary`; one commit per subagent delivery; no agent pushes.
+- Commit format: `[agent:role] HU-xx short summary`; one commit per subagent delivery. Since 2026-11-21 (constitution
+  1.3.0) hubx-lead commits, pushes the story branch and opens the PR without confirmation; no agent merges.
 - Test names: `HUxx_<scenario>`.
 - Tasks in `tasks.md` are marked `- [x]` only by hubx-lead, citing the subagent evidence.
 - Migration numbers (reserve here before using): 0001 baseline (A), 0002_seed_ledger (C, after the fingerprint
@@ -46,7 +47,6 @@
   (bypasses the immutability trigger on purpose).
 
 ## Pending
-- Raise `protect-release-no-approval` to 1 approval before story PRs merge (owner A).
 - hubx-api `main.go` still reads `PORT` directly; wire `internal/config`.
 - hubx-gw has no config reader yet (reads `PORT`/`API_URL`).
 - gosec G304 in `hubx-api/internal/config/config.go:102` (owner B, item 5): blocks "gosec without findings".
