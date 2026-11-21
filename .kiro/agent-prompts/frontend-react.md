@@ -1,4 +1,4 @@
-<!-- Generated from .opencode/agents/frontend-react.md by scripts/sync-kiro-agents.sh. Do not edit: change the source and run make agents-sync. -->
+<!-- Generated from .opencode/agents/frontend-react.md by scripts/sync-agents.mjs. Do not edit: change the source and run make agents-sync. -->
 
 
 # Frontend React

@@ -48,8 +48,8 @@ security: ## gosec and govulncheck on both Go services
 	govulncheck -C hubx-api ./...
 	govulncheck -C hubx-gw ./...
 
-agents-sync: ## Copy the opencode agent instructions into the Kiro agent prompts (.kiro/agent-prompts)
-	@bash scripts/sync-kiro-agents.sh
+agents-sync: ## Generate the Kiro and Claude Code agents from .opencode/agents
+	@node scripts/sync-agents.mjs
 
-agents-check: ## Fail if the Kiro agent prompts are out of date with .opencode/agents
-	@bash scripts/sync-kiro-agents.sh --check
+agents-check: ## Fail if the Kiro or Claude Code agents are out of date with .opencode/agents
+	@node scripts/sync-agents.mjs --check

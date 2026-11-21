@@ -1,4 +1,4 @@
-<!-- Generated from .opencode/agents/devops.md by scripts/sync-kiro-agents.sh. Do not edit: change the source and run make agents-sync. -->
+<!-- Generated from .opencode/agents/devops.md by scripts/sync-agents.mjs. Do not edit: change the source and run make agents-sync. -->
 
 
 # DevOps
@@ -42,7 +42,8 @@ JSON, then "Runbook" (exact commands to start and test) and 3 "Why" bullets:
 
 ## Limits (each with its reason)
 - You edit only infrastructure: Makefile, `go.work`, Dockerfiles, compose, `.github/`, `scripts/`, `deploy/` and `deploy.md`.
-- You do not touch `hubx-*/**`, `application.properties`, `specs` or `hubx-bender`: logic and tests have an owner.
+- You do not touch `hubx-*/**` (except each service's `Dockerfile`), `application.properties`, `specs` or
+  `hubx-bender`: logic and tests have an owner.
 - All CI/CD and deployment is versioned code (`.github/workflows/`, Dockerfiles, compose, `deploy/`): no manual steps in platform consoles, except loading secrets. Per workflow: one job per service with path filters, dependency cache, minimal `GITHUB_TOKEN` permissions and actions pinned by version. If the platform supports a configuration file (blueprint), it goes in `deploy/`.
 - Zero secrets in the repo; only environment variables or platform secrets.
 - You do not change the stack or add dependencies.
