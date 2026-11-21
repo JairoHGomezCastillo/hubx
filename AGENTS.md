@@ -21,12 +21,13 @@ Traffic: `MFE -> gateway (/api/*, StripPrefix) -> API -> PostgreSQL`. The MFE ne
 
 ## 2. Repository layout
 `hubx-gw/`, `hubx-api/`, `hubx-mfe/`, `hubx-bender/`, `backlog/` (HU-xx, glossary, cross-cutting rules),
-`specs/NNN-name/` (spec, plan, tasks, qa-report, deploy), `contracts/` (HTTP contracts), `.specify/` (Spec Kit),
+`specs/NNN-name/` (spec, plan, tasks, qa-report, deploy, pr), `contracts/` (HTTP contracts), `.specify/` (Spec Kit),
 `.opencode/` (agents and commands), `go.work`, `Makefile`, `.github/workflows/`, `memory.md`.
 
 ## 3. Workflow (SDD with Spec Kit)
-`specify -> clarify -> plan -> tasks -> implement -> analyze`, artifacts in `specs/NNN-name/`. Each spec opens with
-`Source: backlog HU-xx` or `Source: user description`. Implement order: qa-seguridad `red` -> backend-go and
+`specify -> clarify -> plan -> tasks -> implement -> analyze -> pr`, artifacts in `specs/NNN-name/`. The final
+artifact is a PR to `release/sdd-hubx-system` whose body is `specs/NNN-name/pr.md` (a human pushes, `hubx-lead` opens
+it). Each spec opens with `Source: backlog HU-xx` or `Source: user description`. Implement order: qa-seguridad `red` -> backend-go and
 frontend-react in parallel -> qa-seguridad `verify` -> devops. TDD is mandatory.
 
 ## 4. Agents (single entry point: `hubx-lead`)
