@@ -8,3 +8,5 @@ dist/
 application-local.properties
 promts/
 .claude/settings.local.json
+# Exported Claude Code sessions
+*local-command-caveat*.txt
