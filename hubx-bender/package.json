@@ -1,0 +1,15 @@
+{
+  "name": "hubx-bender",
+  "version": "1.0.0",
+  "private": true,
+  "description": "HUBX QA workspace: API integration tests through the gateway (Playwright Test, API mode).",
+  "type": "module",
+  "scripts": {
+    "test": "playwright test",
+    "test:report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.65.0",
+    "@types/node": "22.20.5"
+  }
+}

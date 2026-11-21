@@ -4,3 +4,7 @@ dist/
 .env
 .env.*
 *.log
+.idea
+application-local.properties
+promts/
+.claude/settings.local.json
