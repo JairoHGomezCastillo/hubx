@@ -179,7 +179,7 @@ El script de Spec Kit admite `--number` y `--short-name` (`.specify/scripts/bash
 [agent:backend-go] HU-02 create shipment module
 ```
 
-**7. PR hacia `release/v1`** (no hacia `main`). El PR es el resultado final de la historia. El lead escribe la descripción en `specs/0X-<name>/pr.md` con la evidencia real, empuja la rama de la historia y abre el PR (`gh pr create --base release/v1 --body-file specs/0X-<name>/pr.md`) sin pedirte nada; te da la URL. **Ningún agente fusiona**: fusionar feature → release y release/hotfix → `main` es siempre una decisión humana, y el ruleset de release exige una aprobación. La historia queda en revisión mientras el PR está abierto y se da por terminada cuando se fusiona.
+**7. PR hacia `release/v1`** (no hacia `main`). El PR es el resultado final de la historia. El lead escribe la descripción en `specs/0X-<name>/pr.md` con la evidencia real, empuja la rama de la historia y abre el PR (`gh pr create --base release/v1 --body-file specs/0X-<name>/pr.md`) sin pedirte nada; te da la URL. El título sigue Conventional Commits con gitmoji y la marca del agente al final: `<tipo>(<alcance>): <emoji> <descripción corta> [agent:hubx-lead]`, por ejemplo `feat(HU-02): ✨ create shipment module [agent:hubx-lead]` (tipos y emojis en `.opencode/agents/hubx-lead.md`, paso 10). **Ningún agente fusiona**: fusionar feature → release y release/hotfix → `main` es siempre una decisión humana, y el ruleset de release exige una aprobación. La historia queda en revisión mientras el PR está abierto y se da por terminada cuando se fusiona.
 
 Plantilla de la descripción del PR (también en `.github/pull_request_template.md`):
 

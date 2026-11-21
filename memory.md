@@ -28,6 +28,8 @@
   (repo setting "automatically delete head branches" on, 2026-11-21).
 
 ## Conventions
+- PR title (2026-11-21): `<type>(<scope>): <gitmoji> <short description> [agent:role]`, scope `HU-xx` or an area;
+  mapping in hubx-lead step 10. Commits keep their own format below.
 - Commit format: `[agent:role] HU-xx short summary`; one commit per subagent delivery. Since 2026-11-21 (constitution
   1.3.0) hubx-lead commits, pushes the story branch and opens the PR without confirmation; no agent merges.
 - Test names: `HUxx_<scenario>`.

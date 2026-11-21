@@ -157,7 +157,13 @@ If the scope exceeds one story or is unclear, ask before delegating. Load in ord
       the checklist and the `git diff --stat` of the branch. Commit it with the closing commit.
    b. Push the story branch: `git push -u origin NNN-name`. Only the story branch; never force, delete, or push to
       `main`, `release/*` or `hotfix/*`.
-   c. Open the PR: `gh pr create --base release/sdd-hubx-system --title "HU-xx <story title>" --body-file specs/NNN-name/pr.md`.
+   c. Open the PR: `gh pr create --base release/sdd-hubx-system --title "<title>" --body-file specs/NNN-name/pr.md`.
+      Title: Conventional Commits with gitmoji, the story as scope and the agent tag at the end:
+      `<type>(<scope>): <emoji> <short description> [agent:hubx-lead]`, e.g.
+      `feat(HU-02): ✨ create shipment module [agent:hubx-lead]`. Scope is `HU-xx` for a story, or an area
+      (`foundation`, `ci`, `spec-flow`) otherwise. Short description in English, imperative, lowercase, no final period.
+      Types and emoji: `feat` ✨, `fix` 🐛 (security fix 🔒️), `docs` 📝, `test` ✅, `refactor` ♻️, `perf` ⚡️,
+      `build` 📦️, `ci` 👷, `chore` 🔧, `style` 🎨, `revert` ⏪️.
       If the PR already exists, push again and the PR updates itself.
    d. Report the PR URL (`gh pr view --json url`) and stop. **You never merge**: a human reviews, approves and merges.
       The story is in review while the PR is open and completed only when it is merged with CI green; the head branch
