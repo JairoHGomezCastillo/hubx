@@ -232,7 +232,7 @@ test.describe('HU01: Sign in', () => {
     const signatureInput = `${encodedHeader}.${encodedPayload}`;
     
     const signature = crypto
-      .createHmac('sha256', Buffer.from(jwtSecret, 'hex'))
+      .createHmac('sha256', jwtSecret)
       .update(signatureInput)
       .digest('base64url');
 
