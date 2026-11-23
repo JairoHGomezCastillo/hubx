@@ -1,5 +1,8 @@
 # HTTP Contract: Sign in
 
+> **Superseded in part** by the implement clarifications in `tasks.md` and by `contracts/auth-sign-in.md` v1.1 (the
+> root contract prevails): role `ground partner` (space), no `party_id`, schema from `0001_baseline_schema.sql`.
+
 **Endpoint**: `POST /api/auth/sign-in`
 
 **Description**: Authenticate a HUBX user with email and password, returning a JWT session token valid for one hour.

@@ -1,5 +1,8 @@
 # Research: Sign in (HU-01)
 
+> **Superseded in part** (implement clarifications in `tasks.md`): decision 6 is replaced by reusing the existing
+> `0001_baseline_schema.sql`; bcrypt cost is 12 (existing demo hashes); role is `ground partner`.
+
 **Date**: 2025-01-21
 **Phase**: 0 (pre-implementation research)
 

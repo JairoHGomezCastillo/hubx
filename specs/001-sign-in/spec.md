@@ -137,7 +137,7 @@ As a system, I want sessions to expire after one hour, so that inactive accounts
 - **Authentication approach**: Local authentication against PostgreSQL using bcrypt for password hashing and JWT for session management (Constitution Principle VI). LDAP is not in scope.
 - **Demo users**: Five preloaded users (operator@hubx.co, rapido@hubx.co, express@hubx.co, ana@hubx.co, andina@hubx.co) all with password "Hubx-Demo-2026" (documented in memory.md).
 - **JWT transmission**: Authorization header with "Bearer <token>" scheme. The MFE stores the token and includes it in all API requests through the gateway.
-- **JWT structure**: Token includes user identity (sub, email), role (operator, ground_partner, customer), optional party_id (for ground partners and customers), issue time (iat) and expiration (exp).
+- **JWT structure**: Token includes user identity (sub, email), role (operator, ground partner, customer), issue time (iat) and expiration (exp).
 - **Sign-in response**: JSON with token string and basic user info (email, role).
 - **Session expiration**: Protected endpoints return 401 Unauthorized when JWT expires. The MFE redirects to sign-in. No server-side redirection.
 - **Refresh tokens**: Out of scope. Sessions expire after 1 hour and users sign in again (cross-cutting rule 1).

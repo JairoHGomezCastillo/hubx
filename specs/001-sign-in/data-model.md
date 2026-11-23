@@ -1,5 +1,9 @@
 # Data Model: Sign in (HU-01)
 
+> **Superseded in part** (implement clarifications in `tasks.md`): the real `users` table is the one in
+> `hubx-api/migrations/0001_baseline_schema.sql` (role text with `ground partner`, bcrypt cost 12, `name`, no
+> `party_id`, no `updated_at`). No migration is added in HU-01. JWT claims: `sub`, `email`, `role`, `iat`, `exp`.
+
 **Date**: 2025-01-21
 **Source**: research.md decisions + spec.md requirements
 

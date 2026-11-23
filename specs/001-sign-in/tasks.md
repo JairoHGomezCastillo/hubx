@@ -8,6 +8,19 @@
 
 **Agent Ownership**: `[QA]`, `[API]`, `[GW]`, `[MFE]`, `[OPS]`
 
+## Implement clarifications (human decisions, start of implement)
+
+1. **Migration**: `hubx-api/migrations/0001_baseline_schema.sql` already exists on `release/sdd-hubx-system` and
+   seeds the `users` table and the five demo users. It is reused as is: no new migration in HU-01. Real schema:
+   `users(id uuid, email text UNIQUE normalized, name text, role text IN ('operator','ground partner','customer'),
+   password_hash text, created_at)`, bcrypt cost 12, no `party_id`. T024/T025 are dropped; T026 only verifies.
+2. **Role value**: the role is `ground partner` (with a space) everywhere: JWT claim, `user.role` in the response,
+   tests. Same as constitution VI and the database.
+3. **Gateway JWT validation**: kept (T027-T031). Human approved `golang-jwt/jwt/v5 v5.2.1` in hubx-gw as well. The
+   gateway still forwards `Authorization` untouched and the API validates the JWT on its own (constitution II).
+4. **Claims**: `sub` (users.id), `email`, `role`, `iat`, `exp`. No `party_id` (no column; ownership in later stories
+   uses `sub`).
+
 ---
 
 ## Phase 1: QA Red (Integration Tests MUST Fail)
@@ -19,7 +32,7 @@
 **Owned Paths**: `hubx-bender/tests/`
 
 - [ ] **T001** [P] [QA] Write `HU01_sign_in_operator.spec.ts`: POST /api/auth/sign-in with operator@hubx.co, expect 200 + JWT with role=operator
-- [ ] **T002** [P] [QA] Write `HU01_sign_in_partner.spec.ts`: POST /api/auth/sign-in with rapido@hubx.co, expect 200 + JWT with role=ground_partner
+- [ ] **T002** [P] [QA] Write `HU01_sign_in_partner.spec.ts`: POST /api/auth/sign-in with rapido@hubx.co, expect 200 + JWT with role="ground partner"
 - [ ] **T003** [P] [QA] Write `HU01_sign_in_customer.spec.ts`: POST /api/auth/sign-in with ana@hubx.co, expect 200 + JWT with role=customer
 - [ ] **T004** [P] [QA] Write `HU01_email_normalization.spec.ts`: POST /api/auth/sign-in with " ANA@hubx.co " (capitals, spaces), expect 200
 - [ ] **T005** [P] [QA] Write `HU01_security_non_revealing_errors.spec.ts`: POST /api/auth/sign-in with wrong password AND with unknown email, expect identical 401 "Invalid credentials"
@@ -52,18 +65,18 @@
 
 #### Models & Repository
 
-- [ ] **T009** [P] [API] Create `hubx-api/internal/auth/user.go`: User struct (id, email, passwordHash, role, partyID, createdAt, updatedAt)
+- [ ] **T009** [P] [API] Create `hubx-api/internal/auth/user.go`: User struct (id, email, name, role, passwordHash, createdAt) matching `0001_baseline_schema.sql`
 - [ ] **T010** [P] [API] Create `hubx-api/internal/auth/repository.go`: Interface + PostgreSQL impl
-  - `FindUserByEmail(ctx, email) (*User, error)` (parameterized query: `SELECT * FROM users WHERE email = $1`)
+  - `FindUserByEmail(ctx, email) (*User, error)` (parameterized query with explicit columns: `SELECT id, email, name, role, password_hash, created_at FROM users WHERE email = $1`)
   - `NormalizeEmail(email) string` helper (lowercase, trim)
 - [ ] **T011** [API] Write `hubx-api/internal/auth/repository_test.go`: Unit tests for FindUserByEmail (mock DB or use testcontainers)
 
 #### JWT Logic
 
 - [ ] **T012** [P] [API] Create `hubx-api/internal/auth/jwt.go`: JWT functions
-  - `GenerateToken(user *User, secret string, expirationHours int) (string, error)` (HS256, claims: sub, email, role, party_id, iat, exp)
+  - `GenerateToken(user *User, secret string, expirationHours int) (string, error)` (HS256, claims: sub, email, role, iat, exp)
   - `ValidateToken(tokenString, secret string) (*Claims, error)` (verify signature, check exp)
-  - `Claims struct` (sub, email, role, partyID, iat, exp)
+  - `Claims struct` (sub, email, role, iat, exp)
 - [ ] **T013** [API] Write `hubx-api/internal/auth/jwt_test.go`: Unit tests for GenerateToken and ValidateToken (valid token, expired token, invalid signature)
 
 #### Service
@@ -71,7 +84,7 @@
 - [ ] **T014** [API] Create `hubx-api/internal/auth/service.go`: SignIn(ctx, email, password) (token, user, error)
   - Normalize email
   - FindUserByEmail
-  - bcrypt.CompareHashAndPassword (cost 10)
+  - bcrypt.CompareHashAndPassword (stored hashes are cost 12; on unknown email compare against a dummy hash so timing does not reveal the email)
   - Return generic "Invalid credentials" for both user-not-found and wrong-password
   - GenerateToken on success
 - [ ] **T015** [API] Write `hubx-api/internal/auth/service_test.go`: Unit tests for SignIn (success, wrong password, unknown email, email normalization)
@@ -103,25 +116,14 @@
 
 #### Configuration
 
-- [ ] **T022** [API] Update `hubx-api/application.properties`: Add jwt.expiration.hours=1, jwt.secret.path= (empty, must come from env)
+- [ ] **T022** [API] Update `hubx-api/application.properties`: Add jwt.expiration.hours=1 and `jwt.secret=` (empty, supplied only via `JWT_SECRET`, constitution III)
 - [ ] **T023** [API] Update `hubx-api/internal/config/config.go`: Read jwt.expiration.hours (default 1), JWT_SECRET env var (required, no default)
 
 #### Migration
 
-- [ ] **T024** [API] Create `hubx-api/migrations/0001_baseline.sql`:
-  - CREATE TYPE role AS ENUM ('operator', 'ground_partner', 'customer');
-  - CREATE TABLE users (id UUID PK, email VARCHAR(254) UNIQUE NOT NULL, password_hash TEXT NOT NULL, role role NOT NULL, party_id UUID NULL, created_at TIMESTAMPTZ, updated_at TIMESTAMPTZ);
-  - CREATE INDEX idx_users_email, idx_users_role;
-  - INSERT 5 demo users (email, bcrypt hash of 'Hubx-Demo-2026' cost 10, role)
-  - Run in one transaction (Constitution: immutability)
-- [ ] **T025** [API] Generate bcrypt hashes for demo users:
-  ```bash
-  # From repo root or use Go script
-  for user in operator@hubx.co rapido@hubx.co express@hubx.co ana@hubx.co andina@hubx.co; do
-    echo "$user: $(echo -n 'Hubx-Demo-2026' | bcrypt -c 10)"
-  done
-  ```
-- [ ] **T026** [API] Verify migration applies cleanly: `make migrate` (or `make up` if migration runs on startup)
+- ~~**T024**~~ Dropped (implement clarification 1): `0001_baseline_schema.sql` already creates `users` and seeds the demo users. Do not create, edit or renumber any migration.
+- ~~**T025**~~ Dropped (implement clarification 1): demo hashes already exist (bcrypt cost 12).
+- [ ] **T026** [API] Verify the existing migration 0001 applies cleanly and the API can read the demo users (`make up` or `make test-integration`)
 
 **Evidence**: `go test ./internal/auth/...` passes; `make up` applies migration; curl POST /api/auth/sign-in returns 200 or 401 (not 404/500).
 
@@ -131,7 +133,7 @@
 
 **Agent**: `backend-go`
 
-**Owned Paths**: `hubx-gw/internal/middleware/`, `hubx-gw/cmd/gw/main.go`, `hubx-gw/application.properties`, `hubx-gw/go.mod`
+**Owned Paths**: `hubx-gw/internal/middleware/`, `hubx-gw/cmd/gw/main.go`, `hubx-gw/application.properties`, `hubx-gw/go.mod`, `hubx-gw/go.sum`, `hubx-gw/AGENTS.md`
 
 - [ ] **T027** [GW] Add `golang-jwt/jwt` v5.2.1 to `hubx-gw/go.mod`: `go get -C hubx-gw github.com/golang-jwt/jwt/v5@v5.2.1`
 
@@ -146,8 +148,9 @@
 
 #### Registration
 
-- [ ] **T030** [GW] Update `hubx-gw/cmd/gw/main.go`: Apply JWTValidation middleware to all routes except /health and /api/auth/sign-in
-- [ ] **T031** [GW] Update `hubx-gw/application.properties`: Read JWT_SECRET env var (same value as API)
+- [ ] **T030** [GW] Update `hubx-gw/cmd/gw/main.go`: Apply JWTValidation middleware to all routes except `GET /health`, `GET /api/health` and `POST /api/auth/sign-in`
+- [ ] **T031** [GW] Update `hubx-gw/application.properties`: add `jwt.secret=` (empty; value only via `JWT_SECRET`, same value as the API). The gateway refuses to start if it is empty.
+- [ ] **T053** [GW] Update `hubx-gw/AGENTS.md` sections 3 and 7: Go stdlib plus the approved `golang-jwt/jwt/v5` for JWT validation only (never issuance)
 
 **Evidence**: `go test ./internal/middleware/...` passes; gateway returns 401 for invalid JWT before forwarding to API.
 

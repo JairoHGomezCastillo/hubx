@@ -1,8 +1,13 @@
 # HTTP Contract: POST /api/auth/sign-in
 
 **Story**: HU-01 Sign in
-**Version**: 1.0
+**Version**: 1.1
 **Status**: Draft (pending implementation)
+
+**1.1 changes (implement clarifications)**: role value is `ground partner` (with a space, constitution VI); no
+`party_id` claim (`sub` is `users.id`); the gateway also validates the JWT and answers the same 401 bodies below
+before forwarding, while the API keeps validating on its own. `GET /health`, `GET /api/health` and
+`POST /api/auth/sign-in` are public. This root file prevails over `specs/001-sign-in/contracts/auth-sign-in.md`.
 
 ## Endpoint
 
@@ -56,8 +61,7 @@ User authenticated successfully.
 {
   "sub": "user-uuid",
   "email": "user@hubx.co",
-  "role": "operator|ground_partner|customer",
-  "party_id": "uuid-or-null",
+  "role": "operator|ground partner|customer",
   "iat": 1737499200,
   "exp": 1737502800
 }
@@ -172,7 +176,7 @@ curl -X GET http://localhost:8080/api/shipments/HBX-SEED-0001 \
 ## Security Requirements
 
 - Parameterized SQL queries (prevent injection)
-- Bcrypt password hashing (cost 10)
+- Bcrypt password hashing (demo hashes in migration 0001 use cost 12)
 - Generic error messages (prevent user enumeration)
 - JWT signature validation (HS256 with `JWT_SECRET`)
 - Session expiration enforcement (1 hour per cross-cutting rule 1)

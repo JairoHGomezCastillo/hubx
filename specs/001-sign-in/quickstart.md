@@ -1,5 +1,8 @@
 # Quickstart: Sign in (HU-01)
 
+> **Superseded in part** (implement clarifications in `tasks.md`): the migration is `0001_baseline_schema.sql`,
+> the partner role reads `"ground partner"` and the JWT has no `party_id`.
+
 **Purpose**: Runnable validation scenarios to prove the sign-in feature works end-to-end.
 
 **Audience**: Developers, QA, reviewers.
