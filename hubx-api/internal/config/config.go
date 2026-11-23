@@ -22,13 +22,16 @@ const (
 	profileEnvKey = "APP_PROFILE"
 	portAliasKey  = "PORT"
 	serverPortKey = "server.port"
+	jwtExpirationHoursKey = "jwt.expiration.hours"
 	defaultPort   = "8081"
+	defaultJWTExpirationHours = "1"
 )
 
 // defaults holds values with no secrets. Secrets are supplied only through
 // the environment and therefore never appear here.
 var defaults = map[string]string{
-	serverPortKey: defaultPort,
+	serverPortKey:         defaultPort,
+	jwtExpirationHoursKey: defaultJWTExpirationHours,
 }
 
 // Config holds the resolved configuration values of the service.
@@ -128,4 +131,19 @@ func readProperties(path string) (map[string]string, error) {
 		return nil, fmt.Errorf("read %s: %w", path, err)
 	}
 	return values, nil
+}
+
+// GetInt returns the configuration value as an integer. If the key is not found
+// or the value cannot be parsed, returns the defaultValue.
+func (c *Config) GetInt(key string, defaultValue int) int {
+	value := c.Get(key)
+	if value == "" {
+		return defaultValue
+	}
+	var result int
+	_, err := fmt.Sscanf(value, "%d", &result)
+	if err != nil {
+		return defaultValue
+	}
+	return result
 }
