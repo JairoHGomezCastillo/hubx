@@ -33,6 +33,14 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Verify the gateway shared secret is set (injected toward the API so the
+	// API can reject any request that did not come through the gateway).
+	gatewaySecret := os.Getenv("GATEWAY_SECRET")
+	if gatewaySecret == "" {
+		logger.Error("GATEWAY_SECRET environment variable is required")
+		os.Exit(1)
+	}
+
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, _ *http.Request) {
@@ -45,7 +53,7 @@ func main() {
 	})
 
 	apiURL := env("API_URL", "http://localhost:8081")
-	proxy.Register(mux, apiURL)
+	proxy.Register(mux, apiURL, gatewaySecret)
 
 	// Apply JWT validation middleware to all routes except excluded paths
 	excludedPaths := map[string]bool{

@@ -17,7 +17,7 @@ func TestProxy(t *testing.T) {
 		}))
 		defer upstream.Close()
 
-		handler := New(upstream.URL)
+		handler := New(upstream.URL, "test-secret")
 
 		req := httptest.NewRequest(http.MethodGet, "/api/health", nil)
 		rec := httptest.NewRecorder()
@@ -31,9 +31,30 @@ func TestProxy(t *testing.T) {
 		}
 	})
 
+	t.Run("inyecta el secreto compartido hacia el upstream", func(t *testing.T) {
+		var gotSecret string
+		upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			gotSecret = r.Header.Get(GatewaySecretHeader)
+			w.WriteHeader(http.StatusOK)
+		}))
+		defer upstream.Close()
+
+		handler := New(upstream.URL, "s3cr3t-value")
+
+		// El cliente intenta suplantar el secreto; el gateway debe sobrescribirlo.
+		req := httptest.NewRequest(http.MethodGet, "/api/health", nil)
+		req.Header.Set(GatewaySecretHeader, "forged-by-client")
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, req)
+
+		if gotSecret != "s3cr3t-value" {
+			t.Errorf("upstream recibió %s = %q, want %q", GatewaySecretHeader, gotSecret, "s3cr3t-value")
+		}
+	})
+
 	t.Run("responde 502 si el upstream está caído", func(t *testing.T) {
 		// Puerto sin servicio escuchando: el proxy no podrá conectarse.
-		handler := New("http://localhost:1")
+		handler := New("http://localhost:1", "test-secret")
 
 		req := httptest.NewRequest(http.MethodGet, "/api/health", nil)
 		rec := httptest.NewRecorder()
