@@ -1,0 +1,101 @@
+name: CI
+
+# Continuous Integration: build and test on every PR and push to protected branches.
+# Runs unit tests (Go, Node), security scans (gosec, govulncheck), and integration tests (Playwright via gateway).
+on:
+  pull_request:
+  push:
+    branches: [main, "release/**", "hotfix/**"]
+
+permissions:
+  contents: read
+
+jobs:
+  # API: build, unit tests, security scans
+  api:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v4
+        with:
+          go-version-file: go.work
+          cache: true
+      - name: Build
+        run: go -C hubx-api build ./...
+      - name: Unit tests
+        run: go -C hubx-api test ./...
+      - name: Install security tools
+        run: |
+          go install github.com/securego/gosec/v2/cmd/gosec@latest
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+      - name: gosec
+        run: cd hubx-api && gosec ./...
+      - name: govulncheck
+        run: govulncheck -C hubx-api ./...
+
+  # Gateway: build, unit tests, security scans
+  gw:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v4
+        with:
+          go-version-file: go.work
+          cache: true
+      - name: Build
+        run: go -C hubx-gw build ./...
+      - name: Unit tests
+        run: go -C hubx-gw test ./...
+      - name: Install security tools
+        run: |
+          go install github.com/securego/gosec/v2/cmd/gosec@latest
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+      - name: gosec
+        run: cd hubx-gw && gosec ./...
+      - name: govulncheck
+        run: govulncheck -C hubx-gw ./...
+
+  # MFE: build, typecheck, linting, unit tests
+  mfe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: hubx-mfe/package-lock.json
+      - name: Install
+        run: npm --prefix hubx-mfe ci
+      - name: Build
+        run: npm --prefix hubx-mfe run build
+      - name: Lint
+        run: npm --prefix hubx-mfe run lint
+      - name: Typecheck
+        run: npm --prefix hubx-mfe run typecheck
+      - name: Unit tests
+        run: npm --prefix hubx-mfe run test
+
+  # Integration tests: clean stack (PostgreSQL + API + gateway + bender), all tests must pass
+  integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Depends on successful unit tests to avoid wasting resources
+    needs: [api, gw, mfe]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v4
+        with:
+          go-version-file: go.work
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: hubx-bender/package-lock.json
+      - name: Set up Docker
+        uses: docker/setup-buildx-action@v3
+      - name: Integration tests
+        run: make test-integration
