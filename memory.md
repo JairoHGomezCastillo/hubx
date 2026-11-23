@@ -74,6 +74,12 @@
 - Spec Kit 1.4.2 `create-new-feature.sh` creates the folder and `.specify/feature.json` but not the git branch (that
   was the git extension, not installed). Without a story branch every Spec Kit command reads `feature.json`; a stale
   one sent HU-01 to an empty `specs/001-sign` folder. `--number N` silently renumbers if any `specs/N-*` exists.
+- Kiro checks every sub-agent call against the parent's policy and the sub-agent's own; a deny in either wins and a
+  sub-agent's allow cannot widen the parent (https://kiro.dev/docs/custom-agents/subagents/). So `.kiro/agents/hubx-lead.json`
+  is generated (`make agents-sync`): the lead's own rules (`scripts/agents/hubx-lead.kiro.json`, edit this one) plus the
+  union of its sub-agents' allows. In Kiro the lead could therefore write code; only its instructions stop it, so check
+  its commits with `git diff --stat`. Claude Code's guard applies the lead's own rules and lets each sub-agent's guard
+  judge that sub-agent's calls (`agent_type`). opencode scopes sub-agents by their own permissions (checked 2026-11-19).
 ## Pending
 - Make the `agents-check` CI job (`.github/workflows/agents.yml`) a required check in the rulesets once it has run green.
 - hubx-api `main.go` still reads `PORT` directly; wire `internal/config`.

@@ -6,6 +6,7 @@
 // Reads the hook JSON on stdin. Deny: exit 2 with the reason on stderr. Ask: JSON decision on stdout. Else: silent.
 import { readFileSync } from "node:fs";
 import path from "node:path";
+import { LEAD, LEAD_SOURCE } from "./kiro-delegation.mjs";
 
 const agent = process.argv[2];
 const root = process.env.CLAUDE_PROJECT_DIR || process.cwd();
@@ -16,18 +17,26 @@ function block(reason) {
 }
 
 if (!agent) block("missing agent name");
-let rules;
-try {
-  rules = JSON.parse(readFileSync(path.join(root, ".kiro/agents", `${agent}.json`), "utf8")).permissions.rules;
-} catch (e) {
-  block(`cannot read .kiro/agents/${agent}.json: ${e.message}`);
-}
 
 let input;
 try {
   input = JSON.parse(readFileSync(0, "utf8"));
 } catch {
   block("invalid hook input");
+}
+
+// Each guard judges only its own agent's calls. Inside a sub-agent the hook input carries that sub-agent's name in
+// agent_type; when it is another agent (e.g. the lead's guard seeing a backend-go call), that agent's guard decides.
+if (input.agent_type && input.agent_type !== agent) process.exit(0);
+
+// The lead's own rules live in scripts/agents/hubx-lead.kiro.json; its generated Kiro config adds the delegation
+// envelope that Kiro needs for sub-agents, which must not widen what the lead itself may do.
+const rulesFile = agent === LEAD ? LEAD_SOURCE : `.kiro/agents/${agent}.json`;
+let rules;
+try {
+  rules = JSON.parse(readFileSync(path.join(root, rulesFile), "utf8")).permissions.rules;
+} catch (e) {
+  block(`cannot read ${rulesFile}: ${e.message}`);
 }
 const tool = input.tool_name || "";
 const args = input.tool_input || {};
@@ -82,8 +91,8 @@ if (tool === "Bash") {
 let ask = null;
 for (const [capability, target, kind] of checks) {
   const effect = decide(capability, target, kind);
-  if (effect === "deny") block(`${capability} denied for '${target}' by .kiro/agents/${agent}.json`);
-  if (effect === "ask") ask = `${capability} '${target}' needs confirmation (.kiro/agents/${agent}.json)`;
+  if (effect === "deny") block(`${capability} denied for '${target}' by ${rulesFile}`);
+  if (effect === "ask") ask = `${capability} '${target}' needs confirmation (${rulesFile})`;
 }
 if (ask) {
   process.stdout.write(JSON.stringify({
