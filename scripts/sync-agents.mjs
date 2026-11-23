@@ -3,10 +3,13 @@
 //   .kiro/agent-prompts/<name>.md  instructions (body) used by .kiro/agents/<name>.json
 //   .claude/agents/<name>.md       Claude Code subagent: model, tools and a guard hook + the same instructions
 // Permissions live in .kiro/agents/<name>.json; Claude Code enforces them through scripts/agent-guard.mjs.
+//   .kiro/agents/hubx-lead.json    generated: the lead's own rules (scripts/agents/hubx-lead.kiro.json) plus the
+//                                  delegation envelope its sub-agents need in Kiro (scripts/kiro-delegation.mjs).
 // Usage: node scripts/sync-agents.mjs [--check]   (--check exits 1 if any generated file is out of date)
 import { readFileSync, writeFileSync, readdirSync, mkdirSync, existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { LEAD, leadKiroConfig } from "./kiro-delegation.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const check = process.argv.includes("--check");
@@ -70,5 +73,7 @@ for (const f of readdirSync(src).filter((f) => f.endsWith(".md")).sort()) {
   ].join("\n");
   emit(`.claude/agents/${name}.md`, header + note + body);
 }
+
+emit(`.kiro/agents/${LEAD}.json`, JSON.stringify(leadKiroConfig(root), null, 2) + "\n");
 
 process.exit(stale ? 1 : 0);

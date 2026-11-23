@@ -1,0 +1,132 @@
+{
+  "name": "hubx-lead",
+  "description": "HUBX leader and orchestrator. Receives a story (from the backlog or described by the user), drives specify, clarify, plan, tasks, implement, analyze and the pull request with Spec Kit, delegates to the subagents and validates evidence. Single entry point of the team.",
+  "model": "claude-opus-5.5",
+  "prompt": "file://../agent-prompts/hubx-lead.md",
+  "tools": [
+    "read",
+    "write",
+    "shell",
+    "subagent/backend-go",
+    "subagent/frontend-react",
+    "subagent/qa-seguridad",
+    "subagent/devops"
+  ],
+  "permissions": {
+    "rules": [
+      {
+        "capability": "fs_read",
+        "match": [
+          "**/.env",
+          "**/.env.*"
+        ],
+        "exclude": [
+          "**/.env.example"
+        ],
+        "effect": "ask"
+      },
+      {
+        "capability": "fs_write",
+        "match": [
+          "**"
+        ],
+        "exclude": [
+          "**/specs/**",
+          "**/backlog/**",
+          "**/contracts/**",
+          "**/memory.md"
+        ],
+        "effect": "deny"
+      },
+      {
+        "capability": "fs_write",
+        "match": [
+          "**/specs/**",
+          "**/backlog/**",
+          "**/contracts/**",
+          "**/memory.md"
+        ],
+        "effect": "allow"
+      },
+      {
+        "capability": "shell",
+        "match": [
+          "git status*",
+          "git diff*",
+          "git log*",
+          "git checkout -b*",
+          "git switch*",
+          "git add*",
+          "git commit*",
+          "git push*",
+          "gh pr create*",
+          "gh pr view*",
+          "make test-integration*",
+          "go -C hubx-api test*",
+          "go -C hubx-gw test*",
+          "npm --prefix hubx-mfe run*",
+          "git branch --show-current*",
+          "git rev-parse*",
+          "git ls-files*",
+          "git fetch*",
+          "gh pr list*",
+          ".specify/scripts/*",
+          "bash .specify/scripts/*"
+        ],
+        "effect": "allow"
+      },
+      {
+        "capability": "shell",
+        "match": [
+          "*"
+        ],
+        "exclude": [
+          "git status*",
+          "git diff*",
+          "git log*",
+          "git checkout -b*",
+          "git switch*",
+          "git add*",
+          "git commit*",
+          "git push*",
+          "gh pr create*",
+          "gh pr view*",
+          "make test-integration*",
+          "go -C hubx-api test*",
+          "go -C hubx-gw test*",
+          "npm --prefix hubx-mfe run*",
+          "git branch --show-current*",
+          "git rev-parse*",
+          "git ls-files*",
+          "git fetch*",
+          "gh pr list*",
+          ".specify/scripts/*",
+          "bash .specify/scripts/*"
+        ],
+        "effect": "deny"
+      },
+      {
+        "capability": "shell",
+        "match": [
+          "git push*--force*",
+          "git push* -f*",
+          "git push*--delete*",
+          "git push* -d*",
+          "git push*:*",
+          "git push* main*",
+          "git push* release/*",
+          "git push* hotfix/*",
+          "gh pr merge*",
+          "git merge*",
+          "gh api*"
+        ],
+        "effect": "deny"
+      }
+    ]
+  },
+  "resources": [
+    "file://AGENTS.md",
+    "file://memory.md",
+    "file://.specify/memory/constitution.md"
+  ]
+}

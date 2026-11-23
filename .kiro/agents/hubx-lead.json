@@ -34,7 +34,22 @@
           "**/specs/**",
           "**/backlog/**",
           "**/contracts/**",
-          "**/memory.md"
+          "**/memory.md",
+          "**/hubx-api/**",
+          "**/hubx-gw/**",
+          "**/hubx-mfe/**",
+          "**/hubx-bender/**",
+          "**/specs/*/qa-report.md",
+          "**/Makefile",
+          "**/go.work",
+          "**/Dockerfile*",
+          "**/compose.yaml",
+          "**/docker-compose*.yml",
+          "**/docker-compose*.yaml",
+          "**/.github/**",
+          "**/scripts/**",
+          "**/deploy/**",
+          "**/specs/*/deploy.md"
         ],
         "effect": "deny"
       },
@@ -101,7 +116,28 @@
           "git fetch*",
           "gh pr list*",
           ".specify/scripts/*",
-          "bash .specify/scripts/*"
+          "bash .specify/scripts/*",
+          "go -C hubx-api build*",
+          "go -C hubx-api vet*",
+          "go -C hubx-api fmt*",
+          "go -C hubx-api mod tidy*",
+          "go -C hubx-gw build*",
+          "go -C hubx-gw vet*",
+          "go -C hubx-gw fmt*",
+          "go -C hubx-gw mod tidy*",
+          "npm --prefix hubx-mfe test*",
+          "npm --prefix hubx-bender run*",
+          "gosec*",
+          "govulncheck -C*",
+          "make *",
+          "docker compose*",
+          "docker build*",
+          "npm --prefix hubx-mfe run build*",
+          "curl -s*",
+          "go -C hubx-api get*",
+          "go -C hubx-gw get*",
+          "npm --prefix hubx-mfe install*",
+          "npm --prefix hubx-bender install*"
         ],
         "effect": "deny"
       },
@@ -121,6 +157,66 @@
           "gh api*"
         ],
         "effect": "deny"
+      },
+      {
+        "capability": "fs_write",
+        "match": [
+          "**/hubx-api/**",
+          "**/hubx-gw/**",
+          "**/hubx-mfe/**",
+          "**/hubx-bender/**",
+          "**/specs/*/qa-report.md",
+          "**/Makefile",
+          "**/go.work",
+          "**/Dockerfile*",
+          "**/compose.yaml",
+          "**/docker-compose*.yml",
+          "**/docker-compose*.yaml",
+          "**/.github/**",
+          "**/scripts/**",
+          "**/deploy/**",
+          "**/specs/*/deploy.md"
+        ],
+        "effect": "allow"
+      },
+      {
+        "capability": "shell",
+        "match": [
+          "go -C hubx-api build*",
+          "go -C hubx-api test*",
+          "go -C hubx-api vet*",
+          "go -C hubx-api fmt*",
+          "go -C hubx-api mod tidy*",
+          "go -C hubx-gw build*",
+          "go -C hubx-gw test*",
+          "go -C hubx-gw vet*",
+          "go -C hubx-gw fmt*",
+          "go -C hubx-gw mod tidy*",
+          "git status*",
+          "git diff*",
+          "npm --prefix hubx-mfe run*",
+          "npm --prefix hubx-mfe test*",
+          "make test-integration*",
+          "npm --prefix hubx-bender run*",
+          "gosec*",
+          "govulncheck -C*",
+          "make *",
+          "docker compose*",
+          "docker build*",
+          "npm --prefix hubx-mfe run build*",
+          "curl -s*"
+        ],
+        "effect": "allow"
+      },
+      {
+        "capability": "shell",
+        "match": [
+          "go -C hubx-api get*",
+          "go -C hubx-gw get*",
+          "npm --prefix hubx-mfe install*",
+          "npm --prefix hubx-bender install*"
+        ],
+        "effect": "ask"
       }
     ]
   },
