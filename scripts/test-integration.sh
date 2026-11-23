@@ -29,4 +29,9 @@ bash scripts/wait-health.sh http://localhost:8080 90
 
 [ -d hubx-bender/node_modules ] || npm --prefix hubx-bender ci --no-audit --no-fund
 
-BENDER_BASE_URL=http://localhost:8080 npm --prefix hubx-bender run test
+# Load .env to pass JWT_SECRET to bender tests
+set -a
+source .env
+set +a
+
+BENDER_BASE_URL=http://localhost:8080 JWT_SECRET="$JWT_SECRET" npm --prefix hubx-bender run test
