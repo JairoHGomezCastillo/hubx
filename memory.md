@@ -66,7 +66,7 @@
   frontmatter hooks ... not trusted"); the guard works both for `claude --agent <name>` and when delegated.
 
 ## Pending
-- Add `make agents-check` to CI (owner D) so the Kiro and Claude Code agents never drift from `.opencode/agents`.
+- Make the `agents-check` CI job (`.github/workflows/agents.yml`) a required check in the rulesets once it has run green.
 - hubx-api `main.go` still reads `PORT` directly; wire `internal/config`.
 - hubx-gw has no config reader yet (reads `PORT`/`API_URL`).
 - gosec G304 in `hubx-api/internal/config/config.go:102` (owner B, item 5): blocks "gosec without findings".
