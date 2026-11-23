@@ -1,0 +1,22 @@
+name: agents
+
+# The Kiro and Claude Code agents are generated from .opencode/agents (make agents-sync).
+# This check fails the PR if someone edited a source agent without regenerating them, or edited a generated file.
+on:
+  pull_request:
+  push:
+    branches: [main, "release/**", "hotfix/**"]
+
+permissions:
+  contents: read
+
+jobs:
+  agents-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: make agents-check
