@@ -163,7 +163,7 @@ git switch release/v1 && git pull
 Trabaja la historia HU-0X del backlog. Crea la spec con el número 0X (--number 0X) y el nombre corto <nombre>.
 ```
 
-El script de Spec Kit admite `--number` y `--short-name` (`.specify/scripts/bash/create-new-feature.sh`). Comprueba que la rama y la carpeta se llaman `0X-nombre` (por ejemplo `002-create-shipment`); si no, corrígelo antes de seguir. Nunca dos personas con el mismo número.
+El número sale siempre del backlog (HU-0X → `00X`). El lead ejecuta `.specify/scripts/bash/create-new-feature.sh` con `--allow-existing-branch --number 00X --short-name <nombre>` y crea él mismo la rama con `git switch -c`, porque el script de Spec Kit 1.4 crea la carpeta pero no la rama. Si el script renumera (otra carpeta usa ese número), el lead se detiene. Comprueba que la rama y la carpeta se llaman `0X-nombre` (por ejemplo `002-create-shipment`); si no, corrígelo antes de seguir. Nunca dos personas con el mismo número.
 
 **2. Flujo.** `specify` → `clarify` → `plan` → `tasks`. Tras cada paso, lee lo producido antes de continuar. Revisa que `spec.md` abra con `Source: backlog HU-0X`, no hable de tecnología y referencie (no copie) las reglas transversales.
 
