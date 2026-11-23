@@ -274,17 +274,22 @@ All Gherkin scenarios from `specs/001-sign-in/spec.md` have corresponding integr
 
 ## 8. Decision
 
-**Status**: ⚠️ **CONDITIONAL PASS**
+**Status**: ✅ **PASS** (blocker resolved)
 
-**Verdict**: All integration tests pass (9/9) and architecture boundaries are verified. However, **1 high-severity vulnerability** (GO-2025-3553) was found in the JWT library used by both hubx-api and hubx-gw. This vulnerability allows denial of service via crafted JWT headers.
+**Verdict**: All integration tests pass (9/9) and architecture boundaries are verified. The high-severity
+vulnerability GO-2025-3553 found during verify (in `golang-jwt/jwt/v5 v5.2.1`, affecting both hubx-api and hubx-gw)
+was resolved before proceeding.
 
-**Recommendation**:
-1. **Fix before merge**: Upgrade `github.com/golang-jwt/jwt/v5` from v5.2.1 to v5.2.2 in both services
-2. **Rerun govulncheck**: Verify the upgrade resolves GO-2025-3553
-3. **Rerun integration tests**: Ensure the upgrade does not break functionality (expected: no breaking changes in patch release)
-4. **Accept G304 finding**: The gosec G304 warning is tracked in `memory.md` and deferred to a future story; it does not block HU-01
+**Resolution applied**:
+1. ✅ `golang-jwt/jwt/v5` upgraded v5.2.1 → v5.2.2 in both `hubx-api/go.mod` and `hubx-gw/go.mod`
+   (commit `[agent:backend-go] HU-01 security: upgrade golang-jwt/jwt/v5 to v5.2.2`).
+2. ✅ `govulncheck -C hubx-api ./...` and `govulncheck -C hubx-gw ./...` → "No vulnerabilities found."
+3. ✅ `go test ./...` green in both modules; `make test-integration` → 9/9 pass after the upgrade.
+4. ✅ G304 (gosec, MEDIUM) in `hubx-api/internal/config/config.go:105` accepted and deferred: pre-existing before
+   HU-01 (introduced in the baseline config reader), path hardcoded (not user input), tracked in `memory.md` line 88.
+   Out of scope for HU-01; to be addressed in a dedicated config-security story.
 
-**After fix**: Change status to **PASS** and proceed to devops phase.
+**Outcome**: No blockers remain. Cleared to proceed to the DevOps phase and PR.
 
 ---
 
