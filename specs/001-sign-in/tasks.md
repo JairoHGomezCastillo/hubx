@@ -366,4 +366,11 @@ Recorded at the end of implement; all tasks complete, 9/9 integration tests gree
    hardcoded path, not user input); tracked in `memory.md` line 88; out of scope for HU-01.
 8. **CI workflow added.** `.github/workflows/ci.yml` is new (the existing `agents.yml` only checks agent-prompt drift);
    it runs unit tests, gosec, govulncheck and `make test-integration`.
+9. **API `RequireAuth` not wired to any route (deferred to HU-02).** The API exposes `auth.RequireAuth` but attaches it
+   to no route, because sign-in is the only API endpoint in HU-01 and it is public. In HU-01 the **gateway** enforces
+   JWT validation on non-public paths (the session-expiration integration test exercises that gateway path). **Risk:**
+   if a future protected API route is added without wiring `RequireAuth`, the API would rely solely on the gateway for
+   auth, weakening defense-in-depth (Constitution II). **Mitigation:** HU-02 must attach `RequireAuth` to the first
+   protected resource (shipments) and add an API-level test that a protected route rejects a missing/expired token
+   even when called directly. Tracked here and in `plan.md` (Technical Decisions implementation note).
 

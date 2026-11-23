@@ -103,14 +103,14 @@ As a system, I want sessions to expire after one hour, so that inactive accounts
 - **FR-006**: System MUST create a session with a one-hour expiration upon successful authentication
 - **FR-007**: System MUST include the user's role in the session so that subsequent requests can be authorized
 - **FR-008**: System MUST reject any operation (except sign-in) when the session has expired
-- **FR-009**: System MUST use JWT (JSON Web Tokens) for session management, as specified in Constitution Principle VI
-- **FR-010**: System MUST validate passwords using bcrypt comparison, as specified in Constitution Principle VI
+- **FR-009**: System MUST issue, on successful sign-in, a tamper-evident session credential that carries the user's identity and role and cannot be forged or altered by the client
+- **FR-010**: System MUST never store or compare passwords in clear text; it verifies the supplied password against a stored non-reversible form
 - **FR-011**: System MUST check session expiration on every protected endpoint request
 
 ### Key Entities
 
 - **User**: Represents a registered HUBX participant with email (unique identifier), hashed password, role (operator, ground partner, or customer), and optionally an associated party ID (for ground partners and customers)
-- **Session**: Represents an authenticated session with JWT token, user identity, role, issue time, and expiration time (one hour from issue)
+- **Session**: Represents an authenticated session identified by a session credential carrying user identity, role, issue time, and expiration time (one hour from issue)
 
 ## Success Criteria
 
@@ -128,16 +128,9 @@ As a system, I want sessions to expire after one hour, so that inactive accounts
 - User registration is out of scope for this story; users are preloaded in the database
 - Password reset functionality is out of scope for this story
 - Multi-factor authentication is out of scope for this story
-- The session is stored in a JWT token issued to the client; server-side session storage is not required
+- The session is carried by a self-contained credential issued to the client; server-side session storage is not required
 - Email address validation (format checking) is performed but detailed email format rules are implementation details
 - Account lockout after multiple failed attempts is out of scope for this story
 
-### Technical Decisions (Confirmed)
-
-- **Authentication approach**: Local authentication against PostgreSQL using bcrypt for password hashing and JWT for session management (Constitution Principle VI). LDAP is not in scope.
-- **Demo users**: Five preloaded users (operator@hubx.co, rapido@hubx.co, express@hubx.co, ana@hubx.co, andina@hubx.co) all with password "Hubx-Demo-2026" (documented in memory.md).
-- **JWT transmission**: Authorization header with "Bearer <token>" scheme. The MFE stores the token and includes it in all API requests through the gateway.
-- **JWT structure**: Token includes user identity (sub, email), role (operator, ground partner, customer), issue time (iat) and expiration (exp).
-- **Sign-in response**: JSON with token string and basic user info (email, role).
-- **Session expiration**: Protected endpoints return 401 Unauthorized when JWT expires. The MFE redirects to sign-in. No server-side redirection.
-- **Refresh tokens**: Out of scope. Sessions expire after 1 hour and users sign in again (cross-cutting rule 1).
+> Technology and implementation decisions (JWT, bcrypt, token transmission and structure, response shape) live in
+> [`plan.md`](plan.md), not in this spec. This document stays implementation-agnostic.

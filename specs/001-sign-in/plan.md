@@ -36,6 +36,22 @@ Authenticate HUBX users (operator, ground partner, customer) with email and pass
 
 **Scale/Scope**: 5 demo users preloaded; production scale TBD (design for 1000+ users)
 
+### Technical Decisions (moved here from spec.md; spec stays implementation-agnostic)
+
+- **Authentication approach**: Local authentication against PostgreSQL using bcrypt for password hashing and JWT for session management (Constitution Principle VI). LDAP is not in scope.
+- **Demo users**: Five preloaded users (operator@hubx.co, rapido@hubx.co, express@hubx.co, ana@hubx.co, andina@hubx.co) all with password "Hubx-Demo-2026" (documented in memory.md). They are seeded by migration `0001_baseline_schema.sql`.
+- **JWT transmission**: Authorization header with "Bearer <token>" scheme. The MFE holds the token in memory (per `hubx-mfe/AGENTS.md`) and includes it on every API request through the gateway.
+- **JWT structure**: HS256 token with claims `sub`, `email`, `role` (`operator`, `ground partner`, `customer`), `iat`, `exp`. No `party_id` (the baseline schema has no such column; later-story ownership uses `sub`).
+- **Sign-in response**: JSON with a token string and basic user info (`email`, `role`).
+- **Session expiration**: Protected endpoints return `401 Unauthorized` when the token has expired. The MFE redirects to sign-in. No server-side redirection.
+- **Refresh tokens**: Out of scope. Sessions expire after 1 hour and users sign in again (cross-cutting rule 1).
+
+> **Implementation note (as built):** the API exposes `auth.RequireAuth` middleware, but it is **not yet attached to
+> any route** (sign-in is the only API endpoint in HU-01 and it is public). Enforcement of `RequireAuth` on protected
+> API routes is deferred to HU-02, when the first protected resource (shipments) exists. In HU-01 the gateway is what
+> rejects expired/invalid tokens on non-public paths; the integration test for session expiration exercises that
+> gateway path. This is tracked as deviation 9 in `tasks.md`.
+
 ## Constitution Check
 
 *Phase 0 (pre-research)*:
@@ -172,11 +188,11 @@ No constitution violations.
 |-------|------|-------------|-------|
 | `id` | UUID | PK | Generated on insert |
 | `email` | VARCHAR(254) | UNIQUE, NOT NULL | Normalized (lowercase, trimmed) on write |
-| `password_hash` | TEXT | NOT NULL | bcrypt hash |
-| `role` | ENUM('operator', 'ground_partner', 'customer') | NOT NULL | |
-| `party_id` | UUID | NULL | FK to parties table (future); NULL for operators |
+| `password_hash` | TEXT | NOT NULL | bcrypt hash (cost 12) |
+| `role` | TEXT | NOT NULL, CHECK IN ('operator', 'ground partner', 'customer') | Value stored with a space, e.g. `ground partner` |
 | `created_at` | TIMESTAMPTZ | NOT NULL, DEFAULT NOW() | |
-| `updated_at` | TIMESTAMPTZ | NOT NULL, DEFAULT NOW() | |
+
+> As built in `0001_baseline_schema.sql`: `role` is `text` (not an ENUM) and there is no `party_id` column.
 
 **Validation Rules**:
 - Email: RFC 5321 format (up to 254 chars), unique after normalization
@@ -190,12 +206,13 @@ No constitution violations.
 {
   "sub": "user-uuid",
   "email": "user@hubx.co",
-  "role": "operator|ground_partner|customer",
-  "party_id": "optional-uuid",
+  "role": "operator | ground partner | customer",
   "iat": 1234567890,
   "exp": 1234571490
 }
 ```
+
+> No `party_id` claim (no such column in the baseline schema).
 
 ### HTTP Contracts (`contracts/auth-sign-in.md`)
 

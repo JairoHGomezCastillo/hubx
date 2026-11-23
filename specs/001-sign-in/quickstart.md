@@ -99,13 +99,13 @@ curl -X POST http://localhost:8080/api/auth/sign-in \
   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
   "user": {
     "email": "rapido@hubx.co",
-    "role": "ground_partner"
+    "role": "ground partner"
   }
 }
 ```
 
 **Validation**:
-- `user.role` is `"ground_partner"`
+- `user.role` is `"ground partner"`
 
 ---
 
@@ -386,7 +386,7 @@ echo $TOKEN | cut -d'.' -f2 | base64 -d | jq
 **Validation**:
 - `sub`: UUID (user ID)
 - `email`: Matches signed-in user
-- `role`: One of `operator`, `ground_partner`, `customer`
+- `role`: One of `operator`, `ground partner`, `customer`
 - `party_id`: NULL for operators, UUID for partners/customers (future)
 - `iat`: Unix timestamp (issued at)
 - `exp`: `iat + 3600` (1 hour later)

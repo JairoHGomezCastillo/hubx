@@ -92,7 +92,7 @@ Content-Type: application/json
 |-------|------|-------------|
 | `token` | string | JWT session token (HS256, 1-hour expiration) |
 | `user.email` | string | User email (normalized) |
-| `user.role` | string | User role: `operator`, `ground_partner`, or `customer` |
+| `user.role` | string | User role: `operator`, `ground partner`, or `customer` |
 
 **JWT Token Structure** (decoded):
 
@@ -110,7 +110,6 @@ Content-Type: application/json
   "sub": "550e8400-e29b-41d4-a716-446655440000",
   "email": "operator@hubx.co",
   "role": "operator",
-  "party_id": null,
   "iat": 1737499200,
   "exp": 1737502800
 }
@@ -330,7 +329,7 @@ curl -X POST http://localhost:8080/api/auth/sign-in \
   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
   "user": {
     "email": "rapido@hubx.co",
-    "role": "ground_partner"
+    "role": "ground partner"
   }
 }
 ```
