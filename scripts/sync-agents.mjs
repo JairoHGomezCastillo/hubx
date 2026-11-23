@@ -12,9 +12,11 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const check = process.argv.includes("--check");
 const src = path.join(root, ".opencode/agents");
 
-// Claude Code model and tools per role (opencode sets no model; Kiro sets it in .kiro/agents/<name>.json).
+// Claude Code model and tools per role. hubx-lead runs on Opus 5.5 in every tool: here (Claude Code), in the opencode
+// front matter (`model: opencode/claude-opus-5-5`) and in .kiro/agents/hubx-lead.json (`claude-opus-5.5`).
+// The other roles set no model in opencode (default); Kiro sets theirs in .kiro/agents/<name>.json.
 const claude = {
-  "hubx-lead": { model: "opus", tools: "Read, Grep, Glob, Edit, Write, Bash, Agent(backend-go, frontend-react, qa-seguridad, devops)" },
+  "hubx-lead": { model: "claude-opus-5-5", tools: "Read, Grep, Glob, Edit, Write, Bash, Agent(backend-go, frontend-react, qa-seguridad, devops)" },
   "qa-seguridad": { model: "sonnet" },
   "backend-go": { model: "sonnet" },
   "frontend-react": { model: "sonnet" },
