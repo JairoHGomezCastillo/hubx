@@ -12,9 +12,10 @@ help: ## List the targets
 env: ## Create .env with random local secrets (only if missing)
 	@bash scripts/env.sh
 
-up: env ## Start PostgreSQL, run migrations, start API and gateway; returns when /health answers
+up: env ## Start PostgreSQL, migrations, API, gateway and MFE (http://localhost:3000); returns when ready
 	$(COMPOSE) up -d --build
 	@bash scripts/wait-health.sh http://localhost:8080 90
+	@bash scripts/wait-ui.sh http://localhost:$${MFE_PORT:-3000} 90
 
 down: ## Stop the local stack (keeps the database)
 	$(COMPOSE) down --remove-orphans
@@ -22,8 +23,8 @@ down: ## Stop the local stack (keeps the database)
 reset: ## Stop the local stack and delete the database volume
 	$(COMPOSE) down -v --remove-orphans
 
-logs: ## Follow API, gateway and migration logs
-	$(COMPOSE) logs -f migrate api gw
+logs: ## Follow API, gateway, MFE and migration logs
+	$(COMPOSE) logs -f migrate api gw mfe
 
 ps: ## Show the local stack
 	$(COMPOSE) ps -a
@@ -39,7 +40,7 @@ test: ## Unit tests of every service
 	go -C hubx-gw test ./...
 	npm --prefix hubx-mfe run test --if-present
 
-test-integration: ## Clean isolated stack + hubx-bender through the gateway, then tear down
+test-integration: ## Clean isolated stack + hubx-bender (Cucumber: API via gateway, @e2e in browser), then tear down
 	@bash scripts/test-integration.sh
 
 security: ## gosec and govulncheck on both Go services
