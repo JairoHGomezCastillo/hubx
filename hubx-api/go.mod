@@ -3,7 +3,7 @@ module hubx-api
 go 1.27.4
 
 require (
-	github.com/golang-jwt/jwt/v5 v5.2.1
+	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/jackc/pgx/v5 v5.12.0
 	golang.org/x/crypto v0.32.0
 )
