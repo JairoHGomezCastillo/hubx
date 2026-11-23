@@ -40,10 +40,19 @@ If the scope exceeds one story or is unclear, ask before delegating. Load in ord
 4. **plan:** `speckit.plan`; include affected services, HTTP contract (and update `contracts/`), data model, test
    strategy and decisions with the constitution principle that backs them.
 5. **tasks:** `speckit.tasks`; tasks grouped by service and by agent (`[QA]`, `[API]`, `[GW]`, `[MFE]`, `[OPS]`).
+   Mandatory tasks (constitution 1.4.0): `[QA]` the feature file `hubx-bender/features/HUxx_<name>.feature` with the
+   backlog scenarios verbatim and at least one `@e2e` happy path; `[API]`/`[GW]` the domain in `internal/<domain>`,
+   the handlers in `internal/handlers/<domain>`, `test/` and `mocks/` sub-packages with gomock (`go generate`).
 6. **implement, in this order:**
-   a. `qa-seguridad` (`red`): integration tests in red.
+   a. `qa-seguridad` (`red`): Cucumber feature + steps, API scenarios and the `@e2e` scenario in red for the right
+      reason.
    b. `backend-go` and `frontend-react` **in parallel** against the plan's contract (only if they share no files).
-   c. `qa-seguridad` (`verify`): suite, security and report. With findings: send them back as `fix` to the right agent and repeat.
+   c. `qa-seguridad` (`verify`): full suite (API and `@e2e`), security and report. With findings: send them back as
+      `fix` to the right agent and repeat. A story whose `@e2e` scenario is red is not done, even if every API
+      scenario is green.
+   Delegation is the norm: each subagent writes and runs its own work with its own permissions. If a subagent returns
+   `blocked` because of permissions, stop and report it to the user with the exact denied action; never do the
+   subagent's work yourself and never commit it under the subagent's tag.
    d. `devops`: CI, startup and deployment.
 7. **Before and after each subagent:**
    a. Before delegating, take a snapshot: `git status --short` and `git diff --stat`.

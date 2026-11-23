@@ -1,4 +1,4 @@
-# Local stack: PostgreSQL -> migrate -> hubx-api -> hubx-gw. Use `make up` / `make down`.
+# Local stack: PostgreSQL -> migrate -> hubx-api -> hubx-gw -> hubx-mfe. Use `make up` / `make down`.
 # Secrets come from .env (git-ignored), which `make` generates with random values on first run.
 name: hubx
 
@@ -52,6 +52,16 @@ services:
       - "127.0.0.1:8080:8080"
     depends_on:
       - api
+
+  mfe:
+    build: ./hubx-mfe
+    image: hubx-mfe:local
+    environment:
+      GATEWAY_URL: http://gw:8080
+    ports:
+      - "127.0.0.1:${MFE_PORT:-3000}:8080"
+    depends_on:
+      - gw
 
 volumes:
   pgdata:

@@ -61,7 +61,7 @@ gh --version | head -1; gosec -version; govulncheck -version; opencode --version
 git clone https://github.com/JairoHGomezCastillo/hubx.git && cd hubx
 git switch release/sdd-hubx-system        # o la rama en la que vayas a trabajar
 gh auth login --hostname github.com --git-protocol https --web
-npm --prefix hubx-bender ci
+npm --prefix hubx-bender ci && npm --prefix hubx-bender run browsers
 npm --prefix hubx-mfe ci
 ```
 
@@ -83,8 +83,12 @@ make security             # gosec + govulncheck en ambos servicios
 make psql                 # consola SQL de la base local (requiere make up)
 ```
 
-Resultado esperado de `make test-integration`: `2 passed` (`SMOKE_gateway_health` y
-`SMOKE_api_health_through_gateway`), en unos 35 s la primera vez.
+Resultado esperado de `make test-integration`: `3 scenarios (3 passed)` de `features/health.feature` (gateway, API
+por el gateway y el `@e2e` en Chromium a través del MFE), más los escenarios de cada historia. La primera vez descarga
+Chromium (`npm --prefix hubx-bender run browsers`) y construye la imagen del MFE.
+
+Con `make up`, el MFE queda en http://localhost:3000 (nginx sirve el build y reenvía `/api` al gateway). Para ver el
+navegador en los `@e2e`: `HEADED=1 npm --prefix hubx-bender run test:e2e`.
 
 Pruebas del runner de migraciones contra PostgreSQL real (opcional; usan una base desechable):
 
