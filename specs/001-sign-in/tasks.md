@@ -362,8 +362,10 @@ Recorded at the end of implement; all tasks complete, 9/9 integration tests gree
 6. **Security blocker found and fixed in verify.** `govulncheck` flagged GO-2025-3553 (HIGH) in
    `golang-jwt/jwt/v5 v5.2.1`; upgraded to v5.2.2 in both services (patch of the already-approved dependency);
    `govulncheck` clean afterwards.
-7. **G304 (gosec, MEDIUM) accepted.** Pre-existing in `hubx-api/internal/config/config.go` (baseline config reader,
-   hardcoded path, not user input); tracked in `memory.md` line 88; out of scope for HU-01.
+7. **G304 (gosec, MEDIUM) justified with `#nosec`.** In `hubx-api/internal/config/config.go`, `readProperties` opens a
+   path built in `Load` from a hardcoded directory (`"."` in `cmd/api`/`cmd/migrate`) plus internal constant filenames
+   and `APP_PROFILE`; no request/user input reaches it, so directory traversal is not reachable. Suppressed with a
+   precise `#nosec G304 -- <reason>` (gosec reports 0 issues, 1 nosec). gosec is not disabled.
 8. **CI workflow added.** `.github/workflows/ci.yml` is new (the existing `agents.yml` only checks agent-prompt drift);
    it runs unit tests, gosec, govulncheck and `make test-integration`.
 9. **API `RequireAuth` not wired to any route (deferred to HU-02).** The API exposes `auth.RequireAuth` but attaches it

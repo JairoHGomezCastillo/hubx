@@ -53,8 +53,28 @@ Recorded in `specs/001-sign-in/tasks.md` (Analyze section):
 5. New dev-only MFE test dependencies (`vitest`, Testing Library, `jsdom`) approved by the human.
 6. `golang-jwt/jwt/v5` bumped to v5.2.2 to clear GO-2025-3553.
 
+## Review round (hardening applied before merge)
+
+Changes made after the first review of this PR:
+
+- **Shared gateway↔API secret** implemented: the gateway injects `X-Gateway-Secret` on every proxied request and the
+  API validates it on all routes with a constant-time compare (`crypto/subtle`); both services refuse to start without
+  `GATEWAY_SECRET`. Closes the defense-in-depth gap (Constitution II/VI, OWASP API8).
+- **`golang.org/x/crypto` upgraded** v0.32.0 → **v0.58.0** (human-approved), fixing GO-2026-6355 / 6354 / 6303.
+- **G304** in the config reader justified with a precise `#nosec G304` (path is internal config, not request input);
+  gosec not disabled. Now 0 issues / 1 justified nosec.
+- **Spec hygiene**: technology decisions (JWT, bcrypt, token shape) moved from `spec.md` to `plan.md`; `ground_partner`
+  corrected to `ground partner` in plan, quickstart and contract; `RequireAuth`-not-wired recorded as deviation 9.
+
+Final state: `govulncheck` clean on both Go modules; `gosec` 0 issues on both; `make test-integration` 9/9;
+Go + MFE unit tests green. See [`qa-report.md`](qa-report.md) (verdict PASS).
+
 ## Notes for the reviewer
 
-- No secrets in the repo: `JWT_SECRET` is generated locally in a git-ignored `.env` and injected via environment.
+- No secrets in the repo: `JWT_SECRET` and `GATEWAY_SECRET` are generated locally in a git-ignored `.env` and injected
+  via environment.
 - No imports between services; the MFE talks only to `/api` through the gateway.
+- `auth.RequireAuth` (API JWT middleware) is not attached to any route yet: sign-in is the only API endpoint in HU-01
+  and it is public. Protected-route enforcement is deferred to HU-02 (deviation 9 in `tasks.md`); in HU-01 the gateway
+  validates the JWT and the shared secret protects the API.
 - Agents do not merge: this PR is for human review and merge.
