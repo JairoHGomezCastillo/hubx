@@ -102,6 +102,10 @@ func envKey(key string) string {
 // with '#' or '!' are comments. Any other line without '=' or with an empty
 // key is malformed and stops loading.
 func readProperties(path string) (map[string]string, error) {
+	// #nosec G304 -- path is not external/request input. It is built in Load from a
+	// caller-supplied directory (hardcoded "." in cmd/api and cmd/migrate) joined with
+	// internal constant filenames and the operator-controlled APP_PROFILE env var. No
+	// end-user data reaches this call, so directory traversal is not reachable here.
 	file, err := os.Open(path)
 	if err != nil {
 		return nil, err
