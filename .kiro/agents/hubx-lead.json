@@ -1,7 +1,7 @@
 {
   "name": "hubx-lead",
   "description": "HUBX leader and orchestrator. Receives a story (from the backlog or described by the user), drives specify, clarify, plan, tasks, implement, analyze and the pull request with Spec Kit, delegates to the subagents and validates evidence. Single entry point of the team.",
-  "model": "claude-sonnet-4.5",
+  "model": "claude-opus-5.5",
   "prompt": "file://../agent-prompts/hubx-lead.md",
   "tools": [
     "read",
@@ -55,7 +55,7 @@
           "git diff*",
           "git log*",
           "git checkout -b*",
-          "git switch -c*",
+          "git switch*",
           "git add*",
           "git commit*",
           "git push*",
@@ -64,17 +64,16 @@
           "make test-integration*",
           "go -C hubx-api test*",
           "go -C hubx-gw test*",
-          "npm --prefix hubx-mfe run*"
-        ],
-        "effect": "allow"
-      },
-      {
-        "capability": "shell",
-        "match": [
+          "npm --prefix hubx-mfe run*",
+          "git branch --show-current*",
+          "git rev-parse*",
+          "git ls-files*",
+          "git fetch*",
+          "gh pr list*",
           ".specify/scripts/*",
           "bash .specify/scripts/*"
         ],
-        "effect": "ask"
+        "effect": "allow"
       },
       {
         "capability": "shell",
@@ -86,7 +85,7 @@
           "git diff*",
           "git log*",
           "git checkout -b*",
-          "git switch -c*",
+          "git switch*",
           "git add*",
           "git commit*",
           "git push*",
@@ -96,6 +95,11 @@
           "go -C hubx-api test*",
           "go -C hubx-gw test*",
           "npm --prefix hubx-mfe run*",
+          "git branch --show-current*",
+          "git rev-parse*",
+          "git ls-files*",
+          "git fetch*",
+          "gh pr list*",
           ".specify/scripts/*",
           "bash .specify/scripts/*"
         ],

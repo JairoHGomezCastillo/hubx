@@ -40,6 +40,12 @@
   (`scripts/agent-guard.mjs`) that enforces the rules of `.kiro/agents/<name>.json`: one permission source for Kiro and
   Claude Code. Spec Kit `claude` integration installed (skills `/speckit-*`); opencode stays the default.
 
+- Story number = backlog number: `HU-xx` -> `specs/NNN-name` and branch `NNN-name` (HU-01 -> `001-sign-in`). hubx-lead
+  runs `create-new-feature.sh --allow-existing-branch --number NNN --short-name <name>` and then creates the branch
+  itself with `git switch -c` (2026-11-23).
+- hubx-lead runs on Claude Opus 5.5 in every tool (2026-11-23): Claude Code `claude-opus-5-5`, opencode
+  `opencode/claude-opus-5-5` (needs OpenCode credits; Copilot does not serve it), Kiro IDE `claude-opus-5.5` (the
+  kiro-cli 3.5 catalog does not list it, the IDE does).
 ## Conventions
 - PR title (2026-11-21): `<type>(<scope>): <gitmoji> <short description> [agent:role]`, scope `HU-xx` or an area;
   mapping in hubx-lead step 10. Commits keep their own format below.
@@ -68,6 +74,9 @@
 - Claude Code skips agent front-matter hooks in folders whose trust dialog was not accepted (debug log: "Skipping
   frontmatter hooks ... not trusted"); the guard works both for `claude --agent <name>` and when delegated.
 
+- Spec Kit 1.4.2 `create-new-feature.sh` creates the folder and `.specify/feature.json` but not the git branch (that
+  was the git extension, not installed). Without a story branch every Spec Kit command reads `feature.json`; a stale
+  one sent HU-01 to an empty `specs/001-sign` folder. `--number N` silently renumbers if any `specs/N-*` exists.
 ## Pending
 - Make the `agents-check` CI job (`.github/workflows/agents.yml`) a required check in the rulesets once it has run green.
 - hubx-api `main.go` still reads `PORT` directly; wire `internal/config`.
