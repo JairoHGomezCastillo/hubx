@@ -102,8 +102,14 @@ changing behavior (the acceptance scenarios stayed the source of truth). Tasks T
   injected interface). `go mod tidy -diff` is empty for both modules.
 
 Commits this round: `d1606e5`, `b0d40ea` (`qa-seguridad` red), `85c3f66`, `55a683a` (`backend-go` layout + tidy),
-`12d2778` (`frontend-react` navigation fix), plus this `qa-seguridad` verify. Final: `make test-integration`
-**12 scenarios / 65 steps green** including the `@e2e`.
+`12d2778` (`frontend-react` navigation fix), `9b5b037` (`hubx-lead` spec/pr/tasks closeout) and `5013eda`
+(`qa-seguridad` verify). Final: `make test-integration` **12 scenarios / 65 steps green** including the `@e2e`.
+
+> **Note on `qa-report.md` authorship.** In commit `9b5b037` the lead had rewritten `qa-report.md` to the 1.4.0 state;
+> that overstepped ownership (the QA report is `qa-seguridad`'s artifact). `qa-seguridad` then re-ran the verify with
+> its own evidence (`make test-integration` 12/65, `gosec`, `govulncheck`), corrected the feature-line numbers and
+> timestamps to its own run, signed the header, and committed the report itself in `5013eda`
+> (`[agent:qa-seguridad] HU-01 verify (1.4.0): PASS`).
 
 ## Notes for the reviewer
 
