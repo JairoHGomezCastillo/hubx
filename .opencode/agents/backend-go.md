@@ -13,6 +13,9 @@ permissions:
   - action: edit
     resource: "hubx-gw/**"
     effect: allow
+  - action: edit
+    resource: "go.work.sum"
+    effect: allow
   - action: shell
     resource: "*"
     effect: deny

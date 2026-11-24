@@ -37,6 +37,7 @@
           "**/memory.md",
           "**/hubx-api/**",
           "**/hubx-gw/**",
+          "**/go.work.sum",
           "**/hubx-mfe/**",
           "**/hubx-bender/**",
           "**/specs/*/qa-report.md",
@@ -167,6 +168,7 @@
         "match": [
           "**/hubx-api/**",
           "**/hubx-gw/**",
+          "**/go.work.sum",
           "**/hubx-mfe/**",
           "**/hubx-bender/**",
           "**/specs/*/qa-report.md",

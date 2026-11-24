@@ -1,0 +1,5 @@
+# Tagged commits accepted although they touch files outside their agent's zone. History is not rewritten; each line
+# says why. Add a line only for commits that are already published and whose work cannot be redone.
+63e4726 HU-01: written by the orchestrator while Kiro blocked sub-agents (docs/sdd-agent-blockers.md); README and docs/setup.md are not devops paths.
+9b5b037 HU-01: hubx-lead rewrote qa-report.md (qa-seguridad's artifact); qa-seguridad redid the verify in its own commit.
+936abb1 HU-01: hubx-lead wrote qa-report.md during analyze (qa-seguridad's artifact); superseded by qa-seguridad's verify.

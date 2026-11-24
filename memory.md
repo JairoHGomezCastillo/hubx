@@ -90,6 +90,11 @@
 - Delegation honesty: a commit tagged `[agent:<role>]` must contain work that agent wrote and ran itself. HU-01's
   implementation was partly done by the orchestrator because Kiro blocked the sub-agents (docs/sdd-agent-blockers.md);
   the lead now stops and reports instead of doing a sub-agent's work.
+- Agent zones are enforced on commits (2026-11-24): a commit tagged `[agent:<role>]` may only touch that role's
+  write zone (`make agents-zones`, run by CI on PRs into `release/*`). Zones come from `.kiro/agents/<role>.json` and
+  `scripts/agents/hubx-lead.kiro.json`. The lead may not write `qa-report.md` (opencode and Claude Code block it; in
+  Kiro only CI catches it, because a lead deny would also block qa-seguridad). Historical exceptions with their
+  reason: `scripts/agent-zones-exceptions.txt` (63e4726, 9b5b037, 936abb1).
 ## Pending
 - Make the `agents-check` CI job (`.github/workflows/agents.yml`) a required check in the rulesets once it has run green.
 - hubx-api `main.go` still reads `PORT` directly; wire `internal/config`.

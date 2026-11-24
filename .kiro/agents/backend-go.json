@@ -28,7 +28,8 @@
         ],
         "exclude": [
           "**/hubx-api/**",
-          "**/hubx-gw/**"
+          "**/hubx-gw/**",
+          "**/go.work.sum"
         ],
         "effect": "deny"
       },
@@ -36,7 +37,8 @@
         "capability": "fs_write",
         "match": [
           "**/hubx-api/**",
-          "**/hubx-gw/**"
+          "**/hubx-gw/**",
+          "**/go.work.sum"
         ],
         "effect": "allow"
       },

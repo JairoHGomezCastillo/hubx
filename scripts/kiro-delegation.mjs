@@ -40,8 +40,15 @@ export function leadKiroConfig(root) {
     if (r.capability === "shell" && r.match.includes("*")) {
       return { ...r, exclude: uniq([...(r.exclude || []), ...env.shellAllow, ...env.shellAsk]) };
     }
+    // A lead deny on a path a sub-agent must write (e.g. qa-report.md) would also block that sub-agent in Kiro, so it
+    // is dropped from the Kiro config; Claude Code's guard and opencode still enforce it, and CI checks commits
+    // (scripts/check-agent-zones.mjs).
+    if (r.capability === "fs_write") {
+      const match = r.match.filter((g) => !env.fsWriteAllow.includes(g));
+      return match.length ? { ...r, match } : null;
+    }
     return r;
-  });
+  }).filter(Boolean);
   rules.push({ capability: "fs_write", match: env.fsWriteAllow, effect: "allow" });
   rules.push({ capability: "shell", match: env.shellAllow, effect: "allow" });
   if (env.shellAsk.length) rules.push({ capability: "shell", match: env.shellAsk, effect: "ask" });
