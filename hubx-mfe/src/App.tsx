@@ -7,6 +7,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { SignIn } from './pages/SignIn';
 import { Dashboard } from './pages/Dashboard';
+import { navigateTo } from './services/navigation';
 
 type Route = 'sign-in' | 'dashboard' | 'home';
 
@@ -46,8 +47,8 @@ function App() {
           <h1>HUBX</h1>
           <p>Air cargo traceability platform</p>
           <div style={{ marginTop: '32px' }}>
-            <a
-              href="/sign-in"
+            <button
+              onClick={() => navigateTo('/sign-in')}
               style={{
                 padding: '12px 24px',
                 fontSize: '16px',
@@ -56,10 +57,12 @@ function App() {
                 textDecoration: 'none',
                 borderRadius: '4px',
                 display: 'inline-block',
+                border: 'none',
+                cursor: 'pointer',
               }}
             >
               Sign In
-            </a>
+            </button>
           </div>
         </main>
       )}

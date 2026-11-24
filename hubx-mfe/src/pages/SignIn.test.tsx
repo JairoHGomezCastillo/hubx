@@ -9,17 +9,16 @@ import { userEvent } from '@testing-library/user-event';
 import { SignIn } from './SignIn';
 import { AuthProvider } from '../contexts/AuthContext';
 import * as authService from '../services/authService';
+import * as navigation from '../services/navigation';
 
-// Mock authService
+// Mock authService and navigation
 vi.mock('../services/authService');
+vi.mock('../services/navigation');
 
 describe('SignIn', () => {
   beforeEach(() => {
     sessionStorage.clear();
     vi.clearAllMocks();
-    
-    // Reset location.href using vi.stubGlobal
-    vi.stubGlobal('location', { href: '/sign-in' });
     
     vi.mocked(authService.getToken).mockReturnValue(null);
   });
@@ -177,7 +176,7 @@ describe('SignIn', () => {
     );
 
     await waitFor(() => {
-      expect(globalThis.location.href).toBe('/dashboard');
+      expect(navigation.navigateTo).toHaveBeenCalledWith('/dashboard');
     });
   });
 

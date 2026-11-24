@@ -6,6 +6,7 @@
 import { useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { navigateTo } from '../services/navigation';
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -16,7 +17,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   useEffect(() => {
     if (!isAuthenticated) {
-      window.location.href = '/sign-in';
+      navigateTo('/sign-in');
     }
   }, [isAuthenticated]);
 

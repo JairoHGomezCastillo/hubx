@@ -4,16 +4,22 @@
  */
 
 import { useAuth } from '../contexts/AuthContext';
+import { navigateTo } from '../services/navigation';
 
 export function Dashboard() {
   const { user, signOut } = useAuth();
+
+  const handleSignOut = () => {
+    signOut();
+    navigateTo('/sign-in');
+  };
 
   return (
     <main style={{ maxWidth: '800px', margin: '40px auto', padding: '20px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
         <h1>Dashboard</h1>
         <button
-          onClick={signOut}
+          onClick={handleSignOut}
           style={{
             padding: '8px 16px',
             fontSize: '14px',

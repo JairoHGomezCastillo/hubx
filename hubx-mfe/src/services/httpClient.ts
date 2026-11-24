@@ -4,6 +4,7 @@
  */
 
 import * as authService from './authService';
+import { navigateTo } from './navigation';
 
 export interface ApiError {
   error: string;
@@ -54,8 +55,8 @@ export async function fetchWithAuth(url: string, options: FetchOptions = {}): Pr
       sessionStorage.setItem('session_expired_message', 'Session expired. Please sign in again.');
     }
     
-    // Redirect to sign-in page
-    window.location.href = '/sign-in';
+    // Redirect to sign-in page (client-side, never a full reload)
+    navigateTo('/sign-in');
     
     // Throw error to prevent further processing
     throw new Error(errorData?.message || 'Unauthorized');

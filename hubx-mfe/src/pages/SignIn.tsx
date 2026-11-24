@@ -6,6 +6,7 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { navigateTo } from '../services/navigation';
 
 export function SignIn() {
   const [email, setEmail] = useState('');
@@ -24,10 +25,10 @@ export function SignIn() {
     }
   }, []);
 
-  // Redirect to dashboard if already authenticated
+  // Navigate to dashboard if already authenticated (client-side, preserves in-memory token)
   useEffect(() => {
     if (isAuthenticated) {
-      window.location.href = '/dashboard';
+      navigateTo('/dashboard');
     }
   }, [isAuthenticated]);
 
