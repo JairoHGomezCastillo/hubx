@@ -24,6 +24,26 @@ type Repository interface {
 	Insert(ctx context.Context, shipment *Shipment, createdBy, customerID string) error
 }
 
+// ShipmentRepository resolves a shipment by its public code or internal id.
+// FindByCode returns (nil, nil) when no shipment matches, so an unknown code
+// can be handled exactly like one the caller cannot see (FR-012).
+type ShipmentRepository interface {
+	FindByCode(ctx context.Context, code string) (*Shipment, error)
+	FindByID(ctx context.Context, id string) (*Shipment, error)
+}
+
+// GroundPartner is a registered partner that can be named for delivery.
+type GroundPartner struct {
+	ID   string
+	Name string
+}
+
+// GroundPartnerRepository resolves registered ground partners for assignment.
+type GroundPartnerRepository interface {
+	IsRegisteredPartner(ctx context.Context, userID string) (bool, error)
+	List(ctx context.Context) ([]GroundPartner, error)
+}
+
 // PgRepository implements Repository using PostgreSQL.
 type PgRepository struct {
 	db *sql.DB

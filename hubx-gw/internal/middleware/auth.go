@@ -13,7 +13,7 @@ import (
 var (
 	// ErrInvalidToken is returned when the JWT is malformed or signature is invalid.
 	ErrInvalidToken = errors.New("invalid token")
-	
+
 	// ErrExpiredToken is returned when the JWT exp claim is in the past.
 	ErrExpiredToken = errors.New("expired token")
 )
@@ -26,10 +26,33 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
-// errorResponse represents an error response.
+// errorResponse represents the flat error response used by HU-01/HU-02.
 type errorResponse struct {
 	Error   string `json:"error"`
 	Message string `json:"message"`
+}
+
+// sessionErrorResponse represents the nested error body required by HU-03.
+type sessionErrorResponse struct {
+	Error struct {
+		Code    string `json:"code"`
+		Message string `json:"message"`
+	} `json:"error"`
+}
+
+// usesSessionErrorContract reports whether the route's HTTP error contract
+// requires the nested SESSION_EXPIRED body. It only inspects method and path:
+// no business rule is applied here, the API remains authoritative for the
+// shipment and ledger state.
+func usesSessionErrorContract(r *http.Request) bool {
+	if r.Method == http.MethodGet && r.URL.Path == "/api/ground-partners" {
+		return true
+	}
+	if r.Method != http.MethodPost {
+		return false
+	}
+	parts := strings.Split(strings.Trim(r.URL.Path, "/"), "/")
+	return len(parts) == 4 && parts[0] == "api" && parts[1] == "shipments" && parts[2] != "" && parts[3] == "updates"
 }
 
 // JWTValidation returns middleware that validates JWT tokens on all routes except
@@ -44,34 +67,38 @@ func JWTValidation(jwtSecret string, excludedPaths map[string]bool) func(http.Ha
 				next.ServeHTTP(w, r)
 				return
 			}
-			
+
+			// The HU-03 contract defines a nested 401 body; every other route
+			// keeps the flat UNAUTHORIZED body.
+			sessionBody := usesSessionErrorContract(r)
+
 			// Extract Authorization header
 			authHeader := r.Header.Get("Authorization")
 			if authHeader == "" {
-				writeError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Authorization header required")
+				rejectUnauthorized(w, sessionBody, "Authorization header required")
 				return
 			}
-			
+
 			// Check Bearer scheme
 			parts := strings.SplitN(authHeader, " ", 2)
 			if len(parts) != 2 || parts[0] != "Bearer" {
-				writeError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Invalid authorization header format")
+				rejectUnauthorized(w, sessionBody, "Invalid authorization header format")
 				return
 			}
-			
+
 			token := parts[1]
-			
+
 			// Validate token
 			if err := validateToken(token, jwtSecret); err != nil {
 				if err == ErrExpiredToken {
-					writeError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Session expired. Please sign in again.")
+					rejectUnauthorized(w, sessionBody, "Session expired. Please sign in again.")
 					return
 				}
 				// Invalid token (bad signature, malformed, etc.)
-				writeError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Invalid token")
+				rejectUnauthorized(w, sessionBody, "Invalid token")
 				return
 			}
-			
+
 			// Token is valid; forward request to upstream with Authorization header intact
 			next.ServeHTTP(w, r)
 		})
@@ -88,7 +115,7 @@ func validateToken(tokenString, secret string) error {
 		}
 		return []byte(secret), nil
 	})
-	
+
 	if err != nil {
 		// Check if the error is due to expiration
 		if errors.Is(err, jwt.ErrTokenExpired) {
@@ -96,12 +123,26 @@ func validateToken(tokenString, secret string) error {
 		}
 		return ErrInvalidToken
 	}
-	
+
 	if !token.Valid {
 		return ErrInvalidToken
 	}
-	
+
 	return nil
+}
+
+// rejectUnauthorized writes a 401 in the shape required by the route's contract.
+func rejectUnauthorized(w http.ResponseWriter, sessionBody bool, message string) {
+	if sessionBody {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		var body sessionErrorResponse
+		body.Error.Code = "SESSION_EXPIRED"
+		body.Error.Message = "Session expired; sign in again."
+		_ = json.NewEncoder(w).Encode(body)
+		return
+	}
+	writeError(w, http.StatusUnauthorized, "UNAUTHORIZED", message)
 }
 
 // writeError writes a JSON error response.
