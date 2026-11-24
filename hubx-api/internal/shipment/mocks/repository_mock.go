@@ -69,3 +69,111 @@ func (mr *MockRepositoryMockRecorder) Insert(ctx, arg1, createdBy, customerID an
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Insert", reflect.TypeOf((*MockRepository)(nil).Insert), ctx, arg1, createdBy, customerID)
 }
+
+// MockShipmentRepository is a mock of ShipmentRepository interface.
+type MockShipmentRepository struct {
+	ctrl     *gomock.Controller
+	recorder *MockShipmentRepositoryMockRecorder
+	isgomock struct{}
+}
+
+// MockShipmentRepositoryMockRecorder is the mock recorder for MockShipmentRepository.
+type MockShipmentRepositoryMockRecorder struct {
+	mock *MockShipmentRepository
+}
+
+// NewMockShipmentRepository creates a new mock instance.
+func NewMockShipmentRepository(ctrl *gomock.Controller) *MockShipmentRepository {
+	mock := &MockShipmentRepository{ctrl: ctrl}
+	mock.recorder = &MockShipmentRepositoryMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockShipmentRepository) EXPECT() *MockShipmentRepositoryMockRecorder {
+	return m.recorder
+}
+
+// FindByCode mocks base method.
+func (m *MockShipmentRepository) FindByCode(ctx context.Context, code string) (*shipment.Shipment, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindByCode", ctx, code)
+	ret0, _ := ret[0].(*shipment.Shipment)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindByCode indicates an expected call of FindByCode.
+func (mr *MockShipmentRepositoryMockRecorder) FindByCode(ctx, code any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByCode", reflect.TypeOf((*MockShipmentRepository)(nil).FindByCode), ctx, code)
+}
+
+// FindByID mocks base method.
+func (m *MockShipmentRepository) FindByID(ctx context.Context, id string) (*shipment.Shipment, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindByID", ctx, id)
+	ret0, _ := ret[0].(*shipment.Shipment)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindByID indicates an expected call of FindByID.
+func (mr *MockShipmentRepositoryMockRecorder) FindByID(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByID", reflect.TypeOf((*MockShipmentRepository)(nil).FindByID), ctx, id)
+}
+
+// MockGroundPartnerRepository is a mock of GroundPartnerRepository interface.
+type MockGroundPartnerRepository struct {
+	ctrl     *gomock.Controller
+	recorder *MockGroundPartnerRepositoryMockRecorder
+	isgomock struct{}
+}
+
+// MockGroundPartnerRepositoryMockRecorder is the mock recorder for MockGroundPartnerRepository.
+type MockGroundPartnerRepositoryMockRecorder struct {
+	mock *MockGroundPartnerRepository
+}
+
+// NewMockGroundPartnerRepository creates a new mock instance.
+func NewMockGroundPartnerRepository(ctrl *gomock.Controller) *MockGroundPartnerRepository {
+	mock := &MockGroundPartnerRepository{ctrl: ctrl}
+	mock.recorder = &MockGroundPartnerRepositoryMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockGroundPartnerRepository) EXPECT() *MockGroundPartnerRepositoryMockRecorder {
+	return m.recorder
+}
+
+// IsRegisteredPartner mocks base method.
+func (m *MockGroundPartnerRepository) IsRegisteredPartner(ctx context.Context, userID string) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsRegisteredPartner", ctx, userID)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// IsRegisteredPartner indicates an expected call of IsRegisteredPartner.
+func (mr *MockGroundPartnerRepositoryMockRecorder) IsRegisteredPartner(ctx, userID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsRegisteredPartner", reflect.TypeOf((*MockGroundPartnerRepository)(nil).IsRegisteredPartner), ctx, userID)
+}
+
+// List mocks base method.
+func (m *MockGroundPartnerRepository) List(ctx context.Context) ([]shipment.GroundPartner, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "List", ctx)
+	ret0, _ := ret[0].([]shipment.GroundPartner)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// List indicates an expected call of List.
+func (mr *MockGroundPartnerRepositoryMockRecorder) List(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockGroundPartnerRepository)(nil).List), ctx)
+}

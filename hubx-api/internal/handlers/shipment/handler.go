@@ -134,7 +134,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 			Email: shipment.CustomerEmail,
 			Name:  shipment.CustomerName,
 		},
-		Stage:     shipment.Stage,
+		Stage:     string(shipment.Stage),
 		CreatedAt: shipment.CreatedAt.UTC().Format("2006-01-02T15:04:05Z"),
 	}
 
