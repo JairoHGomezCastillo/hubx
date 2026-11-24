@@ -75,6 +75,9 @@ export interface UpdateWorld extends HubxWorld {
   previousFingerprint?: string | null;
   lastUpdate?: UpdateResponse;
   uiShipmentCode?: string;
+  // Customer that owns the shipment created by a fixture; used to choose a
+  // genuinely different demo customer for the "cannot see" scenario.
+  fixtureCustomerEmail?: string;
 }
 
 // Demo data from migration 0001, not production secrets. Overridable in CI.
@@ -114,9 +117,15 @@ const NEXT_STAGE: Record<string, string> = {
   'Out for delivery': 'Delivered',
 };
 
-// Seed shipments from migration 0001, all in Created before HU-03 runs.
-const SEED_CODES = ['HBX-SEED-0001', 'HBX-SEED-0002', 'HBX-SEED-0003', 'HBX-SEED-0004'] as const;
-let fixtureIndex = 0;
+// Every API fixture creates its own shipment through HU-02's endpoint on the
+// gateway. The API generates a fresh random code, so no fixture advances a seed
+// shipment: HBX-SEED-0001 must remain in Created for the @e2e scenario.
+const FIXTURE_SHIPMENT = {
+  origin: 'Bogotá',
+  destination: 'Miami',
+  flight: 'AV-204',
+  weightKg: 100,
+} as const;
 
 export function authHeader(world: UpdateWorld): Record<string, string> {
   if (!world.token) throw new Error('No JWT: a "has signed in" step must run first');
@@ -185,8 +194,11 @@ export function emailForActor(world: UpdateWorld, actor: string): string {
   const text = actor.toLowerCase();
   if (text.includes('not the one assigned')) return OTHER_PARTNER_EMAIL;
   if (text.includes('does not own')) {
-    const ownedByAndina = world.shipmentCode === 'HBX-SEED-0001' || world.shipmentCode === 'HBX-SEED-0003';
-    return ownedByAndina ? DEMO_CREDENTIALS.customer : OTHER_CUSTOMER_EMAIL;
+    // The fixture shipment is owned by one demo customer: sign in as the other
+    // one so the caller really cannot see it (FR-012, NOT_RESPONSIBLE).
+    return world.fixtureCustomerEmail === OTHER_CUSTOMER_EMAIL
+      ? DEMO_CREDENTIALS.customer
+      : OTHER_CUSTOMER_EMAIL;
   }
   return DEMO_CREDENTIALS[roleForActor(actor)];
 }
@@ -209,24 +221,52 @@ Given(/^(.+) has signed in$/, async function (this: UpdateWorld, actor: string) 
   await signInAs(this, role, email);
 });
 
-// Prepares a fixture using only HU-03's own endpoint through the gateway: no
-// direct DB writes. The seed for this scenario is chosen round-robin.
+// Prepares a fixture with a brand-new shipment, using only HTTP through the
+// gateway: HU-02's creation endpoint for the shipment and HU-03's own endpoint
+// to advance it. No direct DB writes and no reuse of the four seed codes, which
+// would leave the same shipment out of sequence for later scenarios.
 export async function prepareShipment(world: UpdateWorld, stage: string): Promise<string> {
-  const code = SEED_CODES[fixtureIndex % SEED_CODES.length]!;
-  fixtureIndex += 1;
-  world.shipmentCode = code;
-  world.currentStage = stage;
-  world.previousFingerprint = null;
-  world.lastUpdate = undefined;
-
-  await signInAs(world, 'operator');
-
   const target = UPDATE_STAGES.indexOf(stage as (typeof UPDATE_STAGES)[number]);
   if (stage !== 'Created' && target < 0) throw new Error(`Unsupported fixture stage "${stage}"`);
 
+  await signInAs(world, 'operator');
+
+  // Distribuciones Andina is a demo customer from migration 0001; the other
+  // demo customer is used by the "cannot see" scenario as a non-owner.
+  const ownerEmail = OTHER_CUSTOMER_EMAIL;
+  const created = await world.api.post('/api/shipments', {
+    headers: authHeader(world),
+    data: { ...FIXTURE_SHIPMENT, customerEmail: ownerEmail },
+  });
+  expect(created.status(), 'fixture shipment creation through the gateway').toBe(201);
+  const shipment = (await created.json()) as { code: string; stage: string };
+  expect(shipment.code, 'fresh fixture shipment code').toMatch(/^HBX-[0-9A-F]{8}$/);
+  expect(shipment.stage, 'a new shipment starts in Created').toBe('Created');
+
+  const code = shipment.code;
+  world.shipmentCode = code;
+  world.fixtureCustomerEmail = ownerEmail;
+  world.currentStage = stage;
+  world.previousFingerprint = null;
+  world.lastUpdate = undefined;
+  world.assignedPartnerId = undefined;
+  world.assignedPartnerEmail = undefined;
+
   for (let i = 0; i <= target; i += 1) {
     const next = UPDATE_STAGES[i]!;
-    const partnerId = next === 'Assigned to partner' ? await groundPartnerId(world, ASSIGNED_PARTNER_NAME) : null;
+    // Created -> Assigned to partner is the operator's turn; only the assigned
+    // ground partner may record Out for delivery and Delivered (stage.go).
+    const byPartner = next === 'Out for delivery' || next === 'Delivered';
+    if (byPartner) {
+      expect(world.assignedPartnerId, `partner assigned before "${next}"`).toBeTruthy();
+      await signInAs(world, 'ground partner', world.assignedPartnerEmail ?? DEMO_CREDENTIALS['ground partner']);
+    } else {
+      await signInAs(world, 'operator');
+    }
+
+    const partnerId = next === 'Assigned to partner'
+      ? await groundPartnerId(world, ASSIGNED_PARTNER_NAME)
+      : null;
     const response = await postUpdate(world, code, next, partnerId);
     expect(response.status(), `fixture advance ${code} to ${next} through the gateway`).toBe(201);
     world.previousFingerprint = world.lastUpdate?.fingerprint ?? null;
