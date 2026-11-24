@@ -19,6 +19,10 @@ const (
 		assigned_partner_id, recorded_at, previous_fingerprint, fingerprint
 		FROM updates WHERE shipment_id = $1 ORDER BY sequence DESC LIMIT 1`
 
+	listUpdatesSQL = `SELECT id, shipment_id, sequence, stage, responsible_party_id,
+		assigned_partner_id, recorded_at, previous_fingerprint, fingerprint
+		FROM updates WHERE shipment_id = $1 ORDER BY sequence ASC`
+
 	insertUpdateSQL = `INSERT INTO updates
 		(shipment_id, sequence, stage, responsible_party_id, assigned_partner_id,
 		 recorded_at, previous_fingerprint, fingerprint)
@@ -34,6 +38,7 @@ const (
 type DB interface {
 	BeginTx(ctx context.Context, opts *sql.TxOptions) (Tx, error)
 	QueryRowContext(ctx context.Context, query string, args ...any) Row
+	QueryContext(ctx context.Context, query string, args ...any) (Rows, error)
 }
 
 // Tx is the transactional handle needed to append an update atomically.
@@ -47,6 +52,14 @@ type Tx interface {
 // Row is the single-row result of QueryRowContext.
 type Row interface {
 	Scan(dest ...any) error
+}
+
+// Rows is the multi-row result of QueryContext.
+type Rows interface {
+	Next() bool
+	Scan(dest ...any) error
+	Close() error
+	Err() error
 }
 
 // Result is the outcome of the projection write.
@@ -74,6 +87,10 @@ func (d sqlDB) BeginTx(ctx context.Context, opts *sql.TxOptions) (Tx, error) {
 
 func (d sqlDB) QueryRowContext(ctx context.Context, query string, args ...any) Row {
 	return d.db.QueryRowContext(ctx, query, args...)
+}
+
+func (d sqlDB) QueryContext(ctx context.Context, query string, args ...any) (Rows, error) {
+	return d.db.QueryContext(ctx, query, args...)
 }
 
 type sqlTx struct {
@@ -113,7 +130,10 @@ func (r *postgresRepository) Append(ctx context.Context, in AppendInput) (*Updat
 	if err := ValidateAppendInput(in); err != nil {
 		return nil, err
 	}
-	recordedAt := in.RecordedAt.UTC()
+	// HU-05: Truncate to microseconds before computing the fingerprint, so the
+	// stored instant and the recomputed fingerprint match (PostgreSQL timestamptz
+	// keeps microseconds while Go clocks have nanoseconds).
+	recordedAt := in.RecordedAt.UTC().Truncate(time.Microsecond)
 
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -187,6 +207,56 @@ func (r *postgresRepository) Append(ctx context.Context, in AppendInput) (*Updat
 // Last returns the newest stored update, or nil when the chain is empty.
 func (r *postgresRepository) Last(ctx context.Context, shipmentID string) (*Update, error) {
 	return scanLastUpdate(r.db.QueryRowContext(ctx, lastUpdateSQL, shipmentID))
+}
+
+// List returns all updates of a shipment ordered by sequence ascending.
+func (r *postgresRepository) List(ctx context.Context, shipmentID string) ([]Update, error) {
+	rows, err := r.db.QueryContext(ctx, listUpdatesSQL, shipmentID)
+	if err != nil {
+		return nil, fmt.Errorf("query updates: %w", mapPgError(err))
+	}
+	defer rows.Close()
+
+	var updates []Update
+	for rows.Next() {
+		var id int64
+		var shipmentIDScanned string
+		var sequence int
+		var stage, responsiblePartyID, fingerprint string
+		var assignedPartnerID, previousFingerprint sql.NullString
+		var recordedAt time.Time
+
+		err := rows.Scan(&id, &shipmentIDScanned, &sequence, &stage, &responsiblePartyID,
+			&assignedPartnerID, &recordedAt, &previousFingerprint, &fingerprint)
+		if err != nil {
+			return nil, fmt.Errorf("scan update row: %w", mapPgError(err))
+		}
+
+		update := Update{
+			ID:                 id,
+			ShipmentID:         shipmentIDScanned,
+			Sequence:           sequence,
+			Stage:              stage,
+			ResponsiblePartyID: responsiblePartyID,
+			RecordedAt:         recordedAt.UTC(),
+			Fingerprint:        fingerprint,
+		}
+		if assignedPartnerID.Valid {
+			value := assignedPartnerID.String
+			update.AssignedPartnerID = &value
+		}
+		if previousFingerprint.Valid {
+			value := previousFingerprint.String
+			update.PreviousFingerprint = &value
+		}
+		updates = append(updates, update)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate updates: %w", mapPgError(err))
+	}
+
+	return updates, nil
 }
 
 func scanLastUpdate(row Row) (*Update, error) {

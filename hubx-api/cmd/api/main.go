@@ -98,6 +98,10 @@ func main() {
 	shipment.RegisterUpdates(mux, authMiddleware.RequireSessionAuth, recorder,
 		shipment.NewClaimsPrincipalSource(), shipmentRepo, shipmentRepo)
 
+	// HU-05: integrity verification uses the flat-body RequireAuth (same as HU-01/HU-02).
+	verifier := domainshipment.NewVerifier(shipmentRepo, ledgerRepo)
+	shipment.RegisterIntegrity(mux, authMiddleware.RequireAuth, verifier)
+
 	// The gateway shared secret guards every route: all legitimate traffic
 	// enters through the gateway, which injects X-Gateway-Secret.
 	handler := auth.RequireGatewaySecret(gatewaySecret)(mux)
