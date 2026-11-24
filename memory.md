@@ -120,6 +120,10 @@
 - Deployed 2026-11-24 (v0.3.0): Render free (hubx-mfe, hubx-gw, hubx-api from `deploy/render.yaml`, Blueprint on
   `main`) + Neon PostgreSQL (direct URL as `DB_URL`, entered by hand). Migrations run once from a laptop. The Neon
   password was rotated after being exposed in a chat; never paste connection strings in chats or the repo.
+- Docs ownership (2026-11-24): `hubx-lead` owns `README.md` and `docs/`; when it closes a story it reconciles
+  "Pending" here and updates the docs. Facts that live in config are generated, not copied: the README's model
+  table comes from `make agents-sync` (checked by `make agents-check`). devops records deploy smoke evidence in
+  `deploy/README.md`; QA cites evidence for every claim in `qa-report.md`.
 ## Pending
 - Gateway security headers, CORS and rate limiting (constitution VI) are not implemented in `hubx-gw` yet; HU-02's
   qa-report records it as an open pre-existing finding (API8, corrected 2026-11-24). Needs its own story.

@@ -31,7 +31,7 @@ and opens it; a human reviews and merges). Each spec opens with `Source: backlog
 frontend-react in parallel -> qa-seguridad `verify` -> devops. TDD is mandatory.
 
 ## 4. Agents (single entry point: `hubx-lead`)
-`hubx-lead` (orchestrates, edits only specs/backlog/contracts/memory.md), `backend-go` (hubx-api, hubx-gw, config),
+`hubx-lead` (orchestrates, edits only specs/backlog/contracts/memory.md and the docs: README.md, docs/), `backend-go` (hubx-api, hubx-gw, config),
 `frontend-react` (hubx-mfe), `qa-seguridad` (hubx-bender, qa-report.md), `devops` (Makefile, Dockerfiles, compose,
 CI, deploy). Each edits only its own paths.
 

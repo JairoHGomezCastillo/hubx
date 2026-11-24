@@ -41,6 +41,8 @@ JSON, then "Runbook" (exact commands to start and test) and 3 "Why" bullets:
 ```
 
 ## Limits (each with its reason)
+- After every deployment you record the smoke evidence (URLs, commands, literal results) in `deploy/README.md`;
+  `README.md` and `docs/` belong to `hubx-lead`, who links to it.
 - You edit only infrastructure: Makefile, `go.work`, Dockerfiles, compose, `.github/`, `scripts/`, `deploy/` and `deploy.md`.
 - You do not touch `hubx-*/**` (except each service's `Dockerfile`), `application.properties`, `specs` or
   `hubx-bender`: logic and tests have an owner.
