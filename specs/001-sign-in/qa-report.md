@@ -1,10 +1,11 @@
 # QA Report: HU-01 Sign In
 
 **Story**: HU-01 Sign In  
-**Phase**: Verify (Final, post-1.4.0 refactor)  
+**Phase**: Verify (1.4.0)  
 **Agent**: qa-seguridad  
 **Date**: 2026-11-23  
 **Branch**: `001-sign-in`  
+**Go toolchain**: 1.27.4  
 **Status**: ✅ **PASS** (ready to merge)
 
 ---
@@ -25,8 +26,8 @@ All 12 Cucumber scenarios pass (3 health checks + 9 HU-01 scenarios across 65 st
 **Toolchain**: Cucumber 13.3.0 + Playwright 1.65.0 (TypeScript via tsx 4.23.15)  
 **Command**: `make test-integration`  
 **Result**: ✅ **PASS** (12 scenarios / 65 steps)  
-**Duration**: 3.636s (3.613s executing)  
-**Go version**: 1.27.4 (from Docker build images)
+**Duration**: 4.238s (4.210s executing)  
+**Go toolchain**: 1.27.4 (from Docker build images)
 
 ### Gherkin Coverage
 
@@ -39,10 +40,10 @@ Constitution 1.4.0 Principle V: each story has one feature file with backlog Ghe
 | The API answers through the gateway | health.feature:10 | API | ✅ PASS |
 | The web app reaches the API through its own origin | health.feature:15 | @e2e | ✅ PASS |
 | **HU-01 Sign in (HU01_sign_in.feature)** |
-| Each role signs in (operator) | HU01_sign_in.feature:7 | API | ✅ PASS |
-| Each role signs in (ground partner) | HU01_sign_in.feature:7 | API | ✅ PASS |
-| Each role signs in (customer) | HU01_sign_in.feature:7 | API | ✅ PASS |
-| Each role signs in (operator) | HU01_sign_in.feature:7 (@e2e) | @e2e | ✅ PASS |
+| Each role signs in (operator) | HU01_sign_in.feature:11 | API | ✅ PASS |
+| Each role signs in (ground partner) | HU01_sign_in.feature:12 | API | ✅ PASS |
+| Each role signs in (customer) | HU01_sign_in.feature:13 | API | ✅ PASS |
+| Each role signs in (operator, @e2e) | HU01_sign_in.feature:18 | @e2e | ✅ PASS |
 | Email typed with capital letters and extra spaces | HU01_sign_in.feature:21 | API | ✅ PASS |
 | Wrong password | HU01_sign_in.feature:26 | API | ✅ PASS |
 | Email not registered | HU01_sign_in.feature:32 | API | ✅ PASS |
@@ -62,7 +63,7 @@ This E2E failure caught a critical bug that every API test missed: the MFE's nav
 1 hook (1 passed)
 12 scenarios (12 passed)
 65 steps (65 passed)
-0m 3.636s (0m 3.613s executing your code)
+0m 4.238s (0m 4.210s executing your code)
 ```
 
 ---
@@ -76,8 +77,8 @@ This E2E failure caught a critical bug that every API test missed: the MFE's nav
 
 **Literal Output**:
 ```
-[gosec] 2026/11/23 20:11:24 Including rules: default
-[gosec] 2026/11/23 20:11:24 Excluding rules: default
+[gosec] 2026/11/23 20:27:22 Including rules: default
+[gosec] 2026/11/23 20:27:22 Excluding rules: default
 ...
 Results:
 Summary:
@@ -201,10 +202,10 @@ All Gherkin scenarios from `backlog/backlog.md` HU-01 are automated in `hubx-ben
 
 | Backlog Scenario | Feature File | Type | Status |
 |------------------|--------------|------|--------|
-| Each role signs in (operator) | HU01_sign_in.feature:7, Examples:11-14 | API | ✅ PASS |
-| Each role signs in (ground partner) | HU01_sign_in.feature:7, Examples:11-14 | API | ✅ PASS |
-| Each role signs in (customer) | HU01_sign_in.feature:7, Examples:11-14 | API | ✅ PASS |
-| Each role signs in (operator) | HU01_sign_in.feature:7, @e2e Examples:16-19 | @e2e | ✅ PASS |
+| Each role signs in (operator) | HU01_sign_in.feature:11 | API | ✅ PASS |
+| Each role signs in (ground partner) | HU01_sign_in.feature:12 | API | ✅ PASS |
+| Each role signs in (customer) | HU01_sign_in.feature:13 | API | ✅ PASS |
+| Each role signs in (operator, @e2e) | HU01_sign_in.feature:18 | @e2e | ✅ PASS |
 | Email typed with capital letters and extra spaces | HU01_sign_in.feature:21 | API | ✅ PASS |
 | Wrong password | HU01_sign_in.feature:26 | API | ✅ PASS |
 | Email not registered | HU01_sign_in.feature:32 | API | ✅ PASS |
