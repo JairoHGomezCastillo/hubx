@@ -182,10 +182,16 @@ export function roleForActor(actor: string): Role {
 
 export function emailForActor(world: UpdateWorld, actor: string): string {
   const text = actor.toLowerCase();
-  if (text.includes('not the one assigned')) return OTHER_PARTNER_EMAIL;
+  // HU-03 and HU-04: "not the one assigned" or "was not assigned" -> the other partner.
+  if (text.includes('not the one assigned') || text.includes('was not assigned')) {
+    return OTHER_PARTNER_EMAIL;
+  }
+  // HU-04: "who owns the shipment" -> the fixture owner (OTHER_CUSTOMER_EMAIL by default).
+  if (text.includes('who owns')) {
+    return world.fixtureCustomerEmail ?? OTHER_CUSTOMER_EMAIL;
+  }
+  // HU-04: "does not own" -> the other customer (not the fixture owner).
   if (text.includes('does not own')) {
-    // The fixture shipment is owned by one demo customer: sign in as the other
-    // one so the caller really cannot see it (FR-012, NOT_RESPONSIBLE).
     return world.fixtureCustomerEmail === OTHER_CUSTOMER_EMAIL
       ? DEMO_CREDENTIALS.customer
       : OTHER_CUSTOMER_EMAIL;
