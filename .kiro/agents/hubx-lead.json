@@ -37,6 +37,7 @@
           "**/memory.md",
           "**/hubx-api/**",
           "**/hubx-gw/**",
+          "**/go.work.sum",
           "**/hubx-mfe/**",
           "**/hubx-bender/**",
           "**/specs/*/qa-report.md",
@@ -86,7 +87,8 @@
           "git fetch*",
           "gh pr list*",
           ".specify/scripts/*",
-          "bash .specify/scripts/*"
+          "bash .specify/scripts/*",
+          "git branch -r*"
         ],
         "effect": "allow"
       },
@@ -117,6 +119,7 @@
           "gh pr list*",
           ".specify/scripts/*",
           "bash .specify/scripts/*",
+          "git branch -r*",
           "go -C hubx-api build*",
           "go -C hubx-api vet*",
           "go -C hubx-api fmt*",
@@ -167,6 +170,7 @@
         "match": [
           "**/hubx-api/**",
           "**/hubx-gw/**",
+          "**/go.work.sum",
           "**/hubx-mfe/**",
           "**/hubx-bender/**",
           "**/specs/*/qa-report.md",

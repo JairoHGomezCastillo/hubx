@@ -6,7 +6,10 @@
 - Configuration via `application.properties` per service (constitution Principle III); stdlib reader, one copy per service.
 - Backlog and all artifacts in English; guide and conversation with the team in Spanish.
 - Branching: release/feature/hotfix; the Spec Kit story branch is the feature branch.
-- Integration branch is `release/sdd-hubx-system` (the team guide calls it `release/v1`); story PRs target it, `main` receives it by PR for deploy.
+- Release branches are `release/vX.Y.Z`, cut from `main`; exactly one is open at a time (the current release:
+  `git branch -r --list 'origin/release/*'`). Story PRs target it; when the release is ready it is merged into `main`
+  by PR, tagged `vX.Y.Z` with a GitHub Release, and its branch is deleted automatically; the next release branch is
+  cut from `main`. The first one, `release/sdd-hubx-system`, ships as v0.1.0 (2026-11-24).
 - PostgreSQL driver: `github.com/jackc/pgx/v5` v5.12.0 through `database/sql` (`pgx/v5/stdlib`), approved by a human (2026-11-20).
 - JWT library (HU-01): `golang-jwt/jwt` v5.2.1, stdlib-only, HS256 signing, approved 2025-01-21.
 - Migrations: plain SQL in `hubx-api/migrations/NNNN_name.sql`, embedded in the binary; own runner `internal/migrate`
@@ -28,7 +31,7 @@
 - All files use LF (`.gitattributes`); run `make` from Git Bash on Windows.
 - Branch protection (2026-11-20): ruleset `protect-main` on `main` needs a PR with 1 approval from someone other than
   the last pusher, resolved threads, no force push, no deletion, no bypass (admins included). Ruleset
-  `protect-release` (formerly `protect-release-no-approval`) on `release/sdd-hubx-system` needs a PR with 1 approval
+  `protect-release` (formerly `protect-release-no-approval`) on every `release/**` branch needs a PR with 1 approval
   from someone other than the last pusher (raised from 0 on 2026-11-21 so GitHub enforces that no agent merges,
   constitution 1.3.0), resolved threads, no force push; deletion is allowed so the branch is removed after merge.
   Add the CI checks as required once D's workflows exist (item 8).
@@ -97,6 +100,11 @@
 - Delegation honesty: a commit tagged `[agent:<role>]` must contain work that agent wrote and ran itself. HU-01's
   implementation was partly done by the orchestrator because Kiro blocked the sub-agents (docs/sdd-agent-blockers.md);
   the lead now stops and reports instead of doing a sub-agent's work.
+- Agent zones are enforced on commits (2026-11-24): a commit tagged `[agent:<role>]` may only touch that role's
+  write zone (`make agents-zones`, run by CI on PRs into `release/*`). Zones come from `.kiro/agents/<role>.json` and
+  `scripts/agents/hubx-lead.kiro.json`. The lead may not write `qa-report.md` (opencode and Claude Code block it; in
+  Kiro only CI catches it, because a lead deny would also block qa-seguridad). Historical exceptions with their
+  reason: `scripts/agent-zones-exceptions.txt` (63e4726, 9b5b037, 936abb1).
 ## Pending
 - Make the `agents-check` CI job (`.github/workflows/agents.yml`) a required check in the rulesets once it has run green.
 - hubx-api `main.go` still reads `PORT` directly; wire `internal/config`.

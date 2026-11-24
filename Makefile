@@ -4,7 +4,7 @@
 .DEFAULT_GOAL := help
 COMPOSE := docker compose
 
-.PHONY: help env up down reset logs ps migrate psql test test-integration security agents-sync agents-check
+.PHONY: help env up down reset logs ps migrate psql test test-integration security agents-sync agents-check agents-zones
 
 help: ## List the targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-18s %s\n", $$1, $$2}'
@@ -54,3 +54,6 @@ agents-sync: ## Generate the Kiro and Claude Code agents from .opencode/agents
 
 agents-check: ## Fail if the Kiro or Claude Code agents are out of date with .opencode/agents
 	@node scripts/sync-agents.mjs --check
+
+agents-zones: ## Fail if a commit tagged [agent:<role>] touches files outside that role's zone (base..HEAD)
+	@node scripts/check-agent-zones.mjs $(BASE)

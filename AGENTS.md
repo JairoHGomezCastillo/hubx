@@ -26,7 +26,7 @@ Traffic: `MFE -> gateway (/api/*, StripPrefix) -> API -> PostgreSQL`. The MFE ne
 
 ## 3. Workflow (SDD with Spec Kit)
 `specify -> clarify -> plan -> tasks -> implement -> analyze -> pr`, artifacts in `specs/NNN-name/`. The final
-artifact is a PR to `release/sdd-hubx-system` whose body is `specs/NNN-name/pr.md` (`hubx-lead` pushes the story branch
+artifact is a PR to the current release branch (`release/vX.Y.Z`, the only open `release/*`) whose body is `specs/NNN-name/pr.md` (`hubx-lead` pushes the story branch
 and opens it; a human reviews and merges). Each spec opens with `Source: backlog HU-xx` or `Source: user description`. Implement order: qa-seguridad `red` -> backend-go and
 frontend-react in parallel -> qa-seguridad `verify` -> devops. TDD is mandatory.
 
@@ -40,6 +40,7 @@ CI, deploy). Each edits only its own paths.
 - Integration (PostgreSQL + API + gateway + MFE + bender, API and `@e2e`): `make test-integration`
 - Local app: `make up`, then http://localhost:3000 (MFE; `/api` goes to the gateway)
 - Go mocks: `go -C hubx-api generate ./...` (gomock via `go tool mockgen`)
+- Agent zones: `make agents-zones` (each `[agent:<role>]` commit only touches that role's paths; CI on PRs to release)
 - Security: `gosec ./...`, `govulncheck -C hubx-api ./...`, `govulncheck -C hubx-gw ./...`
 - Health: `curl -s http://localhost:8080/health` and `curl -s http://localhost:8080/api/health`
 

@@ -71,7 +71,8 @@
           "git fetch*",
           "gh pr list*",
           ".specify/scripts/*",
-          "bash .specify/scripts/*"
+          "bash .specify/scripts/*",
+          "git branch -r*"
         ],
         "effect": "allow"
       },
@@ -101,7 +102,8 @@
           "git fetch*",
           "gh pr list*",
           ".specify/scripts/*",
-          "bash .specify/scripts/*"
+          "bash .specify/scripts/*",
+          "git branch -r*"
         ],
         "effect": "deny"
       },
@@ -119,6 +121,13 @@
           "gh pr merge*",
           "git merge*",
           "gh api*"
+        ],
+        "effect": "deny"
+      },
+      {
+        "capability": "fs_write",
+        "match": [
+          "**/specs/*/qa-report.md"
         ],
         "effect": "deny"
       }

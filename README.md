@@ -30,7 +30,7 @@ problems and demo users: [`docs/setup.md`](docs/setup.md).
 
 ```bash
 git clone https://github.com/JairoHGomezCastillo/hubx.git && cd hubx
-git switch release/sdd-hubx-system
+git switch $(git branch -r --list 'origin/release/*' | sed 's#origin/##')   # the open release
 npm --prefix hubx-bender ci && npm --prefix hubx-mfe ci
 
 make up                                   # PostgreSQL, migrations, API and gateway
@@ -86,7 +86,7 @@ runs `gosec` and `govulncheck`, and then runs `make test-integration` on a clean
 Authority order: constitution > `AGENTS.md` > service `AGENTS.md` > `memory.md`.
 
 Per story: `specify -> clarify -> plan -> tasks -> implement -> analyze -> pr`, on its own branch `NNN-name`. The story
-ends with a PR to `release/sdd-hubx-system`: `hubx-lead` commits, pushes the story branch and opens the PR with
+ends with a PR to the open release branch (`release/vX.Y.Z`; merged into `main`, tagged and deleted when ready): `hubx-lead` commits, pushes the story branch and opens the PR with
 `specs/NNN-name/pr.md` as body; you review and merge (agents never merge); the branch is deleted automatically on merge. `main` receives the release by PR for deployment. Commits are one
 per agent delivery, tagged `[agent:role] HU-xx summary`.
 
