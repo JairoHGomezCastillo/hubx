@@ -38,9 +38,7 @@ Given(/^a shipment has three updates recorded$/, async function (this: Traceabil
   await prepareShipment(this, 'Assigned to partner');
 });
 
-Given(/^a shipment has no updates recorded$/, async function (this: TraceabilityWorld) {
-  await prepareShipment(this, 'Created');
-});
+// "a shipment has no updates recorded" is now shared in common.steps.ts (also used by HU-05).
 
 Given(/^a shipment with updates recorded exists$/, async function (this: TraceabilityWorld) {
   await prepareShipment(this, 'Assigned to partner');
@@ -187,11 +185,5 @@ Then(/^they see that it has no updates yet$/, async function (this: Traceability
   expect(this.traceabilityResponse!.updates).toEqual([]);
 });
 
-Then(/^they are told that no shipment exists with that code$/, async function (this: TraceabilityWorld) {
-  await assertError(
-    this.response!,
-    404,
-    'SHIPMENT_NOT_FOUND',
-    'No shipment exists with that code.',
-  );
-});
+// "they are told that no shipment exists with that code" is now shared in common.steps.ts
+// (HU-04 and HU-05 use the same Gherkin text but assert different contracts based on the URL).

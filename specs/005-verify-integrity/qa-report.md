@@ -1,233 +1,259 @@
-# QA Report: HU-05 Verify the integrity of the chain
+# QA Report: HU-05 Verify Shipment Integrity
 
-**Story**: HU-05 Verify the integrity of the chain  
-**Phase**: red  
+**Story**: HU-05  
 **Agent**: qa-seguridad  
-**Date**: 2026-11-25  
-**Status**: OK
+**Phase**: verify (attempt 3 of 3, after fix)  
+**Date**: 2026-11-24
+
+---
 
 ## Summary
 
-**Verdict**: All 8 HU-05 scenarios written and RED for the right reason (missing route `/api/shipments/{code}/integrity`). The tamper helper successfully bypassed the immutability trigger. Regression green: all 43 scenarios from HU-01 through HU-04 passed. No undefined steps. Ready for backend-go and frontend-react implementation.
+**Verdict**: PASSED
+
+All 59 scenarios passed (8 from HU-05, 51 regression) after fixing the ambiguous step definitions. Security scans (gosec, govulncheck) passed with no findings. OWASP API Top 10 review shows no new critical or high findings; the pre-existing gateway finding (CORS, headers, rate limiting) remains open.
+
+**Fix applied**: Consolidated the two ambiguous step definitions (`^a shipment has no updates recorded$` and `^they are told that no shipment exists with that code$`) into `features/steps/common.steps.ts`. The 404 assertion step now inspects `response.url()` to determine which contract applies: HU-05's flat body `{error, message}` for `/integrity`, or HU-04's nested body `{error: {code, message}}` for `/traceability`.
+
+---
+
+## Red Phase Summary (from prior attempt)
+
+All HU-05 scenarios were written and ran red for the right reason (404 on the missing route `/api/shipments/{code}/integrity`). The step definitions in `hubx-bender/features/steps/HU05_verify-integrity.steps.ts` and the feature file `hubx-bender/features/HU05_verify-integrity.feature` correctly matched the backlog Gherkin verbatim.
+
+---
+
+## Fix Summary
+
+**Finding**: After merging the HU-04 release base, two step patterns became ambiguous (defined in both `HU04_view-traceability.steps.ts` and `HU05_verify-integrity.steps.ts`):
+
+1. `^a shipment has no updates recorded$` (HU04:41, HU05:32)
+2. `^they are told that no shipment exists with that code$` (HU04:190, HU05:122)
+
+**Cause**: HU-04 and HU-05 both use these Gherkin phrases verbatim from the backlog. When both step files coexist, Cucumber strict mode fails with "Ambiguous scenarios".
+
+**Resolution**:
+
+- **Files changed**:
+  - `hubx-bender/features/steps/common.steps.ts`: added the two shared steps at the end (lines 320-349).
+  - `hubx-bender/features/steps/HU04_view-traceability.steps.ts`: removed the duplicate definitions, added comments pointing to common.steps.ts (lines 41-43, 190-191).
+  - `hubx-bender/features/steps/HU05_verify-integrity.steps.ts`: removed the duplicate definitions, added comments pointing to common.steps.ts (lines 32-34, 122-123).
+
+- **Implementation details**:
+  - `Given(/^a shipment has no updates recorded$/, ...)` in common.steps.ts calls `prepareShipment(this, 'Created')`, identical to both original definitions.
+  - `Then(/^they are told that no shipment exists with that code$/, ...)` in common.steps.ts inspects `this.response.url()`:
+    - If it contains `/integrity`: asserts HU-05's flat body `{error: "SHIPMENT_NOT_FOUND", message: "No shipment exists with that code"}` (no final period, per `contracts/hu05-verify-integrity.md`).
+    - If it contains `/traceability`: calls the existing `assertError(this.response!, 404, 'SHIPMENT_NOT_FOUND', 'No shipment exists with that code.')` helper (nested body with final period, per `contracts/hu04-view-traceability.md`).
+    - Otherwise: throws an error with the unexpected URL.
+  - Both contracts are now honored without weakening either assertion.
+
+**Verification**: The fix was verified by running `make test-integration` and confirming all 59 scenarios passed.
+
+---
+
+## Verify Phase Evidence
+
+### 1. Integration Tests
+
+**Command**: `make test-integration`  
+**Exit code**: 0  
+**Result excerpt**:
+
+```
+1 hook (1 passed)
+59 scenarios (59 passed)
+382 steps (382 passed)
+0m 48.906s (0m 48.742s executing your code)
+```
+
+**Tamper test evidence**: The logs show that the tamper test scenario (HU-05 line 24, "Update improperly altered") executed and passed:
+
+```
+Tampered update 2 of HBX-589C5339 to stage "Out for delivery"
+```
+
+This line appears in the console output during the test run, confirming that the tamper helper (`hubx-bender/features/support/tamper.ts`) intentionally modified the second update of a 3-update shipment, and the API's `VerifyIntegrity` correctly detected it.
+
+**HU-05 scenarios** (8 total):
+
+| Scenario | Feature line | Test type | Result |
+|----------|-------------|-----------|--------|
+| Intact chain (operator) | features/HU05_verify-integrity.feature:9 | API | passed |
+| Intact chain (ground partner) | features/HU05_verify-integrity.feature:13 | API | passed |
+| Intact chain (customer) | features/HU05_verify-integrity.feature:17 | API | passed |
+| Shipment without updates | features/HU05_verify-integrity.feature:19 | API | passed |
+| Update improperly altered | features/HU05_verify-integrity.feature:24 | API | passed (tamper log: "Tampered update 2 of HBX-589C5339...") |
+| Code that matches no shipment | features/HU05_verify-integrity.feature:34 | API | passed |
+| Shipment the participant cannot see | features/HU05_verify-integrity.feature:39 | API | passed |
+| Operator verifies in browser | features/HU05_verify-integrity.feature:44 | @e2e | passed |
+
+**Regression**: 51 scenarios from HU-01, HU-02, HU-03 and HU-04 all passed.
+
+### 2. Security Scans
+
+#### gosec (hubx-api)
+
+**Command**: `gosec ./...` (cwd: `/Users/jaigomez/source/hubx-hu05/hubx-api`)  
+**Exit code**: 0  
+**Result**:
+
+```
+Results:
+Summary:
+  Gosec  : dev
+  Files  : 55
+  Lines  : 5218
+  Nosec  : 1
+  Issues : 0
+```
+
+#### gosec (hubx-gw)
+
+**Command**: `gosec ./...` (cwd: `/Users/jaigomez/source/hubx-hu05/hubx-gw`)  
+**Exit code**: 0  
+**Result**:
+
+```
+Results:
+Summary:
+  Gosec  : dev
+  Files  : 3
+  Lines  : 294
+  Nosec  : 0
+  Issues : 0
+```
+
+#### govulncheck (hubx-api)
+
+**Command**: `govulncheck -C hubx-api ./...`  
+**Exit code**: 0  
+**Result**:
+
+```
+=== Symbol Results ===
+No vulnerabilities found.
+Your code is affected by 0 vulnerabilities.
+This scan also found 0 vulnerabilities in packages you import and 1
+vulnerability in modules you require, but your code doesn't appear to call these
+vulnerabilities.
+Use '-show verbose' for more details.
+```
+
+#### govulncheck (hubx-gw)
+
+**Command**: `govulncheck -C hubx-gw ./...`  
+**Exit code**: 0  
+**Result**:
+
+```
+No vulnerabilities found.
+```
+
+---
+
+## Gherkin Coverage
+
+All 8 HU-05 scenarios passed after the fix:
+
+| Scenario | Feature line | Test type | Result |
+|----------|-------------|-----------|--------|
+| Intact chain (operator) | features/HU05_verify-integrity.feature:9 | API | passed |
+| Intact chain (ground partner) | features/HU05_verify-integrity.feature:13 | API | passed |
+| Intact chain (customer) | features/HU05_verify-integrity.feature:17 | API | passed |
+| Shipment without updates | features/HU05_verify-integrity.feature:19 | API | passed |
+| Update improperly altered | features/HU05_verify-integrity.feature:24 | API | passed |
+| Code that matches no shipment | features/HU05_verify-integrity.feature:34 | API | passed |
+| Shipment the participant cannot see | features/HU05_verify-integrity.feature:39 | API | passed |
+| Operator verifies in browser | features/HU05_verify-integrity.feature:44 | @e2e | passed |
+
+**Step consolidation**: The two previously ambiguous steps are now defined once in `features/steps/common.steps.ts` (lines 320-349) and shared by HU-04 and HU-05 without ambiguity. Cucumber strict mode passed.
+
+---
+
+## OWASP API Security Top 10 (2023) Review
+
+### GET /api/shipments/{code}/integrity
+
+| OWASP Category | Test / Evidence | Result |
+|---------------|-----------------|--------|
+| **API1: Broken Object Level Authorization (BOLA)** | Scenario "Shipment the participant cannot see" (line 39): a customer who does not own the shipment receives 404 `SHIPMENT_NOT_FOUND`, identical to an unknown code (line 34). The shared step in common.steps.ts asserts the flat body `{error: "SHIPMENT_NOT_FOUND", message: "No shipment exists with that code"}` for `/integrity`. | passed |
+| **API2: Broken Authentication** | JWT validation is enforced by the gateway (HU-01) and independently by the API (`RequireAuth` middleware, `internal/handlers/auth/middleware.go:17-39`); `Authorization` header required. Contract error table (401) documents the flat `UNAUTHORIZED` body. | passed |
+| **API3: Broken Object Property Level Authorization** | Response body exposes only the verification fields documented in the contract (`shipmentCode`, `intact`, `updatesChecked`, `firstAlteredUpdate`); no excessive data. Evidence: `hubx-api/internal/handlers/shipment/integrity_handler.go:68-82` constructs the response with exactly these 4 fields. | passed |
+| **API4: Unrestricted Resource Consumption** | No pagination needed (single shipment). Gateway rate limiting is a pre-existing open finding (not implemented yet). | rate limit: open pre-existing finding |
+| **API5: Broken Function Level Authorization** | All three roles (operator, ground partner, customer) can verify their own shipments (scenarios lines 9, 13, 17 all passed); no role elevation. The visibility rules (`internal/shipment/repository.go:124-137`, `canSee`) are tested by scenario line 39. | passed |
+| **API6: Unrestricted Access to Sensitive Business Flows** | Read-only operation; no business impact from repeated calls. Rate limiting at the gateway is planned but not implemented (pre-existing finding). | rate limit: open pre-existing finding |
+| **API7: Server Side Request Forgery (SSRF)** | No user-supplied URLs or external requests. | not applicable |
+| **API8: Security Misconfiguration** | Security headers, restrictive CORS and rate limiting are not implemented in `hubx-gw` yet (pre-existing open finding recorded in HU-02 qa-report.md). | open pre-existing finding (gateway headers/CORS/rate limit) |
+| **API9: Improper Inventory Management** | Route documented in `contracts/hu05-verify-integrity.md`; API version in response header (`X-API-Version`, `hubx-api/cmd/api/main.go:66`). | passed |
+| **API10: Unsafe Consumption of APIs** | No external API consumption. | not applicable |
+
+**Additional security controls verified**:
+
+- **Parameterized queries**: The integrity handler (`hubx-api/internal/handlers/shipment/integrity_handler.go:40-85`) calls `verifier.VerifyIntegrity(shipment.ID)`, which uses parameterized SQL (`internal/shipment/verifier.go:38-78`, `internal/ledger/postgres.go:85-124`). Evidence: the verifier constructs the fingerprint formula from stored fields and compares it to the stored fingerprint; the ledger repository reads updates with `$1` placeholders.
+
+- **Ledger immutability**: The tamper test scenario (line 24, "Update improperly altered") intentionally bypasses the database trigger using `SET LOCAL session_replication_role = replica` in `hubx-bender/features/support/tamper.ts:15-28` and verifies that `VerifyIntegrity` detects the alteration: the test log shows "Tampered update 2 of HBX-589C5339 to stage "Out for delivery"" and the scenario passed. Evidence: `hubx-api/internal/shipment/verifier.go:69-73` checks that the recomputed fingerprint matches the stored one, returning `intact: false, firstAlteredUpdate: 2` when it does not.
+
+- **Input validation**: Shipment code format is validated in the API (HU-02 and HU-03 contract); unknown codes return 404. Evidence: Scenario "Code that matches no shipment" (line 34) passed, asserting the flat 404 body `{error: "SHIPMENT_NOT_FOUND", message: "No shipment exists with that code"}` per the HU-05 contract.
+
+---
+
+## Findings
+
+### Critical
+
+None.
+
+### High
+
+None.
+
+### Medium
+
+None.
+
+### Low
+
+None.
+
+### Pre-existing (open, not introduced by HU-05)
+
+1. **Gateway security headers, CORS and rate limiting not implemented**  
+   **OWASP**: API4, API6, API8  
+   **Description**: `hubx-gw` does not apply security headers (CSP, X-Frame-Options, etc.), restrictive CORS or rate limiting yet. First recorded in HU-02 qa-report.md (2026-11-24).  
+   **Location**: `hubx-gw/cmd/gw/main.go`  
+   **Status**: Requires its own story (memory.md "Pending").
+
+---
 
 ## Blockers
 
 None.
 
-## Artifacts Created
+---
 
-- ✅ `hubx-bender/features/HU05_verify-integrity.feature` — 7 scenarios (Scenario Outline with 3 examples expanded to 3 scenarios, plus 4 individual scenarios) + 1 `@e2e` happy path
-- ✅ `hubx-bender/features/steps/HU05_verify-integrity.steps.ts` — Step definitions reusing `common.steps.ts` helpers
-- ✅ `hubx-bender/features/support/tamper.ts` — Tamper helper using Node `spawn` (no shell), docker compose exec psql with shipment code validated and passed as psql variable
-- ✅ `specs/005-verify-integrity/qa-report.md` — This report
+## Files Changed (fix + verify phase)
 
-## Gherkin Coverage
+**Fix**:
+- `hubx-bender/features/steps/common.steps.ts` (added 2 shared steps at end, lines 320-349)
+- `hubx-bender/features/steps/HU04_view-traceability.steps.ts` (removed 2 duplicate steps, added comments)
+- `hubx-bender/features/steps/HU05_verify-integrity.steps.ts` (removed 2 duplicate steps, added comments)
 
-| Scenario | Feature Line | Test Type | Result (red) |
-|---|---|---|---|
-| Intact chain (operator) | 6-18 | API | ❌ 404 (missing route) |
-| Intact chain (customer who owns) | 6-18 | API | ❌ 404 (missing route) |
-| Intact chain (assigned partner) | 6-18 | API | ❌ 404 (missing route) |
-| Shipment without updates | 20-24 | API | ❌ 404 (missing route) |
-| Update improperly altered | 26-31 (tagged @needs-secret @needs-db) | API | ❌ 404 (missing route) |
-| Code that matches no shipment | 33-36 | API | ❌ JSON parse error (HTML 404 from gateway) |
-| Shipment the participant cannot see | 38-42 | API | ❌ JSON parse error (HTML 404 from gateway) |
-| Verify an intact chain in the browser | 44-49 (tagged @e2e) | E2E | ❌ Timeout (missing MFE view) |
-
-**Total**: 8 scenarios (7 from backlog + 1 @e2e), all RED because `GET /api/shipments/{code}/integrity` does not exist yet.
-
-**Regression**: 43 scenarios from HU-01 through HU-04 passed.
-
-## Test Design Notes
-
-### Fixtures
-- Fresh shipments created through `POST /api/shipments` (HU-02) via the gateway
-- Advanced through `POST /api/shipments/{code}/updates` (HU-03) to reach the needed stage
-- "Three updates" = Assigned to partner (In flight → At destination airport → Assigned to partner)
-- "No updates" = Created (HU-02 creates shipments in Created with no update)
-- Demo users from `memory.md`: operator@hubx.co, rapido@hubx.co (assigned ground partner), ana@hubx.co and andina@hubx.co (customers)
-- Password: `Hubx-Demo-2026` (from `DEMO_PASSWORD` in `common.steps.ts`)
-
-### Tamper Scenario
-- Tagged `@needs-secret` and `@needs-db` so deployments never run it
-- Uses `tamperUpdate(code, sequence, newStage)` from `features/support/tamper.ts`
-- Runs `docker compose -p $BENDER_COMPOSE_PROJECT exec -T postgres psql -U hubx -d hubx -v code=<code> -v newStage=<stage> -v ON_ERROR_STOP=1 -f -`
-- SQL piped to stdin: `BEGIN; SET LOCAL session_replication_role = replica; UPDATE updates SET stage = :'newStage' WHERE sequence = N AND shipment_id = (SELECT id FROM shipments WHERE code = :'code'); COMMIT;`
-- Shipment code validated with `/^HBX-[0-9A-F]{8}$/` before use
-- Stage value restricted to known stages (In flight, At destination airport, Assigned to partner, Out for delivery, Delivered)
-- Compose project from `BENDER_COMPOSE_PROJECT` env var (defaults to `hubx-it`)
-- No new npm dependency (uses Node built-in `node:child_process` `spawn`)
-- **Result**: Successfully tampered update 2 to "Out for delivery" (confirmed in test log)
-
-### @e2e Contract
-The MFE view expected by the @e2e scenario:
-- Route: `/verify-integrity` (linked from Dashboard with text "Verify integrity")
-- Input labelled: **"Shipment code"** (case-insensitive)
-- Button: **"Verify integrity"** (case-insensitive)
-- Result texts when intact:
-  - **"The chain is intact"** (case-insensitive, visible text)
-  - **"3 updates checked"** (case-insensitive, visible text)
-
-The @e2e step uses `getByRole('link', { name: /verify integrity/i })`, `getByLabel(/shipment code/i)`, `getByRole('button', { name: /verify integrity/i })`, `getByText(/the chain is intact/i)` and `getByText(/3 updates checked/i)`.
-
-### Step Reuse
-- `"<participant> has signed in"` defined in `common.steps.ts` (shared with HU-01, HU-02, HU-03)
-- Phrasing now matches both "the shipment's integrity" and "that shipment's integrity" with regex `(?:the|that)`
-- `prepareShipment(world, stage)` creates fixtures through the gateway (HU-02 + HU-03 endpoints)
-- `authHeader(world)` builds `Authorization: Bearer <JWT>` header
-- No ambiguous step definitions (Cucumber strict mode would fail)
-
-## Evidence
-
-### Integration test (prove RED for the right reason)
-
-**Command**: `make test-integration`  
-**Working directory**: `/Users/jaigomez/source/hubx-hu05`  
-**Result**: 51 scenarios (43 passed, 8 failed), 329 steps (314 passed, 7 skipped, 8 failed), 1m 9.837s
-
-**HU-05 failures (all expected)**:
-
-```
-Failed scenarios:
-  1) Intact chain # features/HU05_verify-integrity.feature:15
-       Then they are told that the chain is intact # features/steps/HU05_verify-integrity.steps.ts:99
-           Error: verification response status
-           expect(received).toBe(expected) // Object.is equality
-           Expected: 200
-           Received: 404
-
-  2) Intact chain # features/HU05_verify-integrity.feature:16
-       [same as #1, second example]
-           Expected: 200
-           Received: 404
-
-  3) Intact chain # features/HU05_verify-integrity.feature:17
-       [same as #1, third example]
-           Expected: 200
-           Received: 404
-
-  4) Shipment without updates # features/HU05_verify-integrity.feature:19
-       Then they are told that the chain is intact # features/steps/HU05_verify-integrity.steps.ts:99
-           Expected: 200
-           Received: 404
-
-  5) Update improperly altered # features/HU05_verify-integrity.feature:27
-       Then they are told that the chain is not intact # features/steps/HU05_verify-integrity.steps.ts:113
-           Expected: 200
-           Received: 404
-
-  6) Code that matches no shipment # features/HU05_verify-integrity.feature:34
-       Then they are told that no shipment exists with that code # features/steps/HU05_verify-integrity.steps.ts:122
-           SyntaxError: Unexpected non-whitespace character after JSON at position 4 (line 1 column 5)
-
-  7) Shipment the participant cannot see # features/HU05_verify-integrity.feature:39
-       Then they are told that no shipment exists with that code # features/steps/HU05_verify-integrity.steps.ts:122
-           SyntaxError: Unexpected non-whitespace character after JSON at position 4 (line 1 column 5)
-
-  8) Verify an intact chain in the browser # features/HU05_verify-integrity.feature:46
-       When the operator verifies the shipment's integrity in the browser # features/steps/HU05_verify-integrity.steps.ts:82
-           Error: function timed out, ensure the promise resolves within 30000 milliseconds
-```
-
-**Tamper evidence**:
-```
-Tampered update 2 of HBX-7E527358 to stage "Out for delivery"
-```
-
-**Analysis**:
-- Scenarios 1-5 fail with **404** because the route `/api/shipments/{code}/integrity` does not exist yet ✅
-- Scenarios 6-7 fail with **JSON parse error** because the gateway returns HTML 404 (not JSON) for unknown routes ✅
-- Scenario 8 (@e2e) **times out** because the MFE view `/verify-integrity` does not exist yet ✅
-- The tamper step in scenario 5 succeeded: it altered update 2 to "Out for delivery" before the verification request
-- **All 43 regression scenarios passed**: HU-01 through HU-04 remain green
-
-**No undefined steps**: The test run shows no "Undefined scenarios" section and no step snippets to implement (the first run had 1 undefined, fixed by updating the step regex to match "that shipment's integrity").
-
-### Security scan (baseline for verify phase)
-
-Not run in phase `red` (read-only route, no new vulnerability surface). Will run in phase `verify`:
-```bash
-gosec ./...
-govulncheck -C hubx-api ./...
-govulncheck -C hubx-gw ./...
-```
-
-## OWASP API Security Top 10 Checklist (Planned for Verify)
-
-This checklist will be completed in phase `verify` after implementation. Recorded here for the verify phase:
-
-| OWASP Category | HU-05 Route | Test / Evidence | Result (verify) |
-|---|---|---|---|
-| **API1: BOLA** | GET /shipments/{code}/integrity | Scenario "Shipment the participant cannot see" (customer who does not own it, ground partner not assigned) → 404 identical to unknown code | To verify |
-| API1 (cont.) | | Scenario "Code that matches no shipment" → 404 `SHIPMENT_NOT_FOUND` | To verify |
-| API1 (cont.) | | Scenario Outline "Intact chain" with operator (any shipment), customer (own shipments), partner (assigned shipments) | To verify |
-| **API2: Broken Authentication** | | JWT required (HU-01's `RequireAuth`); 401 when missing/invalid/expired (contract rule) | Reuses HU-01 |
-| **API3: Broken Object Property Level Authorization** | | Response fields: shipmentCode, intact, updatesChecked, firstAlteredUpdate (contract); no internal IDs | To verify |
-| **API4: Unrestricted Resource Consumption** | | Read-only, one indexed shipment lookup + one query of its updates (plan R6); no unbounded loop | To verify |
-| **API5: Broken Function Level Authorization** | | Same visibility rule as HU-03 (operator, owner customer, assigned partner; plan R2); tested in Scenario Outline | To verify |
-| **API6: Unrestricted Access to Sensitive Business Flows** | | Verification is read-only (FR-008); does not record/modify/delete; no rate-limiting yet (pre-existing finding, HU-02 qa-report) | Pre-existing |
-| **API7: Server Side Request Forgery (SSRF)** | | No external URL input; shipment code validated format `^HBX-[0-9A-F]{8}$` | Not applicable |
-| **API8: Security Misconfiguration** | | Gateway CORS/headers/rate-limit: pre-existing finding from HU-02 qa-report (not implemented yet, constitution VI) | Pre-existing |
-| API8 (cont.) | | Secrets from env vars only (constitution III); JWT secret, DB password | Reuses baseline |
-| **API9: Improper Inventory Management** | | Route documented in `contracts/hu05-verify-integrity.md`; added to hubx-api handler registry | To verify |
-| **API10: Unsafe Consumption of APIs** | | No third-party API consumed | Not applicable |
-
-**Focus for HU-05**: API1 (BOLA) — identical 404 for unknown and invisible shipments, correct visibility enforcement per role.
-
-**Pre-existing findings** (not introduced by HU-05, recorded in HU-02 qa-report):
-- API6/API8: Gateway security headers, CORS and rate limiting not implemented yet (constitution VI). Needs its own story.
-
-## Recommendations for Implementation
-
-1. **Backend-go**: 
-   - Implement `ledger.Verify([]Update) VerificationResult` reusing the existing `ledger.Fingerprint` from HU-03
-   - Add `LedgerRepository.List(ctx, shipmentID) ([]Update, error)` with `ORDER BY sequence ASC`, parameterized SQL
-   - Fix HU-03's `Append`: truncate `RecordedAt` to microseconds before computing the fingerprint (plan R6)
-   - Implement `shipment.Verifier` reusing HU-03's visibility rules
-   - Add `GET /shipments/{code}/integrity` handler with flat 401 body (HU-01 `RequireAuth`)
-   - Return identical 404 for unknown and invisible shipments
-   - Regenerate mocks: `go -C hubx-api generate ./...`
-
-2. **Frontend-react**:
-   - Create `/verify-integrity` route and view
-   - Input labelled "Shipment code", button "Verify integrity"
-   - Result texts: "The chain is intact" / "The chain is not intact", "N updates checked", "first alteration is in the Nth update"
-   - Error: "No shipment exists with that code"
-   - Link from Dashboard with "Verify integrity"
-
-3. **Devops** (verify phase):
-   - Confirm `scripts/test-integration.sh` exports `BENDER_COMPOSE_PROJECT=hubx-it` to bender
-   - Confirm deployments exclude `@needs-secret` scenarios (already in place per memory.md)
-
-## Files Changed
-
-- `hubx-bender/features/HU05_verify-integrity.feature` (new)
-- `hubx-bender/features/steps/HU05_verify-integrity.steps.ts` (new, fixed step regex to match "that shipment's")
-- `hubx-bender/features/support/tamper.ts` (new, using spawn + stdin for SQL)
+**Verify**:
 - `specs/005-verify-integrity/qa-report.md` (this file)
 
-## UI Contract for Frontend-React
+---
 
-The @e2e scenario asserts these exact UI elements (case-insensitive matching):
+## Recommendations
 
-**Route**: `/verify-integrity`
+1. **Address the pre-existing gateway finding** (medium priority):  
+   - Create a story for gateway security headers, CORS and rate limiting (Constitution VI).
 
-**Form elements**:
-- Input with label: `"Shipment code"`
-- Button: `"Verify integrity"`
+2. **Consider step consolidation guidance for future stories**:  
+   - When two stories share identical Gherkin phrasing from the backlog, define the step in `common.steps.ts` from the start to avoid ambiguity.
+   - If the step must assert different contracts (like the 404 body in HU-04 vs HU-05), use `response.url()` to dispatch to the correct assertion.
 
-**Result texts** (intact chain with N updates):
-- `"The chain is intact"`
-- `"N updates checked"` (e.g. "3 updates checked")
+---
 
-**Result texts** (not intact, first alteration at position N):
-- `"The chain is not intact"`
-- `"first alteration is in the Nth update"` (replace N with the actual number, e.g. "2nd" or "second")
-
-**Error text** (unknown/invisible shipment):
-- `"No shipment exists with that code"`
-
-**Navigation**:
-- Dashboard must have a link with text `"Verify integrity"` that navigates to `/verify-integrity`
-
-Frontend-react should implement the view against this contract, using accessible HTML (labels for inputs, role="status" or visible text for results).
+**QA Agent**: qa-seguridad  
+**Verification date**: 2026-11-24  
+**Status**: PASSED (all 59 scenarios passed, gosec and govulncheck clean, OWASP review complete)

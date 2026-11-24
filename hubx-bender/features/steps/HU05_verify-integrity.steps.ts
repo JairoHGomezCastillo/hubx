@@ -29,11 +29,7 @@ Given(/^a shipment has three updates recorded without alterations$/, async funct
   expect(this.shipmentCode, 'fixture shipment with 3 updates').toMatch(/^HBX-[0-9A-F]{8}$/);
 });
 
-Given(/^a shipment has no updates recorded$/, async function (this: VerificationWorld) {
-  // Prepare a fresh shipment in Created (no updates yet).
-  await prepareShipment(this, 'Created');
-  expect(this.shipmentCode, 'fixture shipment in Created').toMatch(/^HBX-[0-9A-F]{8}$/);
-});
+// "a shipment has no updates recorded" is now shared in common.steps.ts (also used by HU-04).
 
 Given(/^the second of a shipment's three updates was improperly altered$/, async function (this: VerificationWorld) {
   // Prepare a fresh shipment with 3 updates, then tamper the second one (sequence=2).
@@ -119,12 +115,8 @@ Then(/^that the first alteration is in the second update$/, async function (this
   expect(this.verificationResult?.firstAlteredUpdate, 'first altered update position').toBe(2);
 });
 
-Then(/^they are told that no shipment exists with that code$/, async function (this: VerificationWorld) {
-  expect(this.response!.status(), 'unknown/invisible shipment').toBe(404);
-  const body = (await this.response!.json()) as { error?: string; message?: string };
-  expect(body.error, 'error code').toBe('SHIPMENT_NOT_FOUND');
-  expect(body.message, 'error message').toBe('No shipment exists with that code');
-});
+// "they are told that no shipment exists with that code" is now shared in common.steps.ts
+// (HU-04 and HU-05 use the same Gherkin text but assert different contracts based on the URL).
 
 // --- @e2e assertions ---------------------------------------------------------
 
