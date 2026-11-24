@@ -85,6 +85,8 @@ if [ -n "$nnn" ]; then
     if [ -f "$dir/deploy.md" ]; then
       grep -qE '[0-9]+ scenarios \([0-9]+ passed\)' "$dir/deploy.md" && add PASS "Deploy validation" "$dir/deploy.md has a green staging smoke" \
         || add WARN "Deploy validation" "$dir/deploy.md has no green smoke result"
+    elif grep -qi 'deploy validation skipped by human decision' "$dir/pr.md" 2>/dev/null; then
+      add WARN "Deploy validation" "skipped by human decision (demo mode): staging is validated when the PR is merged"
     else
       add WARN "Deploy validation" "no $dir/deploy.md (devops validates the story deployed to staging before the PR)"
     fi

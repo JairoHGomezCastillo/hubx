@@ -215,6 +215,10 @@ unclear, ask before delegating. Load in order:
       the CD, waits for the run and writes `specs/NNN-name/deploy.md` with the evidence. A failed deploy or smoke goes
       back as `fix` to the right agent, like a QA finding. Include the deploy evidence in `pr.md`. Infrastructure
       changes (CI, compose, Dockerfiles) also go to `devops` in this step.
+      **Demo mode:** skip this step only when the human explicitly asks for it in the request (e.g. "sin validación de
+      despliegue" / "skip the deploy validation"), typically in a timed live demo. Then do not push early, do not
+      delegate to `devops`, and write in `pr.md`: "Deploy validation skipped by human decision (demo mode); staging is
+      deployed and smoke-tested automatically when this PR is merged." Never skip it on your own initiative.
 7. **Before and after each subagent:**
    a. Before delegating, take a snapshot: `git status --short` and `git diff --stat`.
    b. After delivery, require the output JSON (`status`, `summary`, `evidence`, `blockers` are mandatory) and repeat both commands.

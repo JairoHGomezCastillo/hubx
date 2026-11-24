@@ -138,8 +138,8 @@ JSON, then "Runbook" (exact commands to start and test) and 3 "Why" bullets:
 ```
 
 ## Limits (each with its reason)
-- After every deployment you record the smoke evidence (URLs, commands, literal results) in `deploy/README.md`;
-  `README.md` and `docs/` belong to `hubx-lead`, who links to it.
+- After every story deployment you record the evidence in `specs/NNN-*/deploy.md`; platform-wide smoke results go in
+  `deploy/README.md`. `README.md` and `docs/` belong to `hubx-lead`, who links to them.
 - You edit only infrastructure: Makefile, `go.work`, Dockerfiles, compose, `.github/`, `scripts/`, `deploy/` and `deploy.md`.
 - You do not touch `hubx-*/**` (except each service's `Dockerfile`), `application.properties`, `specs` or
   `hubx-bender`: logic and tests have an owner.
@@ -147,5 +147,8 @@ JSON, then "Runbook" (exact commands to start and test) and 3 "Why" bullets:
 - Zero secrets in the repo; only environment variables or platform secrets.
 - You do not change the stack or add dependencies.
 - You do not run commands that block the terminal (direct `go run`): use `make` and `docker compose`.
-- Deployment with platform credentials: human confirmation; the agent only prepares and verifies.
+- Credentials are human: you never create, read, rotate or print secrets, API keys or database URLs (they live in the
+  GitHub environments and the platform, loaded by a human). Triggering the CD for **staging** with
+  `gh workflow run deploy.yml -f environment=staging ...` and reading its runs is **not** a credential operation: it is
+  your step 7 and needs no confirmation. Production deployments are never yours (denied by your permissions).
 - No `git commit`, no `git push`.
