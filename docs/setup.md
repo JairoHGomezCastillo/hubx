@@ -1,7 +1,7 @@
 # Puesta en marcha de HUBX (macOS, con notas para Windows)
 
 Cómo dejar una máquina lista para trabajar en HUBX y en qué estado está la base del proyecto. Es la sección 3 de
-la guía del equipo hecha paso a paso y comprobada. La rama de integración es `release/sdd-hubx-system`; la guía la
+la guía del equipo hecha paso a paso y comprobada. Cada release es una rama `release/vX.Y.Z` que sale de `main`; solo hay una abierta a la vez y las historias van a ella (la primera, `release/sdd-hubx-system`, es la v0.1.0). La guía la
 llama `release/v1`.
 
 ## 1. Herramientas
@@ -59,7 +59,7 @@ gh --version | head -1; gosec -version; govulncheck -version; opencode --version
 
 ```bash
 git clone https://github.com/JairoHGomezCastillo/hubx.git && cd hubx
-git switch release/sdd-hubx-system        # o la rama en la que vayas a trabajar
+git switch $(git branch -r --list 'origin/release/*' | sed 's#origin/##')   # la release abierta
 gh auth login --hostname github.com --git-protocol https --web
 npm --prefix hubx-bender ci && npm --prefix hubx-bender run browsers
 npm --prefix hubx-mfe ci
@@ -119,8 +119,8 @@ HUBX_TEST_DB_URL="postgres://hubx:$(grep POSTGRES_PASSWORD .env | cut -d= -f2)@l
 |---|---|---|
 | 1. Subir lo existente | Hecho (PR #1 fusionado); `promts/` fuera del repo | — |
 | 2. `hubx-bender` con Playwright | Hecho (fusionado) | `hubx-bender/` |
-| 3. `Makefile` y `make test-integration` | Hecho (ya en `release/sdd-hubx-system`) | `Makefile`, `scripts/`, `compose.yaml`, `*/Dockerfile` |
-| 4. PostgreSQL y migraciones | Hecho (ya en `release/sdd-hubx-system`) | `hubx-api/migrations/`, `hubx-api/internal/migrate/`, `hubx-api/cmd/migrate/` |
+| 3. `Makefile` y `make test-integration` | Hecho (v0.1.0) | `Makefile`, `scripts/`, `compose.yaml`, `*/Dockerfile` |
+| 4. PostgreSQL y migraciones | Hecho (v0.1.0) | `hubx-api/migrations/`, `hubx-api/internal/migrate/`, `hubx-api/cmd/migrate/` |
 | 9. Protección de ramas | Hecho: `protect-main` (PR + 1 aprobación) y `protect-release` (PR + 1 aprobación desde 2026-11-21; ningún agente fusiona); check obligatorio `agents-check` en ambas (2026-11-23); sin push directo | GitHub, Settings, Rules |
 | 10. README con la guía y el backlog | Hecho | `README.md`, `docs/GUIA-EQUIPO-HUBX.md` |
 | HU-01 Sign in | **Siguiente** (1 a 4 ya fusionados) | `specs/001-sign-in` |
