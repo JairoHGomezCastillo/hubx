@@ -45,3 +45,25 @@ Lee el diff (`gh pr diff <PR>`), `specs/NNN-*/` y `pr.md`, y responde cada punto
 4. Si hay algo que corregir: un bloque con el **prompt para el lead** (en español), con los puntos numerados y el
    criterio de "hecho" (por ejemplo, "make test-integration en verde y la suite dos veces sobre la misma base").
 5. Si es aprobable: recuerda fusionar con merge commit y que al fusionar en la release staging se despliega solo.
+
+## 4. Publicar la revisión en el PR
+
+Deja la revisión en el PR para que el equipo y el evaluador la vean, sin preguntar (el usuario lo pidió así):
+
+1. Escribe en un archivo temporal (fuera del repo, `mktemp`) el **resumen**: el veredicto, la tabla del script, los
+   hallazgos de juicio y, si hay correcciones, el prompt para el lead. Es el mismo contenido de la respuesta del
+   paso 3, en markdown.
+2. Escribe en otro archivo temporal los **hallazgos con archivo y línea** del diff (uno por línea, separados por
+   tabulador: `ruta<TAB>línea<TAB>comentario`), solo los que aporten algo en esa línea concreta. Usa la línea del
+   archivo en el commit de cabeza del PR.
+3. Publica:
+   ```bash
+   bash scripts/review-comment.sh <PR> <resumen.md> [hallazgos.tsv]
+   ```
+   - Hay **un solo comentario de resumen por PR**: si ya existe uno de review-story del usuario, se **edita**; volver a
+     revisar no deja comentarios repetidos.
+   - Los hallazgos fuera del diff (GitHub no los acepta en línea) pasan al resumen.
+   - Solo comenta: no aprueba ni pide cambios. El autor del PR no puede aprobar su propio PR y la aprobación es de un
+     compañero.
+4. Devuelve al usuario el enlace del comentario. Nunca incluyas secretos, URLs de bases de datos ni tokens en lo que
+   publicas.
