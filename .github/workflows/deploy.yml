@@ -57,7 +57,7 @@ jobs:
           echo "prefix=$prefix" >> "$GITHUB_OUTPUT"
           echo "Deploying \`$sha\` (${{ inputs.ref }}) to **${{ inputs.environment }}**" >> "$GITHUB_STEP_SUMMARY"
 
-      - uses: docker/login-action@v3
+      - uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -66,9 +66,10 @@ jobs:
       - name: Wait for the images of this commit
         run: bash scripts/deploy/wait-images.sh "${{ steps.target.outputs.prefix }}" "${{ steps.target.outputs.sha }}"
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version-file: go.work
+          cache-dependency-path: hubx-api/go.sum
 
       - name: Migrations
         env:
@@ -88,7 +89,7 @@ jobs:
       - name: Warm up (free-tier services sleep)
         run: bash scripts/deploy/warm-up.sh "${{ vars.GATEWAY_URL }}" "${{ vars.UI_URL }}"
 
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
 
