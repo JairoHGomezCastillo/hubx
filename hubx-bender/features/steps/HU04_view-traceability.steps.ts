@@ -35,13 +35,6 @@ interface TraceabilityResponse {
 // --- Fixtures --------------------------------------------------------------
 
 Given(/^a shipment has three updates recorded$/, async function (this: TraceabilityWorld) {
-  if (this.page) {
-    // @e2e: Create the shipment and advance it to "Assigned to partner" (three
-    // updates) through the gateway (the @e2e fixture uses the API for setup,
-    // not the browser; the scenario's When step drives the MFE).
-    await prepareShipment(this, 'Assigned to partner');
-    return;
-  }
   await prepareShipment(this, 'Assigned to partner');
 });
 
@@ -63,11 +56,12 @@ When(/^(.+) views the shipment's traceability using its code$/, async function (
   actor: string,
 ) {
   if (this.page) {
-    // @e2e: drive the MFE's traceability view on Dashboard.tsx (plan: label
-    // "Shipment code", button "View traceability", then heading "Traceability of
-    // <code>" and the results).
-    await this.ui.getByLabel(/shipment code/i).fill(this.shipmentCode!);
-    await this.ui.getByRole('button', { name: /view traceability/i }).click();
+    // @e2e: drive the MFE's traceability view on Dashboard.tsx. Scope to the
+    // "View traceability" section to avoid strict-mode violation (HU-03 also has
+    // a "Shipment code" label in the "Record an update" section).
+    const section = this.ui.getByRole('region', { name: 'View traceability' });
+    await section.getByLabel('Shipment code').fill(this.shipmentCode!);
+    await section.getByRole('button', { name: 'View traceability' }).click();
     // The route may not exist yet; expect a visible element only in Then.
     return;
   }
@@ -120,11 +114,25 @@ When(/^(.+) views the traceability of that shipment$/, async function (this: Tra
 
 Then(/^they see the three updates, from the oldest to the newest$/, async function (this: TraceabilityWorld) {
   if (this.page) {
-    // The MFE renders a list role='list' name='Updates' with three items.
-    const list = this.ui.getByRole('list', { name: /updates/i });
+    // @e2e: The MFE shows heading "Traceability of <code>", current stage, and
+    // a list role='list' name='Updates' with three items in order. Scope to the
+    // traceability section.
+    const section = this.ui.getByRole('region', { name: 'View traceability' });
+    
+    // Assert heading and current stage as the plan specifies.
+    await expect(section.getByRole('heading', { name: `Traceability of ${this.shipmentCode}` })).toBeVisible();
+    await expect(section.getByText('Current stage: Assigned to partner')).toBeVisible();
+    
+    // Assert the Updates list with three items in order.
+    const list = section.getByRole('list', { name: /updates/i });
     await expect(list).toBeVisible();
     const items = list.getByRole('listitem');
     await expect(items).toHaveCount(3);
+    
+    // Check the order of the three updates (oldest first).
+    await expect(items.nth(0)).toContainText('In flight');
+    await expect(items.nth(1)).toContainText('At destination airport');
+    await expect(items.nth(2)).toContainText('Assigned to partner');
     return;
   }
   expect(this.traceabilityResponse, '200 traceability response').toBeDefined();
@@ -144,7 +152,9 @@ Then(/^for each one they see its stage, its responsible party and its date$/, as
 ) {
   if (this.page) {
     // Each item in the Updates list shows stage, responsible party name and a date.
-    const list = this.ui.getByRole('list', { name: /updates/i });
+    // Scope to the traceability section.
+    const section = this.ui.getByRole('region', { name: 'View traceability' });
+    const list = section.getByRole('list', { name: /updates/i });
     const items = list.getByRole('listitem');
     
     // Check the first item (In flight by Laura Operator).
