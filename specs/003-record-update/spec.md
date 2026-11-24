@@ -1,6 +1,6 @@
 # Feature Specification: Record a shipment update
 
-**Feature Branch**: `003-record-update`
+**Feature Branch**: `003-record-update-sync` (renamed from `003-record-update` after the original remote branch was deleted; delivered from `origin/main`)
 
 **Created**: 2026-11-24
 

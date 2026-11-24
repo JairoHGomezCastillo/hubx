@@ -1,6 +1,6 @@
 # Implementation Plan: Record a shipment update
 
-**Branch**: `003-record-update` | **Date**: 2026-11-24 | **Spec**: [spec.md](./spec.md)
+**Branch**: `003-record-update-sync` (renamed from `003-record-update` after the original remote branch was deleted; delivered from `origin/main`) | **Date**: 2026-11-24 | **Spec**: [spec.md](./spec.md)
 
 **Input**: Feature specification from `/specs/003-record-update/spec.md`
 
@@ -28,10 +28,12 @@ trigger and the CHECKs for chain and assignment). **HU-03 needs no new migration
 `0002_seed_ledger` stays reserved for its owner and is not touched here. Test shipments in later stages are reached by
 calling HU-03's own update endpoint through the gateway, never by direct DB writes from QA.
 
-**Testing**: `go -C hubx-api test ./...`, `go -C hubx-gw test ./...`, `npm --prefix hubx-mfe run build` (the MFE has no
-test script or test dependency; validation is typecheck/build plus the browser scenarios), `make test-integration`
-(full stack: PostgreSQL + API + gateway + MFE + Cucumber API and `@e2e` scenarios), `make security` (`gosec`,
-`govulncheck` for both Go services).
+**Testing**: `go -C hubx-api test ./...`, `go -C hubx-gw test ./...`, `npm --prefix hubx-mfe run build` and the MFE
+unit tests (vitest, with `@testing-library/react`; both were already declared in `hubx-mfe/package.json`, so no new
+dependency was added), `make test-integration` (full stack: PostgreSQL + API + gateway + MFE + Cucumber API and
+`@e2e` scenarios), `make security` (`gosec`, `govulncheck` for both Go services). Deviation accepted at `analyze`
+(D3): this plan initially assumed no MFE test script; the delivered tests strengthen verification without changing
+the stack or introducing a dependency.
 
 **Target Platform**: Linux containers (Docker Compose). Browser: Playwright Chromium for `@e2e`.
 
@@ -118,9 +120,12 @@ hubx-api/
 │   │   ├── mocks/                           [new] generated mocks (go:generate mockgen)
 │   │   └── test/                            [new] black-box unit tests of Recorder and stage rules
 │   └── handlers/
+│       ├── auth/                            [new] HU-03 session-aware auth without changing HU-01's RequireAuth
+│       │   ├── session_middleware.go         RequireSessionAuth: 401 SESSION_EXPIRED for HU-03 routes
+│       │   └── test/                        [new] black-box tests for the nested 401 body
 │       └── shipment/                        [new] HTTP transport package
-│           ├── handler.go                   Register(mux, ...); POST /shipments/{code}/updates, GET /ground-partners
-│           ├── errors.go                    sentinel errors -> HTTP status and English message
+│           ├── update_handler.go            RegisterUpdates(mux, ...); POST /shipments/{code}/updates, GET /ground-partners
+│           ├── update_errors.go              sentinel errors -> HTTP status and English message
 │           ├── mocks/                       [new] generated mocks for injected interfaces
 │           └── test/                        [new] black-box handler tests with gomock
 └── go.mod / go.sum                          [existing] unchanged: no new dependency
@@ -128,18 +133,23 @@ hubx-api/
 hubx-gw/
 ├── cmd/gw/main.go                           [existing] unchanged: no domain logic added to the gateway
 ├── internal/proxy/proxy.go                  [existing] unchanged: already strips /api and forwards Authorization
-├── internal/proxy/proxy_test.go             [existing] unchanged (in-package legacy test; HU-03 adds no gateway test)
+├── internal/middleware/auth.go              [modified] HU-03 routes emit nested 401 SESSION_EXPIRED (deviation D2)
+├── internal/middleware/test/session_error_test.go [new] black-box test of the HU-03 error body
+├── internal/proxy/proxy_test.go             [existing] unchanged
 ├── application.properties                   [existing] unchanged
 └── go.mod / go.sum                          [existing] unchanged
 
 hubx-mfe/
 ├── src/
-│   ├── App.tsx                              [modified] render the update-recording view for the signed-in role
+│   ├── App.tsx                              [modified] client-side HomeRedirect to /sign-in (no window.location)
 │   ├── api/client.ts                        [new] the single /api client; JWT held in memory, never localStorage
+│   ├── services/httpClient.ts               [modified] accepts the nested 401 SESSION_EXPIRED body for HU-03
+│   ├── pages/Dashboard.tsx                  [modified] entry point for the update-recording view
 │   └── features/shipment-updates/
-│       └── RecordUpdate.tsx                 [new] accessible form: shipment code, stage select, ground-partner select,
-│                                                  submit button, role/label locators for @e2e; all text in English
-├── package.json                             [existing] unchanged: no new dependency or script
+│       ├── RecordUpdate.tsx                 [new] accessible form: shipment code, stage select, ground-partner select,
+│       │                                         submit button, role/label locators for @e2e; all text in English
+│       └── RecordUpdateContainer.tsx        [new] container wiring the client to the form
+├── package.json                             [existing] unchanged: no new dependency or script (deviation D3)
 ├── index.html / vite.config.ts              [existing] unchanged
 └── Dockerfile                               [existing] unchanged
 
@@ -159,10 +169,14 @@ contracts/
 
 **Structure Decision**: keep the four existing components and their ownership boundaries. HU-03 adds two Go domains
 because the ledger chain and the shipment stage rules are distinct responsibilities (Principle I vs. the stage
-transition rules); the handler package owns transport only. The gateway needs no change at all: its existing proxy
-forwards any method, including POST, and the Cucumber API scenarios exercise that path. Adding a new in-package gateway
-test would perpetuate a layout that contradicts Principle IV, so none is added. The MFE keeps a single API client and
-one feature folder. No new file is created in `migrations/`,
+transition rules); the handler package owns transport only. Deviation D2 (accepted at `analyze`, committed in
+`27278db`): the gateway proxy itself needs no change, but `internal/middleware/auth.go` was changed so the two HU-03
+update routes emit the nested `401 SESSION_EXPIRED` body required by `contracts/hu03-record-update.md:61`; HU-01's flat
+`UNAUTHORIZED` body is preserved, no route is excluded from JWT validation, and `Authorization` is still forwarded
+untouched so the API validates independently (Constitution II). The new gateway test follows the `test/` layout of
+Principle IV, not an in-package test. Deviation D3: the MFE keeps a single API client and one feature folder, but also
+ships vitest unit tests and a client-side redirect; verification relied on the Docker build (`✓ built in 321ms`) and
+the `@e2e` scenario in the full green suite. No new file is created in `migrations/`,
 `hubx-gw/internal/security` or `contracts/` beyond the contract document listed above.
 
 **Upstream dependency (accepted 2026-11-24)**: HU-01 (sign-in/JWT/roles) and HU-02 (shipment creation) are assumed
