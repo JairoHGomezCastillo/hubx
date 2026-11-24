@@ -22,13 +22,16 @@ const (
 	profileEnvKey = "APP_PROFILE"
 	portAliasKey  = "PORT"
 	serverPortKey = "server.port"
+	jwtExpirationHoursKey = "jwt.expiration.hours"
 	defaultPort   = "8081"
+	defaultJWTExpirationHours = "1"
 )
 
 // defaults holds values with no secrets. Secrets are supplied only through
 // the environment and therefore never appear here.
 var defaults = map[string]string{
-	serverPortKey: defaultPort,
+	serverPortKey:         defaultPort,
+	jwtExpirationHoursKey: defaultJWTExpirationHours,
 }
 
 // Config holds the resolved configuration values of the service.
@@ -99,6 +102,10 @@ func envKey(key string) string {
 // with '#' or '!' are comments. Any other line without '=' or with an empty
 // key is malformed and stops loading.
 func readProperties(path string) (map[string]string, error) {
+	// #nosec G304 -- path is not external/request input. It is built in Load from a
+	// caller-supplied directory (hardcoded "." in cmd/api and cmd/migrate) joined with
+	// internal constant filenames and the operator-controlled APP_PROFILE env var. No
+	// end-user data reaches this call, so directory traversal is not reachable here.
 	file, err := os.Open(path)
 	if err != nil {
 		return nil, err
@@ -128,4 +135,19 @@ func readProperties(path string) (map[string]string, error) {
 		return nil, fmt.Errorf("read %s: %w", path, err)
 	}
 	return values, nil
+}
+
+// GetInt returns the configuration value as an integer. If the key is not found
+// or the value cannot be parsed, returns the defaultValue.
+func (c *Config) GetInt(key string, defaultValue int) int {
+	value := c.Get(key)
+	if value == "" {
+		return defaultValue
+	}
+	var result int
+	_, err := fmt.Sscanf(value, "%d", &result)
+	if err != nil {
+		return defaultValue
+	}
+	return result
 }

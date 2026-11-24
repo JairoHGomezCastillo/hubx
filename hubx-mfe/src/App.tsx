@@ -1,55 +1,73 @@
-import { useEffect, useState } from 'react'
+/**
+ * Main application component with routing and authentication.
+ */
 
-// Contrato del endpoint de salud expuesto por el gateway (/api/health).
-interface HealthResponse {
-  status: string
-  service: string
-}
+import { useEffect, useState } from 'react';
+import { AuthProvider } from './contexts/AuthContext';
+import { ProtectedRoute } from './components/ProtectedRoute';
+import { SignIn } from './pages/SignIn';
+import { Dashboard } from './pages/Dashboard';
+import { navigateTo } from './services/navigation';
 
-// Estados de interfaz explícitos: carga, éxito y fallo.
-type HealthState =
-  | { kind: 'loading' }
-  | { kind: 'ok'; status: string; service: string }
-  | { kind: 'error'; httpStatus: number }
+type Route = 'sign-in' | 'dashboard' | 'home';
 
 function App() {
-  const [state, setState] = useState<HealthState>({ kind: 'loading' })
+  const [route, setRoute] = useState<Route>('home');
 
+  // Simple client-side routing based on pathname
   useEffect(() => {
-    let cancelled = false
-
-    const load = async () => {
-      try {
-        const res = await fetch('/api/health')
-        if (!res.ok) {
-          if (!cancelled) setState({ kind: 'error', httpStatus: res.status })
-          return
-        }
-        const data = (await res.json()) as HealthResponse
-        if (!cancelled) setState({ kind: 'ok', status: data.status, service: data.service })
-      } catch {
-        // Sin respuesta HTTP: gateway caído o red ausente.
-        if (!cancelled) setState({ kind: 'error', httpStatus: 0 })
+    const updateRoute = () => {
+      const path = window.location.pathname;
+      if (path === '/sign-in') {
+        setRoute('sign-in');
+      } else if (path === '/dashboard') {
+        setRoute('dashboard');
+      } else {
+        setRoute('home');
       }
-    }
+    };
 
-    void load()
-    return () => {
-      cancelled = true
-    }
-  }, [])
+    updateRoute();
+
+    // Listen for navigation events
+    window.addEventListener('popstate', updateRoute);
+    return () => window.removeEventListener('popstate', updateRoute);
+  }, []);
 
   return (
-    <main>
-      {state.kind === 'loading' && <p>Cargando…</p>}
-      {state.kind === 'ok' && (
-        <p>
-          API: {state.status} ({state.service})
-        </p>
+    <AuthProvider>
+      {route === 'sign-in' && <SignIn />}
+      {route === 'dashboard' && (
+        <ProtectedRoute>
+          <Dashboard />
+        </ProtectedRoute>
       )}
-      {state.kind === 'error' && <p>Error: HTTP {state.httpStatus}</p>}
-    </main>
-  )
+      {route === 'home' && (
+        <main style={{ maxWidth: '800px', margin: '100px auto', padding: '20px', textAlign: 'center' }}>
+          <h1>HUBX</h1>
+          <p>Air cargo traceability platform</p>
+          <div style={{ marginTop: '32px' }}>
+            <button
+              onClick={() => navigateTo('/sign-in')}
+              style={{
+                padding: '12px 24px',
+                fontSize: '16px',
+                backgroundColor: '#007bff',
+                color: 'white',
+                textDecoration: 'none',
+                borderRadius: '4px',
+                display: 'inline-block',
+                border: 'none',
+                cursor: 'pointer',
+              }}
+            >
+              Sign In
+            </button>
+          </div>
+        </main>
+      )}
+    </AuthProvider>
+  );
 }
 
-export default App
+export default App;

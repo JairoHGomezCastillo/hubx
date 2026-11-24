@@ -9,9 +9,15 @@ import (
 	"net/url"
 )
 
+// GatewaySecretHeader identifica al gateway ante la API. La API rechaza
+// cualquier petición que no la traiga con el valor compartido, de modo que
+// el tráfico legítimo siempre entra por el gateway (constitución VI).
+const GatewaySecretHeader = "X-Gateway-Secret"
+
 // New devuelve el handler que reenvía a la API lo que llega bajo /api,
-// eliminando ese prefijo antes de contactar al upstream.
-func New(apiURL string) http.Handler {
+// eliminando ese prefijo antes de contactar al upstream. Inyecta en cada
+// petición la cabecera del secreto compartido con la API.
+func New(apiURL, gatewaySecret string) http.Handler {
 	target, err := url.Parse(apiURL)
 	if err != nil {
 		// Una URL de upstream inválida es un error de configuración:
@@ -30,6 +36,9 @@ func New(apiURL string) http.Handler {
 	rp.Director = func(req *http.Request) {
 		originalDirector(req)
 		req.Host = target.Host
+		// El cliente no puede suplantar al gateway: descartamos cualquier
+		// cabecera entrante y fijamos la nuestra con el secreto compartido.
+		req.Header.Set(GatewaySecretHeader, gatewaySecret)
 	}
 
 	// ReverseProxy descarta en silencio los errores de transporte y escribe
@@ -44,6 +53,6 @@ func New(apiURL string) http.Handler {
 
 // Register monta el proxy en el mux de la aplicación bajo el prefijo /api.
 // La eliminación del prefijo ocurre una única vez, dentro de New.
-func Register(mux *http.ServeMux, apiURL string) {
-	mux.Handle("/api/", New(apiURL))
+func Register(mux *http.ServeMux, apiURL, gatewaySecret string) {
+	mux.Handle("/api/", New(apiURL, gatewaySecret))
 }

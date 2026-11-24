@@ -7,6 +7,21 @@ Every story meets INVEST and the 3 Cs: **Card** (as a / I want / so that), **Con
 **Confirmation** (scenarios). Response codes, routes and data structures do not live here: they are defined in the plan
 and the contract of each story.
 
+## Story Status
+
+| ID | Story | Status | Branch | PR |
+|---|---|---|---|---|
+| HU-01 | Sign in | In Review (PR open) | 001-sign-in | #13 |
+| HU-02 | Create shipment | Backlog | - | - |
+| HU-03 | Record update | Backlog | - | - |
+| HU-04 | View traceability | Backlog | - | - |
+| HU-05 | Verify integrity | Backlog | - | - |
+| HU-06 | List by stage | Backlog | - | - |
+| HU-07 | View assigned | Backlog | - | - |
+| HU-08 | Report incident | Backlog | - | - |
+| HU-09 | View count | Backlog | - | - |
+| HU-10 | Download evidence | Backlog | - | - |
+
 ## Business language
 
 | Term | Meaning |

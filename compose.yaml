@@ -47,6 +47,7 @@ services:
     image: hubx-gw:local
     environment:
       API_URL: http://api:8081
+      JWT_SECRET: ${JWT_SECRET:?run make up to generate .env}
       GATEWAY_SECRET: ${GATEWAY_SECRET}
     ports:
       - "127.0.0.1:8080:8080"

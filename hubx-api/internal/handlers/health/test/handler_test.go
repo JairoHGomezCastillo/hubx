@@ -1,8 +1,10 @@
-package health
+package test
 
 import (
 	"net/http/httptest"
 	"testing"
+
+	"hubx-api/internal/handlers/health"
 )
 
 const wantJSON = `{"status":"ok","service":"hubx-api"}`
@@ -33,7 +35,7 @@ func TestHealthHandler(t *testing.T) {
 			req := httptest.NewRequest(tt.method, "/health", nil)
 			rec := httptest.NewRecorder()
 
-			NewHandler().ServeHTTP(rec, req)
+			health.NewHandler().ServeHTTP(rec, req)
 
 			if rec.Code != tt.wantStatus {
 				t.Errorf("status = %d, want %d", rec.Code, tt.wantStatus)
