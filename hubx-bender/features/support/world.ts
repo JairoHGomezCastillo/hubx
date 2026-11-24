@@ -12,6 +12,10 @@ export class HubxWorld extends World {
   page?: Page;
   response?: APIResponse;
   token?: string;
+  
+  // HU-01 scenario state
+  role?: string;
+  email?: string;
 
   constructor(options: IWorldOptions) {
     super(options);
