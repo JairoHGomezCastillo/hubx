@@ -131,7 +131,7 @@ As HUBX, I want only operators to create shipments, so that the permission matri
 ## Success Criteria
 
 - **SC-001**: An operator creates a valid shipment and sees its code and the stage "Created" in a single step.
-- **SC-002**: Every scenario of HU-02 (5 scenarios, 13 examples) passes against the full stack, plus one browser happy
+- **SC-002**: Every scenario of HU-02 (5 scenarios, 12 examples) passes against the full stack, plus one browser happy
   path.
 - **SC-003**: No invalid or unauthorized request leaves a shipment behind.
 - **SC-004**: Two shipments never share a code.

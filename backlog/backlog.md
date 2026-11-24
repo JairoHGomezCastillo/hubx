@@ -12,7 +12,7 @@ and the contract of each story.
 | ID | Story | Status | Branch | PR |
 |---|---|---|---|---|
 | HU-01 | Sign in | In Review (PR open) | 001-sign-in | #13 |
-| HU-02 | Create shipment | Backlog | - | - |
+| HU-02 | Create shipment | Implemented, PR pending (release v0.3.0 branch missing) | 002-create-shipment | - |
 | HU-03 | Record update | Backlog | - | - |
 | HU-04 | View traceability | Backlog | - | - |
 | HU-05 | Verify integrity | Backlog | - | - |
