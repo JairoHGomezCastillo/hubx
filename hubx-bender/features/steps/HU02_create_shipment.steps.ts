@@ -307,15 +307,19 @@ Then(
   },
 );
 
-Then('the shipment is not created', function (this: HubxWorld) {
+Then('the shipment is not created', async function (this: HubxWorld) {
   // Not 201 and no code in body
   expect(this.response?.status()).not.toBe(201);
+  const body = await this.response?.json();
+  expect(body.code).toBeUndefined();
 });
 
 Then(
   'they are told that the origin and the destination must be different',
   async function (this: HubxWorld) {
+    expect(this.response?.status()).toBe(400);
     const body = await this.response?.json();
+    expect(body.error).toBe('SAME_ORIGIN_DESTINATION');
     expect(body.message).toBe('The origin and the destination must be different');
   },
 );
@@ -323,7 +327,9 @@ Then(
 Then(
   'they are told that the weight must be between {float} and {int} kg',
   async function (this: HubxWorld, _min: number, _max: number) {
+    expect(this.response?.status()).toBe(400);
     const body = await this.response?.json();
+    expect(body.error).toBe('WEIGHT_OUT_OF_RANGE');
     expect(body.message).toBe('The weight must be between 0.1 and 5000 kg');
   },
 );
@@ -331,7 +337,9 @@ Then(
 Then(
   'they are told that the customer indicated does not exist',
   async function (this: HubxWorld) {
+    expect(this.response?.status()).toBe(422);
     const body = await this.response?.json();
+    expect(body.error).toBe('CUSTOMER_NOT_FOUND');
     expect(body.message).toBe('The customer indicated does not exist');
   },
 );
@@ -339,13 +347,17 @@ Then(
 Then(
   'they are told that the customer indicated does not have the customer role',
   async function (this: HubxWorld) {
+    expect(this.response?.status()).toBe(422);
     const body = await this.response?.json();
+    expect(body.error).toBe('CUSTOMER_NOT_CUSTOMER_ROLE');
     expect(body.message).toBe('The customer indicated does not have the customer role');
   },
 );
 
 Then('they are told that required data is missing', async function (this: HubxWorld) {
+  expect(this.response?.status()).toBe(400);
   const body = await this.response?.json();
+  expect(body.error).toBe('MISSING_REQUIRED_FIELDS');
   expect(body.message).toBe('Required data is missing');
 });
 
