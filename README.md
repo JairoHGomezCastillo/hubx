@@ -135,7 +135,9 @@ Model per agent and tool (`default`: the model you pick in opencode; opencode mo
 
 ### How the lead runs a story
 
-1. **Diagnose** the repo (existing migrations, schema values, contracts) and start clean from the integration branch the human chose.
+1. **Inputs:** the story and its release branch, both mandatory ("Work HU-04 in `release/v0.4.0-ledger`"). If the
+   release does not exist, the lead creates it from `main` after you confirm. **Diagnose** the repo (existing
+   migrations, schema values, contracts) and start clean.
 2. **specify**: the number comes from the backlog (HU-02 -> `specs/002-create-shipment`, branch `002-create-shipment`);
    the spec has WHAT and WHY only, no technology.
 3. **clarify**: at most 3 questions per round; business rules are decided by the human (e.g. HU-02 Q2, the weight
