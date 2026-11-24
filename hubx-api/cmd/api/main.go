@@ -14,7 +14,7 @@ import (
 
 	"hubx-api/internal/config"
 	"hubx-api/internal/handlers/auth"
-	"hubx-api/internal/health"
+	"hubx-api/internal/handlers/health"
 )
 
 // port lee el puerto desde el entorno con un valor por defecto seguro.

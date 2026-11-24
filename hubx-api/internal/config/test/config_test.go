@@ -1,9 +1,11 @@
-package config
+package test
 
 import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"hubx-api/internal/config"
 )
 
 // envLookup adapts a map to the getenv function injected into Load.
@@ -106,7 +108,7 @@ func TestLoad(t *testing.T) {
 				writeProperties(t, dir, name, content)
 			}
 
-			cfg, err := Load(dir, envLookup(tt.env))
+			cfg, err := config.Load(dir, envLookup(tt.env))
 
 			if tt.wantErr {
 				if err == nil {
