@@ -182,6 +182,9 @@
   the limit now separates credentials (human only) from triggering the staging CD (devops, no confirmation), 2026-11-24.
 - Demo mode: the deploy validation (lead step 6d, ~10-12 min on the free tier) is skipped only when the human asks for it
   in the request ("sin validación de despliegue"); recorded in pr.md; staging still validates on merge.
+- Backlog Story Status went stale (HU-01 still "In review" after v0.2.0): the lead wrote it before the PR and merges
+  happen outside its flow. Fixed 2026-11-24: the lead reconciles every row with merged PRs and release tags at the start
+  of each story (step 1) and commits it with that story's spec.
 ## Pending
 - Move production to image-backed services and call deploy.yml (environment `production`) from release.yml after
   tagging; then delete deploy/render.yaml's repo-built services (owner A, after the 2026-11-24 delivery).

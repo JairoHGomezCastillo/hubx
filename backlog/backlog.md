@@ -9,13 +9,16 @@ and the contract of each story.
 
 ## Story Status
 
+Reconciled with GitHub (merged PRs and release tags) by hubx-lead at the start of every story. Statuses: `Backlog`,
+`In progress`, `In review (PR #n)`, `Done in <release branch> (PR #n)`, `Released vX.Y.Z`.
+
 | ID | Story | Status | Branch | PR |
 |---|---|---|---|---|
-| HU-01 | Sign in | In Review (PR open) | 001-sign-in | #13 |
-| HU-02 | Create shipment | Implemented, PR pending (release v0.3.0 branch missing) | 002-create-shipment | - |
-| HU-03 | Record update | In Review (PR open) | 003-record-update-sync | #23 |
-| HU-04 | View traceability | Implemented, PR pending (release/v0.4.0-ledger) | 004-view-traceability | - |
-| HU-05 | Verify integrity | In Review (PR open) | 005-verify-integrity | #33 |
+| HU-01 | Sign in | Released v0.2.0 | 001-sign-in | #13 |
+| HU-02 | Create shipment | Released v0.3.0 | 002-create-shipment | #19 |
+| HU-03 | Record update | Released v0.3.3; scenarios fixed in release/v0.4.0-ledger | 003-record-update-sync, 003-record-update-fix | #23, #27 |
+| HU-04 | View traceability | Done in release/v0.4.0-ledger, ships with v0.4.0 (PR #36) | 004-view-traceability | #30 |
+| HU-05 | Verify integrity | Done in release/v0.4.0-ledger, ships with v0.4.0 (PR #36) | 005-verify-integrity | #33 |
 | HU-06 | List by stage | Backlog | - | - |
 | HU-07 | View assigned | Backlog | - | - |
 | HU-08 | Report incident | Backlog | - | - |

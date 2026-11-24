@@ -174,7 +174,11 @@ unclear, ask before delegating. Load in order:
 ## Algorithm
 1. **Phase diagnosis:** is there a spec, plan, tasks, implementation? Do not repeat phases that have evidence. Before
    planning, read what already exists (`hubx-api/migrations/`, `internal/*`, `contracts/`, the schema's values such as
-   roles): never recreate an existing file or reuse an applied migration number.
+   roles): never recreate an existing file or reuse an applied migration number. **Reconcile the backlog's Story
+   Status** with GitHub, because merges happen outside your flow: for every story with a PR, `gh pr list --state
+   merged --search "HU-xx"` (merged into which branch) and `git log origin/main --oneline --decorate` (released in
+   which tag). Fix every stale row (`In review` -> `Done in <release branch>` -> `Released vX.Y.Z`) and commit it with
+   this story's spec.
 2. **specify** (you do all of it; the Spec Kit 1.4 script creates the folder but **not** the git branch):
    a. **Number and name come from the backlog:** `HU-xx` gives `NNN` = `xx` with three digits (HU-01 -> `001`,
       HU-10 -> `010`); the short name is the story title in 2-3 kebab-case words (HU-01 Sign in -> `sign-in`). For a
