@@ -1,6 +1,6 @@
 ---
 name: review-story
-description: Revisión independiente de un PR de historia de HUBX antes de aprobarlo. Ejecuta scripts/review-story.sh (destino, CI, zonas de agentes, spec sin tecnología, Gherkin literal del backlog, sin escenarios inventados, @e2e, independencia de las semillas, estructura Go, mocks, tidy, pruebas, seguridad y la suite dos veces sobre la misma base) y añade los juicios que una máquina no puede hacer. Termina con un veredicto y el prompt de corrección para el lead. Úsalo cuando el usuario pida "revisa el PR", "revisa la historia" o invoque /review-story.
+description: Revisión independiente de un PR de historia de HUBX antes de aprobarlo. Ejecuta scripts/review-story.sh (destino, CI, zonas de agentes, spec sin tecnología, Gherkin literal del backlog, sin escenarios inventados, @e2e, independencia de las semillas, estructura Go, mocks, tidy, pruebas, seguridad y la suite dos veces sobre la misma base) y añade los juicios que una máquina no puede hacer. Termina con un veredicto, el prompt de corrección para el lead y publica la revisión en el PR (un comentario de resumen que se actualiza en cada re-revisión, más comentarios en línea). Úsalo cuando el usuario pida "revisa el PR", "revisa la historia" o invoque /review-story.
 argument-hint: "<número de PR> [--fast]"
 ---
 
