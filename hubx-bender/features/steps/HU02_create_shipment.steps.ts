@@ -3,8 +3,6 @@ import { expect } from '@playwright/test';
 import type { HubxWorld } from '../support/world.ts';
 
 // Demo users (from migration 0001_baseline_schema.sql)
-const DEMO_PASSWORD = 'Hubx-Demo-2026';
-
 const USERS = {
   operator: 'operator@hubx.co',
   'ground partner': 'rapido@hubx.co',
@@ -36,36 +34,11 @@ declare module '../support/world.ts' {
 
 // ========== GIVEN STEPS ==========
 
-Given('an operator has signed in', async function (this: HubxWorld) {
-  if (this.page) {
-    // E2E: sign in through the browser
-    await this.ui.goto('/sign-in');
-    await this.ui.getByLabel(/email/i).fill(USERS.operator);
-    await this.ui.getByLabel(/password/i).fill(DEMO_PASSWORD);
-    await this.ui.getByRole('button', { name: /sign in/i }).click();
-    await expect(this.ui).toHaveURL(/\/dashboard$/);
-  } else {
-    // API: get a token
-    this.response = await this.api.post('/api/auth/sign-in', {
-      data: { email: USERS.operator, password: DEMO_PASSWORD },
-    });
-    const body = await this.response.json();
-    this.token = body.token;
-  }
-});
+// "an operator has signed in" and "a {role} has signed in" are defined once in
+// common.steps.ts so HU-02 and HU-03 share a single non-ambiguous definition.
 
-Given('a {role} has signed in', async function (this: HubxWorld, role: string) {
-  const email = USERS[role as keyof typeof USERS];
-  this.response = await this.api.post('/api/auth/sign-in', {
-    data: { email, password: DEMO_PASSWORD },
-  });
-  const body = await this.response.json();
-  this.token = body.token;
-});
-
-Given('the customer {string} is registered', function (this: HubxWorld, customerName: string) {
-  // Demo customer is preloaded; nothing to do
-});
+// "the customer ... is registered" is defined once in common.steps.ts (shared
+// with HU-03), so HU-02 and HU-03 do not register an ambiguous step.
 
 Given('a shipment already exists on flight {string}', async function (this: HubxWorld, flight: string) {
   // Create a shipment on the specified flight
