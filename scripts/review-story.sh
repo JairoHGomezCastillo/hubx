@@ -82,6 +82,12 @@ if [ -n "$nnn" ]; then
     dir=$(dirname "$spec")
     for f in plan.md tasks.md qa-report.md pr.md; do [ -f "$dir/$f" ] || add FAIL "SDD artifacts" "missing $dir/$f"; done
     grep -q -i 'verdict' "$dir/qa-report.md" 2>/dev/null && add PASS "QA report" "$dir/qa-report.md has a verdict (claims: reviewer)"
+    if [ -f "$dir/deploy.md" ]; then
+      grep -qE '[0-9]+ scenarios \([0-9]+ passed\)' "$dir/deploy.md" && add PASS "Deploy validation" "$dir/deploy.md has a green staging smoke" \
+        || add WARN "Deploy validation" "$dir/deploy.md has no green smoke result"
+    else
+      add WARN "Deploy validation" "no $dir/deploy.md (devops validates the story deployed to staging before the PR)"
+    fi
   fi
 fi
 

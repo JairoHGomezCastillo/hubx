@@ -67,7 +67,11 @@
           "npm --prefix hubx-mfe run build*",
           "curl -s*",
           "git status*",
-          "git diff*"
+          "git diff*",
+          "gh workflow run deploy.yml -f environment=staging *",
+          "gh run list*",
+          "gh run watch*",
+          "gh run view*"
         ],
         "effect": "allow"
       },
@@ -85,7 +89,18 @@
           "npm --prefix hubx-mfe run build*",
           "curl -s*",
           "git status*",
-          "git diff*"
+          "git diff*",
+          "gh workflow run deploy.yml -f environment=staging *",
+          "gh run list*",
+          "gh run watch*",
+          "gh run view*"
+        ],
+        "effect": "deny"
+      },
+      {
+        "capability": "shell",
+        "match": [
+          "gh workflow run deploy.yml*production*"
         ],
         "effect": "deny"
       }

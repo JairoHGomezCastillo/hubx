@@ -210,7 +210,11 @@ unclear, ask before delegating. Load in order:
    Delegation is the norm: each subagent writes and runs its own work with its own permissions. If a subagent returns
    `blocked` because of permissions, stop and report it to the user with the exact denied action; never do the
    subagent's work yourself and never commit it under the subagent's tag.
-   d. `devops`: CI, startup and deployment.
+   d. **Deploy validation** (after a green verify): push the story branch (`git push -u origin NNN-name`; the push
+      builds its images), then delegate to `devops` with `phase: deploy`: it deploys that branch to staging through
+      the CD, waits for the run and writes `specs/NNN-name/deploy.md` with the evidence. A failed deploy or smoke goes
+      back as `fix` to the right agent, like a QA finding. Include the deploy evidence in `pr.md`. Infrastructure
+      changes (CI, compose, Dockerfiles) also go to `devops` in this step.
 7. **Before and after each subagent:**
    a. Before delegating, take a snapshot: `git status --short` and `git diff --stat`.
    b. After delivery, require the output JSON (`status`, `summary`, `evidence`, `blockers` are mandatory) and repeat both commands.
