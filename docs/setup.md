@@ -1,7 +1,7 @@
 # Puesta en marcha de HUBX (macOS, con notas para Windows)
 
 Cómo dejar una máquina lista para trabajar en HUBX y en qué estado está la base del proyecto. Es la sección 3 de
-la guía del equipo hecha paso a paso y comprobada. Cada release es una rama `release/vX.Y.Z` que sale de `main`; solo hay una abierta a la vez y las historias van a ella (la primera, `release/sdd-hubx-system`, es la v0.1.0). La guía la
+la guía del equipo hecha paso a paso y comprobada. Las historias van a una rama de integración que elige quien la trabaja (hoy `release/vX.Y.Z`, que sale de `main`; la primera, `release/sdd-hubx-system`, es la v0.1.0). La guía la
 llama `release/v1`.
 
 ## 1. Herramientas
@@ -59,7 +59,7 @@ gh --version | head -1; gosec -version; govulncheck -version; opencode --version
 
 ```bash
 git clone https://github.com/JairoHGomezCastillo/hubx.git && cd hubx
-git switch $(git branch -r --list 'origin/release/*' | sed 's#origin/##')   # la release abierta
+git switch <rama de integración>   # la de tu historia (hoy release/*)
 gh auth login --hostname github.com --git-protocol https --web
 npm --prefix hubx-bender ci && npm --prefix hubx-bender run browsers
 npm --prefix hubx-mfe ci

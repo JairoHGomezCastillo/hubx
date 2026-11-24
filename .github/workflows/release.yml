@@ -48,16 +48,26 @@ jobs:
             ${previous:+--notes-start-tag "$previous"}
           echo "Released $VERSION from PR #$PR_NUMBER ($HEAD_REF)" >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Sync a hotfix into the open release branch
+      - name: Sync a hotfix into every open integration branch
         if: startsWith(github.head_ref, 'hotfix/')
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
-          mapfile -t open < <(git ls-remote --heads origin 'release/*' | sed 's#.*refs/heads/##')
-          if [ "${#open[@]}" -ne 1 ]; then
-            echo "::warning::${#open[@]} open release branches; sync the hotfix by hand"
+          # Integration branches have no fixed name: they are the bases of open PRs (other than main) plus any
+          # release/* still open. Each gets one sync PR from main, unless one is already open.
+          mapfile -t targets < <( { gh pr list --state open --json baseRefName --jq '.[].baseRefName';
+                                    git ls-remote --heads origin 'release/*' | sed 's#.*refs/heads/##'; } \
+                                  | grep -vx main | sort -u )
+          if [ "${#targets[@]}" -eq 0 ]; then
+            echo "No open integration branch; nothing to sync." >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
-          gh pr create --base "${open[0]}" --head main \
-            --title "chore(release): 🔀 sync hotfix $VERSION into ${open[0]}" \
-            --body "Hotfix $VERSION was merged into main (PR #$PR_NUMBER). This PR brings it into the open release so the next version keeps the fix."
+          for base in "${targets[@]}"; do
+            git ls-remote --exit-code --heads origin "$base" >/dev/null || continue
+            if [ -n "$(gh pr list --state open --base "$base" --head main --json number --jq '.[].number')" ]; then
+              continue
+            fi
+            gh pr create --base "$base" --head main \
+              --title "chore(release): 🔀 sync hotfix $VERSION into $base" \
+              --body "Hotfix $VERSION was merged into main (PR #$PR_NUMBER). This PR brings it into $base so the next version keeps the fix."
+          done

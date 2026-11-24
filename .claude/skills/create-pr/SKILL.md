@@ -24,7 +24,7 @@ Si no hay sesión, pide al usuario que ejecute `! "<ruta de gh>" auth login --ho
 - Si no, pregunta con **una sola** llamada a AskUserQuestion con dos preguntas:
   - Origen: opciones = rama actual (recomendada) y las ramas remotas más recientes
     (`git for-each-ref --sort=-committerdate --format='%(refname:short)' refs/remotes/origin | head`).
-  - Destino: opciones = la release abierta del repo si está documentada (en HUBX, la única `release/*`: `git branch -r --list 'origin/release/*'`; ver
+  - Destino: opciones = la rama release que indique el usuario (en HUBX, `release/vX.Y.Z[-nombre]`, dato obligatorio de cada historia; ver
     `memory.md`), la rama por defecto (`"$GH" repo view --json defaultBranchRef -q .defaultBranchRef.name`) y `main`.
 - No hagas más preguntas: título y descripción se generan sin pedir confirmación.
 

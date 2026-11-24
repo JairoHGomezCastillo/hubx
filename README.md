@@ -30,7 +30,7 @@ problems and demo users: [`docs/setup.md`](docs/setup.md).
 
 ```bash
 git clone https://github.com/JairoHGomezCastillo/hubx.git && cd hubx
-git switch $(git branch -r --list 'origin/release/*' | sed 's#origin/##')   # the open release
+git switch <integration branch>   # the branch your story goes into (today release/*)
 npm --prefix hubx-bender ci && npm --prefix hubx-mfe ci
 
 make up                                   # PostgreSQL, migrations, API and gateway
@@ -86,7 +86,7 @@ runs `gosec` and `govulncheck`, and then runs `make test-integration` on a clean
 Authority order: constitution > `AGENTS.md` > service `AGENTS.md` > `memory.md`.
 
 Per story: `specify -> clarify -> plan -> tasks -> implement -> analyze -> pr`, on its own branch `NNN-name`. The story
-ends with a PR to the open release branch (`release/vX.Y.Z`; merged into `main`, tagged and deleted when ready): `hubx-lead` commits, pushes the story branch and opens the PR with
+ends with a PR to its integration branch (any branch you choose other than `main`; today `release/vX.Y.Z`, merged into `main`, tagged and deleted when ready): `hubx-lead` commits, pushes the story branch and opens the PR with
 `specs/NNN-name/pr.md` as body; you review and merge (agents never merge); the branch is deleted automatically on merge. `main` receives the release by PR for deployment. Commits are one
 per agent delivery, tagged `[agent:role] HU-xx summary`.
 
@@ -135,7 +135,9 @@ Model per agent and tool (`default`: the model you pick in opencode; opencode mo
 
 ### How the lead runs a story
 
-1. **Diagnose** the repo (existing migrations, schema values, contracts) and start clean from the open release branch.
+1. **Inputs:** the story and its release branch, both mandatory ("Work HU-04 in `release/v0.4.0-ledger`"). If the
+   release does not exist, the lead creates it from `main` after you confirm. **Diagnose** the repo (existing
+   migrations, schema values, contracts) and start clean.
 2. **specify**: the number comes from the backlog (HU-02 -> `specs/002-create-shipment`, branch `002-create-shipment`);
    the spec has WHAT and WHY only, no technology.
 3. **clarify**: at most 3 questions per round; business rules are decided by the human (e.g. HU-02 Q2, the weight
@@ -147,7 +149,7 @@ Model per agent and tool (`default`: the model you pick in opencode; opencode mo
    govulncheck, OWASP table in `qa-report.md`) and findings go back as `fix`.
 6. **analyze**: deviations between spec, plan, tasks and code are recorded in `tasks.md`.
 7. **pr**: one commit per accepted delivery tagged `[agent:<role>]`, `pr.md` with literal evidence, push of the story
-   branch and a PR to the open release. A human reviews, approves and merges; no agent merges.
+   branch and a PR to that integration branch. A human reviews, approves and merges; no agent merges.
 
 ### How the agents were tested and kept honest
 

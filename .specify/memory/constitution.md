@@ -122,8 +122,18 @@ The branching model MUST follow this flow: a release branch is created from mast
 into that release branch; the release branch MUST be merged into master; hotfixes MUST originate from master and be
 merged into master. Every release or hotfix merged into master is tagged `vX.Y.Z` (from its branch name,
 `release/vX.Y.Z[-name]` or `hotfix/vX.Y.Z`) with a GitHub Release, automatically by CI; a hotfix is then merged
-into the open release branch so the next version keeps it. Released versions are not patched afterwards (no
-backports): a fix ships as a new version. The per-story branch created by Spec Kit is the feature branch of this flow. Configuration MUST
+into every open integration branch so the next version keeps it. Released versions are not patched afterwards (no
+backports): a fix ships as a new version. The per-story branch created by Spec Kit is the feature branch of this flow.
+An integration branch is any base of a story PR other than master; its name is free (today `release/*`), and agents
+and workflows MUST NOT depend on it: the story's integration branch is the one the human chooses. A story request
+MUST name its release branch (`release/vX.Y.Z[-name]`); if it does not exist yet, hubx-lead creates it from master,
+with the human's confirmation, and never pushes to an existing one.
+
+**Environments.** CI builds the container images of every commit once (`ghcr.io/<owner>/hubx-<service>:<sha>`);
+environments deploy images, never branches, so the image tested in staging is the one promoted to production.
+Staging receives every PR merged into an integration branch, and any ref on demand; production receives what is
+tagged on master. Every deployment runs the migrations first and a smoke test after, and fails visibly if either
+fails. Configuration MUST
 differ by environment using the `application.properties` mechanism defined in Principle III.
 
 ## Governance
@@ -140,9 +150,14 @@ refinements.
 
 ALL PRs and reviews MUST verify compliance with this constitution. Any added complexity MUST be explicitly justified.
 
-**Version**: 1.4.1 | **Ratified**: 2026-11-17 | **Last Amended**: 2026-11-24
+**Version**: 1.5.0 | **Ratified**: 2026-11-17 | **Last Amended**: 2026-11-24
 
-<!-- Sync Impact Report (1.4.0 -> 1.4.1, PATCH): Development Process clarifies the branching flow already in force:
+<!-- Sync Impact Report (1.4.1 -> 1.5.0, MINOR): Development Process: integration branches have no fixed name (any
+base of a story PR other than master, chosen by the human); hotfixes sync into every open one; new Environments
+paragraph (build once, deploy images, staging on merge or on demand, production from tags, migrations + smoke on every
+deploy). Proposal: human decision 2026-11-24. Migration: hubx-lead, agents and CI workflows, check-agent-zones default
+base, AGENTS.md, README, setup, team guide, memory.md and create-pr skill; staging and image workflows in v0.3.3.
+(1.4.0 -> 1.4.1, PATCH): Development Process clarifies the branching flow already in force:
 automatic vX.Y.Z tag and GitHub Release on every release/hotfix merged into main (.github/workflows/release.yml),
 hotfix synced into the open release by PR, no backports. Proposal: human decision 2026-11-24. Migration: workflow,
 scripts/release-version.sh, memory.md, AGENTS.md and team guide in the same PR.

@@ -1,4 +1,5 @@
 # Regression smoke of the platform (not a backlog story).
+@smoke
 Feature: Platform health
   The gateway answers, proxies /api to the API, and the web app loads through it.
 

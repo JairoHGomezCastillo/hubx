@@ -4,7 +4,7 @@
 // Zones come from the same rules the tools use: .kiro/agents/<role>.json (sub-agents) and
 // scripts/agents/hubx-lead.kiro.json (the lead's own rules). Untagged commits (humans, tooling) are not checked.
 // Known historical exceptions, with their reason: scripts/agent-zones-exceptions.txt.
-// Usage: node scripts/check-agent-zones.mjs [base-ref]   (default: the only open origin/release/*; checks base..HEAD)
+// Usage: node scripts/check-agent-zones.mjs [base-ref]   (default origin/main; checks base..HEAD)
 import { execFileSync } from "node:child_process";
 import { readFileSync, existsSync } from "node:fs";
 import path from "node:path";
@@ -12,19 +12,8 @@ import { fileURLToPath } from "node:url";
 import { LEAD, LEAD_SOURCE, SUBAGENTS } from "./kiro-delegation.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-// Default base: the current release branch (exactly one origin/release/* is open at a time).
-function currentRelease() {
-  const branches = execFileSync("git", ["branch", "-r", "--list", "origin/release/*", "--format=%(refname:short)"], {
-    cwd: root,
-    encoding: "utf8",
-  }).split("\n").filter(Boolean);
-  if (branches.length !== 1) {
-    console.error(`expected exactly one origin/release/* branch, found ${branches.length}: pass the base ref explicitly`);
-    process.exit(2);
-  }
-  return branches[0];
-}
-const base = process.argv[2] || currentRelease();
+// Default base: main, the only branch with a fixed name. CI passes the PR base (any integration branch).
+const base = process.argv[2] || "origin/main";
 
 // Same glob semantics as scripts/agent-guard.mjs for paths: `**` crosses directories, `*` stays in one segment.
 function globToRegExp(glob) {

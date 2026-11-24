@@ -26,7 +26,7 @@ Traffic: `MFE -> gateway (/api/*, StripPrefix) -> API -> PostgreSQL`. The MFE ne
 
 ## 3. Workflow (SDD with Spec Kit)
 `specify -> clarify -> plan -> tasks -> implement -> analyze -> pr`, artifacts in `specs/NNN-name/`. The final
-artifact is a PR to the current release branch (`release/vX.Y.Z`, the only open `release/*`) whose body is `specs/NNN-name/pr.md` (`hubx-lead` pushes the story branch
+artifact is a PR to the story's release branch, a mandatory input of every story request (`release/vX.Y.Z[-name]`; `hubx-lead` creates it from `main` if new, after your confirmation) whose body is `specs/NNN-name/pr.md` (`hubx-lead` pushes the story branch
 and opens it; a human reviews and merges). Each spec opens with `Source: backlog HU-xx` or `Source: user description`. Implement order: qa-seguridad `red` -> backend-go and
 frontend-react in parallel -> qa-seguridad `verify` -> devops. TDD is mandatory.
 

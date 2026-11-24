@@ -3,6 +3,7 @@ Feature: Sign in
   I want to sign in with my email and my password,
   so that I can access the functions that correspond to my role.
 
+  @smoke
   Scenario Outline: Each role signs in
     Given a user with the role of <role> is registered in HUBX
     When that user signs in with their correct email and password
@@ -24,6 +25,7 @@ Feature: Sign in
     When the customer signs in typing " ANA@hubx.co " and their correct password
     Then the customer accesses HUBX with the functions of their role
 
+  @smoke
   Scenario: Wrong password
     Given a customer is registered in HUBX
     When the customer tries to sign in with an incorrect password
@@ -42,6 +44,8 @@ Feature: Sign in
     Then they are asked to complete the missing data
     And they do not access HUBX
 
+  # Forges an expired token with the environment's JWT_SECRET, which never leaves the deployed environment.
+  @needs-secret
   Scenario: Expired session
     Given an operator signed in more than one hour ago
     When the operator tries to view a shipment
