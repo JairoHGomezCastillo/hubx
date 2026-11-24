@@ -7,9 +7,10 @@ import { AuthProvider } from './contexts/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { SignIn } from './pages/SignIn';
 import { Dashboard } from './pages/Dashboard';
+import { CreateShipment } from './pages/CreateShipment';
 import { navigateTo } from './services/navigation';
 
-type Route = 'sign-in' | 'dashboard' | 'home';
+type Route = 'sign-in' | 'dashboard' | 'home' | 'create-shipment';
 
 function App() {
   const [route, setRoute] = useState<Route>('home');
@@ -22,6 +23,8 @@ function App() {
         setRoute('sign-in');
       } else if (path === '/dashboard') {
         setRoute('dashboard');
+      } else if (path === '/shipments/new') {
+        setRoute('create-shipment');
       } else {
         setRoute('home');
       }
@@ -40,6 +43,11 @@ function App() {
       {route === 'dashboard' && (
         <ProtectedRoute>
           <Dashboard />
+        </ProtectedRoute>
+      )}
+      {route === 'create-shipment' && (
+        <ProtectedRoute>
+          <CreateShipment />
         </ProtectedRoute>
       )}
       {route === 'home' && (
