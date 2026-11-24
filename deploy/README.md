@@ -92,4 +92,17 @@ curl -s https://<hubx-gw-url>.onrender.com/api/health | jq .
 
 ## Smoke
 
-(Results after first deploy and URL configuration)
+2026-11-24, release v0.3.0. Run from a laptop against the public URLs.
+
+| Check | Result |
+|---|---|
+| `GET https://hubx-gw.onrender.com/health` | 200 `{"service":"hubx-gw","status":"ok"}` |
+| `GET https://hubx-gw.onrender.com/api/health` | 200 `{"status":"ok","service":"hubx-api"}` |
+| `GET https://hubx-api.onrender.com/health` (direct, no gateway secret) | 401 `Request must come through the gateway` |
+| `GET https://hubx-mfe.onrender.com/` | 200 (the app) |
+| `POST https://hubx-mfe.onrender.com/api/auth/sign-in` as `operator@hubx.co` | 200 with a token and role `operator` |
+| Same with a wrong password | 401 `INVALID_CREDENTIALS` (generic message) |
+| Cucumber with `BENDER_BASE_URL` / `BENDER_UI_URL` set to the public URLs | 25 scenarios: 24 passed, including the `@e2e` of HU-01 (sign in -> dashboard) and HU-02 (create a shipment) in Chromium |
+
+"Expired session" is not run against production: it forges an expired token with the environment's `JWT_SECRET`,
+which by design never leaves Render. The HU-02 scenarios created test shipments in the Neon database.

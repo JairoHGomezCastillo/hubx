@@ -34,7 +34,9 @@
           "**/specs/**",
           "**/backlog/**",
           "**/contracts/**",
-          "**/memory.md"
+          "**/memory.md",
+          "**/README.md",
+          "**/docs/**"
         ],
         "effect": "deny"
       },
@@ -44,7 +46,9 @@
           "**/specs/**",
           "**/backlog/**",
           "**/contracts/**",
-          "**/memory.md"
+          "**/memory.md",
+          "**/README.md",
+          "**/docs/**"
         ],
         "effect": "allow"
       },
