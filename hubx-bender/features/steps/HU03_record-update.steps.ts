@@ -89,12 +89,14 @@ Given(/^the ground partner "([^"]+)" is registered$/, async function (this: Upda
 When(/^(.+) records the update "([^"]+)"$/, async function (this: UpdateWorld, _actor: string, stage: string) {
   this.lastUpdate = undefined;
   if (this.page) {
-    // @e2e: drive the MFE's Record update form (RecordUpdate.tsx). The contract
-    // says it has labels 'Shipment code', 'Stage', 'Ground partner', button 'Record update'.
-    await this.ui.getByLabel(/shipment code/i).fill(this.shipmentCode!);
-    await this.ui.getByLabel(/stage/i).selectOption({ label: stage });
+    // @e2e: drive the MFE's Record update form (RecordUpdate.tsx). Scope to the
+    // "Record an update" region to avoid strict-mode violation with HU-04's
+    // "View traceability" section (both have a "Shipment code" label).
+    const section = this.ui.getByRole('region', { name: 'Record an update' });
+    await section.getByLabel(/shipment code/i).fill(this.shipmentCode!);
+    await section.getByLabel(/stage/i).selectOption({ label: stage });
     // Ground partner is optional (only for Assigned to partner); leave it empty.
-    await this.ui.getByRole('button', { name: /record update/i }).click();
+    await section.getByRole('button', { name: /record update/i }).click();
     return;
   }
   const response = await postUpdate(this, this.shipmentCode!, stage);
