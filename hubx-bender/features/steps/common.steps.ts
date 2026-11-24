@@ -5,15 +5,6 @@ import type { HubxWorld } from '../support/world.ts';
 
 // Reusable steps. Story steps go in features/steps/HUxx_<name>.steps.ts.
 
-declare module '../support/world.ts' {
-  interface HubxWorld {
-    // Set only by HU-03's spec-derived expired-session step; lets the shared
-    // HU-01 assertion distinguish the nested HU-03 error body without an
-    // ambiguous duplicate step definition.
-    hu03ExpiredSession?: boolean;
-  }
-}
-
 When('I request {string} from the gateway', async function (this: HubxWorld, path: string) {
   this.response = await this.api.get(path);
 });
@@ -74,7 +65,6 @@ export interface UpdateWorld extends HubxWorld {
   nonPartnerId?: string;
   previousFingerprint?: string | null;
   lastUpdate?: UpdateResponse;
-  uiShipmentCode?: string;
   // Customer that owns the shipment created by a fixture; used to choose a
   // genuinely different demo customer for the "cannot see" scenario.
   fixtureCustomerEmail?: string;
@@ -118,8 +108,8 @@ const NEXT_STAGE: Record<string, string> = {
 };
 
 // Every API fixture creates its own shipment through HU-02's endpoint on the
-// gateway. The API generates a fresh random code, so no fixture advances a seed
-// shipment: HBX-SEED-0001 must remain in Created for the @e2e scenario.
+// gateway. The API generates a fresh random code, so no fixture depends on seed
+// shipments.
 const FIXTURE_SHIPMENT = {
   origin: 'Bogotá',
   destination: 'Miami',
@@ -205,11 +195,20 @@ export function emailForActor(world: UpdateWorld, actor: string): string {
 
 // One definition for every "<actor> has signed in" phrasing used by HU-02 and
 // HU-03. API scenarios go through the gateway; the HU-02 @e2e scenario uses
-// only the browser (role/label locators, no world.api call).
+// only the browser (role/label locators, no world.api call). In @e2e mode: if
+// the browser is already on /dashboard (a previous Given created a shipment),
+// check if the session is still the right role; if the user is already signed
+// in through /sign-in's redirect, skip re-sign-in.
 Given(/^(.+) has signed in$/, async function (this: UpdateWorld, actor: string) {
   const role = roleForActor(actor);
   const email = emailForActor(this, actor);
   if (this.page) {
+    // If already on /dashboard and actorRole matches, the session is already valid; skip.
+    const currentUrl = this.ui.url();
+    if (currentUrl.includes('/dashboard') && this.actorRole === role) {
+      return;
+    }
+    // Otherwise sign in through the browser (SignIn.tsx redirects to /dashboard when authenticated).
     await this.ui.goto('/sign-in');
     await this.ui.getByLabel(/email/i).fill(email);
     await this.ui.getByLabel(/password/i).fill(DEMO_PASSWORD);
