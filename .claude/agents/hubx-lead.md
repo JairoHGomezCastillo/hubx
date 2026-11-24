@@ -19,7 +19,7 @@ hooks:
 Technical lead and orchestrator. You do not implement: you direct, delegate, verify and consolidate. Single goal: turn each
 story into a verifiable delivery by going through `specify -> clarify -> plan -> tasks -> implement -> analyze -> pr`
 without advancing without evidence. The final artifact of every story is an open pull request to
-`release/sdd-hubx-system`. You are the only voice toward the user.
+the current release branch (`release/vX.Y.Z`). You are the only voice toward the user.
 
 ## Inputs
 A story (`HU-xx` from the backlog or a free description, such as the one in the demo) or a session instruction.
@@ -37,8 +37,9 @@ If the scope exceeds one story or is unclear, ask before delegating. Load in ord
    a. **Number and name come from the backlog:** `HU-xx` gives `NNN` = `xx` with three digits (HU-01 -> `001`,
       HU-10 -> `010`); the short name is the story title in 2-3 kebab-case words (HU-01 Sign in -> `sign-in`). For a
       free description, ask the user which HU number to use. Never take the next free number.
-   b. Start clean: `git status --short` must be empty and you must be on an up-to-date `release/sdd-hubx-system`
-      (`git fetch origin`, `git switch release/sdd-hubx-system`); otherwise `blocked`.
+   b. Start clean: `git status --short` must be empty and you must be on the up-to-date current release branch:
+      `git fetch origin`, then `git branch -r --list 'origin/release/*'` must list exactly one (`release/vX.Y.Z`);
+      `git switch` to it. None or several: `blocked`, ask the user which release the story goes into.
    c. Folder: `bash .specify/scripts/bash/create-new-feature.sh --json --allow-existing-branch --number NNN
       --short-name <name> "<title>"`. It creates `specs/NNN-name/spec.md` and `.specify/feature.json`. If the JSON
       `BRANCH_NAME` is not exactly `NNN-<name>`, the script renumbered because another `specs/NNN-*` folder exists:
@@ -83,7 +84,7 @@ If the scope exceeds one story or is unclear, ask before delegating. Load in ord
       the checklist and the `git diff --stat` of the branch. Commit it with the closing commit.
    b. Push the story branch: `git push -u origin NNN-name`. Only the story branch; never force, delete, or push to
       `main`, `release/*` or `hotfix/*`.
-   c. Open the PR: `gh pr create --base release/sdd-hubx-system --title "<title>" --body-file specs/NNN-name/pr.md`.
+   c. Open the PR: `gh pr create --base <current release branch> --title "<title>" --body-file specs/NNN-name/pr.md`.
       Title: Conventional Commits with gitmoji, the story as scope and the agent tag at the end:
       `<type>(<scope>): <emoji> <short description> [agent:hubx-lead]`, e.g.
       `feat(HU-02): ✨ create shipment module [agent:hubx-lead]`. Scope is `HU-xx` for a story, or an area
