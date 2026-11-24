@@ -154,9 +154,13 @@ if ! $fast; then
       set -a; [ -f .env ] && . ./.env; set +a
       for run in 1 2; do
         res=$(cd hubx-bender && npx cucumber-js 2>&1 | grep -E 'scenarios \(' | tail -1)
-        grep -q 'failed\|undefined\|pending' <<<"$res" || [ -z "$res" ] \
-          && { [ -n "$res" ] && add PASS "Acceptance run $run" "$res" || add FAIL "Acceptance run $run" "no result"; } \
-          || add FAIL "Acceptance run $run" "$res$([ $run = 2 ] && echo ' (re-run on the same data: seed or state dependency?)')"
+        if [ -z "$res" ]; then
+          add FAIL "Acceptance run $run" "no result (cucumber did not report scenarios)"
+        elif grep -qE 'failed|undefined|pending|ambiguous' <<<"$res"; then
+          add FAIL "Acceptance run $run" "$res$([ $run = 2 ] && echo ' (re-run on the same data: seed or state dependency?)')"
+        else
+          add PASS "Acceptance run $run" "$res"
+        fi
       done
     fi
   fi
