@@ -127,7 +127,13 @@
 - Render free cold start (2026-11-24): a sleeping hubx-api makes the gateway return Render's HTML 502 for ~10-60 s;
   the smoke must first poll `GET <gw>/api/health` until 200 (up to ~2 min) and only then run Cucumber. Smoke tags:
   `@smoke` (read-only: health, sign-in) for production, `@needs-secret` (Expired session) never runs on deployments.
+- Environments (2026-11-24, constitution 1.5.0): images built once per commit (`images.yml`, GHCR, tag = SHA, plus
+  `main`); `deploy.yml` deploys any ref to a GitHub environment through the Render API (`imageUrl`), with migrations,
+  warm-up and smoke. Staging (`hubx-*-stg`, Neon branch `staging`) gets every PR merged into an integration branch.
+  Transitional: production still uses Render's repo-built autodeploy from `main`, without migrations or smoke in CI.
 ## Pending
+- Move production to image-backed services and call deploy.yml (environment `production`) from release.yml after
+  tagging; then delete deploy/render.yaml's repo-built services (owner A, after the 2026-11-24 delivery).
 - Gateway security headers, CORS and rate limiting (constitution VI) are not implemented in `hubx-gw` yet; HU-02's
   qa-report records it as an open pre-existing finding (API8, corrected 2026-11-24). Needs its own story.
 - hubx-api `main.go` loads `internal/config` but still reads the port from `PORT` directly (works on Render).

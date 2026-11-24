@@ -1,0 +1,50 @@
+name: images
+
+# Build once: every push to any branch builds the three service images and publishes them to GHCR, tagged with the
+# commit SHA (and `main` for the tip of main). Environments deploy these images, never branches (constitution 1.5.0).
+on:
+  push:
+    branches: ["**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: images-${{ github.sha }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: true
+      matrix:
+        service: [api, gw, mfe]
+    steps:
+      - uses: actions/checkout@v7
+      - name: Image name (GHCR requires lowercase)
+        id: name
+        run: |
+          owner="${GITHUB_REPOSITORY_OWNER,,}"
+          echo "image=ghcr.io/$owner/hubx-${{ matrix.service }}" >> "$GITHUB_OUTPUT"
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: ./hubx-${{ matrix.service }}
+          push: true
+          tags: |
+            ${{ steps.name.outputs.image }}:${{ github.sha }}
+            ${{ github.ref == 'refs/heads/main' && format('{0}:main', steps.name.outputs.image) || '' }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          cache-from: type=gha,scope=hubx-${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=hubx-${{ matrix.service }}

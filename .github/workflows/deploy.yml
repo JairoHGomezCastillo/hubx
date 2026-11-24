@@ -1,0 +1,116 @@
+name: deploy
+
+# Deploys the images of one commit to one environment: migrations -> Render (image-backed services) -> warm-up ->
+# smoke. Any ref can go to staging (Actions -> deploy -> Run workflow); deploy-staging.yml calls it for every PR merged
+# into an integration branch. Environment `staging` | `production` holds:
+#   secrets: DB_URL (Neon direct URL), RENDER_API_KEY
+#   vars:    RENDER_SERVICE_API, RENDER_SERVICE_GW, RENDER_SERVICE_MFE (srv-...), GATEWAY_URL, UI_URL
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Target environment
+        type: choice
+        options: [staging, production]
+        default: staging
+      ref:
+        description: Branch, tag or SHA to deploy (its images must exist; they are built on every push)
+        required: true
+        default: main
+  workflow_call:
+    inputs:
+      environment:
+        type: string
+        required: true
+      ref:
+        type: string
+        required: true
+
+permissions:
+  contents: read
+  packages: read
+
+concurrency:
+  group: deploy-${{ inputs.environment }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment:
+      name: ${{ inputs.environment }}
+      url: ${{ vars.UI_URL }}
+    env:
+      RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Resolve the commit and its images
+        id: target
+        run: |
+          sha=$(git rev-parse HEAD)
+          prefix="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/hubx"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "prefix=$prefix" >> "$GITHUB_OUTPUT"
+          echo "Deploying \`$sha\` (${{ inputs.ref }}) to **${{ inputs.environment }}**" >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - name: Wait for the images of this commit
+        run: bash scripts/deploy/wait-images.sh "${{ steps.target.outputs.prefix }}" "${{ steps.target.outputs.sha }}"
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.work
+
+      - name: Migrations
+        env:
+          DB_URL: ${{ secrets.DB_URL }}
+        run: go -C hubx-api run ./cmd/migrate
+
+      - name: Deploy the API, then the gateway and the MFE
+        env:
+          SHA: ${{ steps.target.outputs.sha }}
+          PREFIX: ${{ steps.target.outputs.prefix }}
+        run: |
+          bash scripts/deploy/render-deploy.sh "${{ vars.RENDER_SERVICE_API }}" "$PREFIX-api:$SHA"
+          bash scripts/deploy/render-deploy.sh "${{ vars.RENDER_SERVICE_GW }}" "$PREFIX-gw:$SHA" &
+          bash scripts/deploy/render-deploy.sh "${{ vars.RENDER_SERVICE_MFE }}" "$PREFIX-mfe:$SHA" &
+          wait -n && wait -n
+
+      - name: Warm up (free-tier services sleep)
+        run: bash scripts/deploy/warm-up.sh "${{ vars.GATEWAY_URL }}" "${{ vars.UI_URL }}"
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+
+      - name: Smoke
+        env:
+          BENDER_BASE_URL: ${{ vars.GATEWAY_URL }}
+          BENDER_UI_URL: ${{ vars.UI_URL }}
+          # Production runs only the read-only @smoke scenarios; staging runs the whole suite. @needs-secret never runs.
+          TAGS: ${{ inputs.environment == 'production' && '@smoke and not @needs-secret' || 'not @needs-secret' }}
+        run: |
+          npm --prefix hubx-bender ci --no-audit --no-fund
+          npm --prefix hubx-bender run browsers -- --with-deps
+          cd hubx-bender && npx cucumber-js --tags "$TAGS"
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "| | |"; echo "|---|---|"
+            echo "| Environment | ${{ inputs.environment }} |"
+            echo "| Commit | \`${{ steps.target.outputs.sha }}\` |"
+            echo "| Images | \`${{ steps.target.outputs.prefix }}-{api,gw,mfe}:${{ steps.target.outputs.sha }}\` |"
+            echo "| URL | ${{ vars.UI_URL }} |"
+            echo "| Result | ${{ job.status }} |"
+          } >> "$GITHUB_STEP_SUMMARY"
