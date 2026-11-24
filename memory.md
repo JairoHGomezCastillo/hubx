@@ -66,8 +66,8 @@
   same origin) on http://localhost:3000; `make test-integration` starts it and runs the `@e2e` scenarios in Chromium.
 - HU-02 (2026-11-24): `POST /api/shipments` (`contracts/shipments-create.md`), no migration (reuses `shipments` from
   0001), no update recorded on creation. Code `HBX-` + 8 upper hex from `crypto/rand`, retried on `shipments_code_key`.
-  Weight is a JSON number literal `^[0-9]+(\.[0-9])?$` in [0.1, 5000] (precision from the schema; pending human
-  confirmation). Customer indicated by email. The API's `RequireAuth` now guards its first route. HU-02 ships in
+  Weight is a JSON number literal `^[0-9]+(\.[0-9])?$` in [0.1, 5000]; more than one decimal (0.15) is
+  rejected with the weight-range message (human decision 2026-11-24, Option A; not deduced from the schema). Customer indicated by email. The API's `RequireAuth` now guards its first route. HU-02 ships in
   v0.3.0 (`release/v0.3.0-create-shipment`), not v0.2.0.
 ## Conventions
 - PR title (2026-11-21): `<type>(<scope>): <gitmoji> <short description> [agent:role]`, scope `HU-xx` or an area;

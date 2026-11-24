@@ -88,14 +88,16 @@ As HUBX, I want only operators to create shipments, so that the permission matri
 
 ## Clarifications
 
-### Session 2026-11-24 (resolved by hubx-lead from existing artifacts; confirm in the PR review)
+### Session 2026-11-24 (Q1 and Q3 resolved by hubx-lead from existing artifacts, confirm in the PR review; Q2 decided by a human)
 
 - **Q1: How does the operator indicate the customer?** By the customer's email, as registered in HUBX (the same
   identifier used to sign in; capital letters and extra spaces are ignored, as in HU-01). The confirmation shows the
   customer's name. Choosing from a list of customers is out of scope.
-- **Q2: What precision does the weight have?** Kilograms with at most one decimal; 0.1 kg is both the minimum and the
-  smallest step. Source: the baseline schema stores one decimal; a weight with more decimals is rejected rather than
-  silently rounded, because rounding would record a weight the operator did not enter. **Needs human confirmation.**
+- **Q2: What happens with a weight that has more than one decimal place?** A weight with more than one decimal place
+  (e.g. 0.15 kg) is rejected with the weight error message ('the weight must be between 0.1 and 5000 kg', i.e. the
+  same weight-range rejection). This is a human decision made on 2026-11-24 (Option A); it is NOT deduced from the
+  database column precision. Kilograms therefore have at most one decimal, and 0.1 kg is both the minimum and the
+  smallest step; nothing is rounded.
 - **Q3: Interface language?** English, as in HU-01.
 
 ## Requirements

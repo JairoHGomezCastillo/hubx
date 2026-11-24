@@ -116,6 +116,8 @@ Contrast of spec, plan, tasks, contract and code at the end of implement.
    "ready to merge", which is a human decision.
 7. **Gateway-secret and body-cap checks** were verified by code review in QA, not by an acceptance scenario.
 8. **HU-01 deviation 9 closed**: the API's `RequireAuth` now guards `POST /shipments`.
-9. **Clarification Q2 (weight precision)** was resolved from the schema (`numeric(6,1)`), not by a human: confirm in
-   PR review.
+9. **Clarification Q2 (weight with more than one decimal)**: closed by a human decision on 2026-11-24 (Option A,
+   rejected with the weight-range message), not deduced from the schema. The code already implements it
+   (`service.go` `validWeightRegex` + `ErrWeightOutOfRange`; `service_test.go` "two decimals invalid" `0.15`); no
+   code or test change.
 10. **Spec count corrected**: HU-02 has 12 examples plus 1 `@e2e` (13 HU-02 scenarios run), not 13 examples.
