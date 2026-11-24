@@ -15,7 +15,7 @@ and the contract of each story.
 | HU-02 | Create shipment | Implemented, PR pending (release v0.3.0 branch missing) | 002-create-shipment | - |
 | HU-03 | Record update | In Review (PR open) | 003-record-update-sync | #23 |
 | HU-04 | View traceability | Implemented, PR pending (release/v0.4.0-ledger) | 004-view-traceability | - |
-| HU-05 | Verify integrity | Backlog | - | - |
+| HU-05 | Verify integrity | Implemented, PR pending (release/v0.4.0-ledger) | 005-verify-integrity | - |
 | HU-06 | List by stage | Backlog | - | - |
 | HU-07 | View assigned | Backlog | - | - |
 | HU-08 | Report incident | Backlog | - | - |

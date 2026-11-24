@@ -86,6 +86,17 @@
   `PartyRepository.Parties` (`WHERE id = ANY($1)`): three queries per request. Ships in `release/v0.4.0-ledger`.
   Human decisions: the human generated the gomock files (exception like HU-01); the `@e2e` Given builds the
   3-update shipment through the API (HU-03 precedent); hubx-lead ran the verify commands for qa-seguridad.
+- HU-05 (2026-11-24): `GET /api/shipments/{code}/integrity` (`contracts/hu05-verify-integrity.md`), read-only, no
+  migration, no gateway change. `ledger.Verify` recomputes each update's HU-03 fingerprint and checks the previous
+  link; `shipment.Verifier` reuses HU-03 `canSee`, returning `ErrShipmentNotFound` for unknown and invisible
+  shipments alike (flat 404 `{error, message}`, no final period, unlike HU-04's nested body). Intact reports
+  `updatesChecked` (0 for an empty chain); not intact reports `firstAlteredUpdate` (chain position, only the first).
+  Microsecond fix: PostgreSQL `timestamptz` keeps only microseconds, so the ledger truncates the update instant
+  (`Truncate(time.Microsecond)`) before the fingerprint, or a round-tripped intact chain reads as altered; the HU-03
+  contract was clarified to match (`contracts/hu03-record-update.md`, by the lead). HU-04 and HU-05 share two verbatim
+  backlog Gherkin phrases that became ambiguous under strict mode after the base merge; qa-seguridad moved them to
+  `common.steps.ts` and dispatched the 404 assertion on `response.url()` to honor both contracts. Ships in
+  `release/v0.4.0-ledger`. Staging deploy validated before the PR (deploy.md, run 45493671765, 57/57 smoke).
 ## Conventions
 - PR title (2026-11-21): `<type>(<scope>): <gitmoji> <short description> [agent:role]`, scope `HU-xx` or an area;
   mapping in hubx-lead step 10. Commits keep their own format below.
