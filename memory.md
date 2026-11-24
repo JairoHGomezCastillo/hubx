@@ -6,10 +6,14 @@
 - Configuration via `application.properties` per service (constitution Principle III); stdlib reader, one copy per service.
 - Backlog and all artifacts in English; guide and conversation with the team in Spanish.
 - Branching: release/feature/hotfix; the Spec Kit story branch is the feature branch.
-- Release branches are `release/vX.Y.Z`, cut from `main`; exactly one is open at a time (the current release:
-  `git branch -r --list 'origin/release/*'`). Story PRs target it; when the release is ready it is merged into `main`
-  by PR, tagged `vX.Y.Z` with a GitHub Release, and its branch is deleted automatically; the next release branch is
-  cut from `main`. The first one, `release/sdd-hubx-system`, ships as v0.1.0 (2026-11-24).
+- Release branches are `release/vX.Y.Z[-name]` (e.g. `release/v0.2.0-sign-in`), cut from `main`; exactly one is open
+  at a time (the current release: `git branch -r --list 'origin/release/*'`). Story PRs target it; when the release is
+  ready it is merged into `main` by PR and its branch is deleted automatically; the next one is cut from `main`.
+  `release/sdd-hubx-system` shipped as v0.1.0, the baseline without stories (2026-11-24); HU-01 goes in v0.2.0.
+- Tags are created only by CI (`.github/workflows/release.yml`): merging a `release/vX.Y.Z[-name]` or `hotfix/vX.Y.Z`
+  into `main` tags `vX.Y.Z` on the merge commit and publishes a GitHub Release with generated notes. Hotfixes come
+  from `main` as `hotfix/vX.Y.Z` and the workflow opens a PR syncing `main` into the open release. No backports:
+  released versions are never patched; a fix is a new version.
 - PostgreSQL driver: `github.com/jackc/pgx/v5` v5.12.0 through `database/sql` (`pgx/v5/stdlib`), approved by a human (2026-11-20).
 - JWT library (HU-01): `golang-jwt/jwt` v5.2.1, stdlib-only, HS256 signing, approved 2025-01-21.
 - Migrations: plain SQL in `hubx-api/migrations/NNNN_name.sql`, embedded in the binary; own runner `internal/migrate`
