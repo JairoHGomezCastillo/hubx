@@ -73,7 +73,9 @@ type handler struct {
 // RegisterUpdates mounts the HU-03 update routes on mux with Go 1.22+ method
 // patterns. It is named separately from the HU-02 shipment creation Register
 // so both stories can be wired on the same mux. Every route goes through the
-// HU-01 RequireAuth middleware: the API validates the JWT on its own.
+// injected authentication middleware: the API validates the JWT on its own,
+// and cmd/api injects the HU-03 session-error variant so rejected sessions get
+// the nested SESSION_EXPIRED body.
 func RegisterUpdates(
 	mux *http.ServeMux,
 	requireAuth func(http.Handler) http.Handler,

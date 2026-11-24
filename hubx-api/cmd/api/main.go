@@ -93,7 +93,9 @@ func main() {
 	ledgerRepo := ledger.NewPostgresRepository(ledger.NewDB(db))
 	shipmentRepo := domainshipment.NewPostgresRepository(domainshipment.NewDB(db))
 	recorder := domainshipment.NewRecorder(shipmentRepo, shipmentRepo, ledgerRepo)
-	shipment.RegisterUpdates(mux, authMiddleware.RequireAuth, recorder,
+	// HU-03 uses the session-error middleware variant: its contract reports
+	// every rejected JWT as SESSION_EXPIRED. HU-01/HU-02 keep RequireAuth.
+	shipment.RegisterUpdates(mux, authMiddleware.RequireSessionAuth, recorder,
 		shipment.NewClaimsPrincipalSource(), shipmentRepo, shipmentRepo)
 
 	// The gateway shared secret guards every route: all legitimate traffic
