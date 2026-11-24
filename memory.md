@@ -6,13 +6,14 @@
 - Configuration via `application.properties` per service (constitution Principle III); stdlib reader, one copy per service.
 - Backlog and all artifacts in English; guide and conversation with the team in Spanish.
 - Branching: release/feature/hotfix; the Spec Kit story branch is the feature branch.
-- Release branches are `release/vX.Y.Z[-name]` (e.g. `release/v0.2.0-sign-in`), cut from `main`; exactly one is open
-  at a time (the current release: `git branch -r --list 'origin/release/*'`). Story PRs target it; when the release is
+- Release branches are `release/vX.Y.Z[-name]` (e.g. `release/v0.2.0-sign-in`), cut from `main`. Every story request names its
+  release branch (mandatory input with the story, 2026-11-24); hubx-lead creates it from `main` if it is new, after the
+  human confirms (`ask` permission), and never pushes to an existing one; when the release is
   ready it is merged into `main` by PR and its branch is deleted automatically; the next one is cut from `main`.
   `release/sdd-hubx-system` shipped as v0.1.0, the baseline without stories (2026-11-24); HU-01 goes in v0.2.0.
 - Tags are created only by CI (`.github/workflows/release.yml`): merging a `release/vX.Y.Z[-name]` or `hotfix/vX.Y.Z`
   into `main` tags `vX.Y.Z` on the merge commit and publishes a GitHub Release with generated notes. Hotfixes come
-  from `main` as `hotfix/vX.Y.Z` and the workflow opens a PR syncing `main` into the open release. No backports:
+  from `main` as `hotfix/vX.Y.Z` and the workflow opens a PR syncing `main` into every open integration branch. No backports:
   released versions are never patched; a fix is a new version.
 - PostgreSQL driver: `github.com/jackc/pgx/v5` v5.12.0 through `database/sql` (`pgx/v5/stdlib`), approved by a human (2026-11-20).
 - JWT library (HU-01): `golang-jwt/jwt` v5.2.1, stdlib-only, HS256 signing, approved 2025-01-21.
@@ -141,6 +142,9 @@
   "Pending" here and updates the docs. Facts that live in config are generated, not copied: the README's model
   table comes from `make agents-sync` (checked by `make agents-check`). devops records deploy smoke evidence in
   `deploy/README.md`; QA cites evidence for every claim in `qa-report.md`.
+- Render free cold start (2026-11-24): a sleeping hubx-api makes the gateway return Render's HTML 502 for ~10-60 s;
+  the smoke must first poll `GET <gw>/api/health` until 200 (up to ~2 min) and only then run Cucumber. Smoke tags:
+  `@smoke` (read-only: health, sign-in) for production, `@needs-secret` (Expired session) never runs on deployments.
 ## Pending
 - HU-03 PR from `003-record-update-sync` to `main` (all 46 scenarios green, gosec 0 issues, both govulncheck clean);
   awaiting review. HU-03 is the first story delivered straight to `main` after v0.1.0 was merged.
