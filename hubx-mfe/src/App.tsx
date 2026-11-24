@@ -8,9 +8,10 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { SignIn } from './pages/SignIn';
 import { Dashboard } from './pages/Dashboard';
 import { CreateShipment } from './pages/CreateShipment';
+import { VerifyIntegrity } from './pages/VerifyIntegrity';
 import { navigateTo } from './services/navigation';
 
-type Route = 'sign-in' | 'dashboard' | 'home' | 'create-shipment';
+type Route = 'sign-in' | 'dashboard' | 'home' | 'create-shipment' | 'verify-integrity';
 
 /** The root path is not a destination: enter the app through sign-in or the dashboard. */
 function HomeRedirect() {
@@ -36,6 +37,8 @@ function App() {
         setRoute('dashboard');
       } else if (path === '/shipments/new') {
         setRoute('create-shipment');
+      } else if (path === '/verify-integrity') {
+        setRoute('verify-integrity');
       } else {
         setRoute('home');
       }
@@ -59,6 +62,11 @@ function App() {
       {route === 'create-shipment' && (
         <ProtectedRoute>
           <CreateShipment />
+        </ProtectedRoute>
+      )}
+      {route === 'verify-integrity' && (
+        <ProtectedRoute>
+          <VerifyIntegrity />
         </ProtectedRoute>
       )}
       {route === 'home' && <HomeRedirect />}

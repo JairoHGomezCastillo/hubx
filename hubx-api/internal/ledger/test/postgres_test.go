@@ -321,6 +321,7 @@ func TestPostgresAppend(t *testing.T) {
 				if err != nil {
 					t.Fatalf("Append() unexpected error: %v", err)
 				}
+				// HU-05: Append now truncates to microseconds before fingerprinting
 				want := &ledger.Update{
 					ID:                  insertedUpdateID,
 					ShipmentID:          tt.in.ShipmentID,
@@ -328,9 +329,17 @@ func TestPostgresAppend(t *testing.T) {
 					Stage:               tt.in.Stage,
 					ResponsiblePartyID:  tt.in.ResponsiblePartyID,
 					AssignedPartnerID:   tt.in.AssignedPartnerID,
-					RecordedAt:          tt.in.RecordedAt.UTC(),
+					RecordedAt:          tt.in.RecordedAt.UTC().Truncate(time.Microsecond),
 					PreviousFingerprint: tt.in.PreviousFingerprint,
-					Fingerprint:         ledger.Fingerprint(tt.in),
+					Fingerprint:         ledger.Fingerprint(ledger.AppendInput{
+						ShipmentID:          tt.in.ShipmentID,
+						Sequence:            tt.in.Sequence,
+						Stage:               tt.in.Stage,
+						ResponsiblePartyID:  tt.in.ResponsiblePartyID,
+						AssignedPartnerID:   tt.in.AssignedPartnerID,
+						RecordedAt:          tt.in.RecordedAt.UTC().Truncate(time.Microsecond),
+						PreviousFingerprint: tt.in.PreviousFingerprint,
+					}),
 				}
 				if !reflect.DeepEqual(got, want) {
 					t.Errorf("Append() = %+v, want %+v", got, want)
@@ -421,8 +430,11 @@ func assertAppendSQL(t *testing.T, queries []string, insertArgs []any, in ledger
 	if insertArgs[1] != in.Sequence {
 		t.Errorf("insert sequence = %v, want %d", insertArgs[1], in.Sequence)
 	}
-	if insertArgs[7] != ledger.Fingerprint(in) {
-		t.Errorf("insert fingerprint = %v, want %q", insertArgs[7], ledger.Fingerprint(in))
+	// HU-05: Fingerprint is now computed over the microsecond-truncated instant
+	expectedInput := in
+	expectedInput.RecordedAt = in.RecordedAt.UTC().Truncate(time.Microsecond)
+	if insertArgs[7] != ledger.Fingerprint(expectedInput) {
+		t.Errorf("insert fingerprint = %v, want %q", insertArgs[7], ledger.Fingerprint(expectedInput))
 	}
 }
 

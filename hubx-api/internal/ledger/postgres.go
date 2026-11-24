@@ -130,7 +130,10 @@ func (r *postgresRepository) Append(ctx context.Context, in AppendInput) (*Updat
 	if err := ValidateAppendInput(in); err != nil {
 		return nil, err
 	}
-	recordedAt := in.RecordedAt.UTC()
+	// HU-05: Truncate to microseconds before computing the fingerprint, so the
+	// stored instant and the recomputed fingerprint match (PostgreSQL timestamptz
+	// keeps microseconds while Go clocks have nanoseconds).
+	recordedAt := in.RecordedAt.UTC().Truncate(time.Microsecond)
 
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {

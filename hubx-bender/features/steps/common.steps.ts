@@ -304,3 +304,30 @@ export async function assertStageUnchanged(world: UpdateWorld): Promise<void> {
   const probe = await postUpdate(world, world.shipmentCode!, next!, partnerId);
   expect(probe.status(), `projection still at "${stage}": the next legitimate update must be accepted`).toBe(201);
 }
+
+// ---------------------------------------------------------------------------
+// Shared steps for HU-04 and HU-05
+// ---------------------------------------------------------------------------
+
+Given(/^a shipment has no updates recorded$/, async function (this: UpdateWorld) {
+  await prepareShipment(this, 'Created');
+});
+
+Then(/^they are told that no shipment exists with that code$/, async function (this: UpdateWorld) {
+  expect(this.response, 'HTTP response object').toBeDefined();
+  const url = this.response!.url();
+  
+  // Determine which contract applies based on the endpoint called.
+  if (url.includes('/integrity')) {
+    // HU-05: flat body {error: "SHIPMENT_NOT_FOUND", message: "No shipment exists with that code"}
+    expect(this.response!.status(), 'unknown/invisible shipment (HU-05)').toBe(404);
+    const body = (await this.response!.json()) as { error?: string; message?: string };
+    expect(body.error, 'error code (HU-05 flat body)').toBe('SHIPMENT_NOT_FOUND');
+    expect(body.message, 'error message (HU-05 flat body, no period)').toBe('No shipment exists with that code');
+  } else if (url.includes('/traceability')) {
+    // HU-04: nested body {error: {code: "SHIPMENT_NOT_FOUND", message: "No shipment exists with that code."}}
+    await assertError(this.response!, 404, 'SHIPMENT_NOT_FOUND', 'No shipment exists with that code.');
+  } else {
+    throw new Error(`Step "they are told that no shipment exists with that code" called on unexpected URL: ${url}`);
+  }
+});

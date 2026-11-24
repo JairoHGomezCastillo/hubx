@@ -78,6 +78,29 @@ export function Dashboard() {
       )}
 
       <div style={{ marginTop: '32px' }}>
+        <a
+          href="/verify-integrity"
+          onClick={(e) => {
+            e.preventDefault();
+            navigateTo('/verify-integrity');
+          }}
+          style={{
+            display: 'inline-block',
+            padding: '12px 24px',
+            fontSize: '16px',
+            backgroundColor: '#007bff',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            textDecoration: 'none',
+          }}
+        >
+          Verify integrity
+        </a>
+      </div>
+
+      <div style={{ marginTop: '32px' }}>
         <p style={{ color: '#666' }}>
           Welcome to HUBX. Role-specific features will be added in future stories.
         </p>
