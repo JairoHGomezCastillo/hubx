@@ -156,17 +156,16 @@ by another customer, both get "no shipment exists with that code".
 
 ### Session 2026-11-25
 
-No question was sent to the user. The three readings below were derived by the lead from the backlog conversation
-and the cross-cutting rules, which the lead judged settle every business rule. **They are lead proposals pending
-human confirmation**, not confirmed answers: the human confirms (or corrects) them on PR #33 before merge. Each is
-marked **PROPOSED (pending human confirmation)**.
+No question was sent to the user during authoring. The three readings below were derived by the lead from the
+backlog conversation and the cross-cutting rules, and were **confirmed by the human on PR #33 (2026-11-24)**. Each
+is marked **confirmed by the human on PR #33 (2026-11-24)**.
 
-- Q: Which participants count as "the ground partner assigned to the shipment" with three updates? → A **(PROPOSED,
-  pending human confirmation)**: a shipment with three updates is in Assigned to partner (In flight, At destination
-  airport, Assigned to partner), so the third update names the partner; no other path exists (HU-03).
-- Q: How is the first altered update identified? → A **(PROPOSED, pending human confirmation)**: by its position in
-  the chain, counted from the oldest (the "second update" of the scenario is position 2).
-- Q: Interface language? → A **(PROPOSED, pending human confirmation)**: English, as in HU-03.
+- Q: Which participants count as "the ground partner assigned to the shipment" with three updates? → A **(confirmed
+  by the human on PR #33 (2026-11-24))**: a shipment with three updates is in Assigned to partner (In flight, At
+  destination airport, Assigned to partner), so the third update names the partner; no other path exists (HU-03).
+- Q: How is the first altered update identified? → A **(confirmed by the human on PR #33 (2026-11-24))**: by its
+  position in the chain, counted from the oldest (the "second update" of the scenario is position 2).
+- Q: Interface language? → A **(confirmed by the human on PR #33 (2026-11-24))**: English, as in HU-03.
 
 ## Assumptions
 
