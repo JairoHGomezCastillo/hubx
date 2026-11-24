@@ -58,8 +58,8 @@ type Row interface {
 type Rows interface {
 	Next() bool
 	Scan(dest ...any) error
-	Close() error
 	Err() error
+	Close() error
 }
 
 // Result is the outcome of the projection write.
@@ -209,7 +209,8 @@ func (r *postgresRepository) Last(ctx context.Context, shipmentID string) (*Upda
 	return scanLastUpdate(r.db.QueryRowContext(ctx, lastUpdateSQL, shipmentID))
 }
 
-// List returns all updates of a shipment ordered by sequence ascending.
+// List returns every update of the shipment ordered by sequence ascending (oldest first).
+// It returns an empty non-nil slice when no updates exist.
 func (r *postgresRepository) List(ctx context.Context, shipmentID string) ([]Update, error) {
 	rows, err := r.db.QueryContext(ctx, listUpdatesSQL, shipmentID)
 	if err != nil {
@@ -217,24 +218,24 @@ func (r *postgresRepository) List(ctx context.Context, shipmentID string) ([]Upd
 	}
 	defer rows.Close()
 
-	var updates []Update
+	updates := make([]Update, 0)
 	for rows.Next() {
 		var id int64
-		var shipmentIDScanned string
+		var shipmentID string
 		var sequence int
 		var stage, responsiblePartyID, fingerprint string
 		var assignedPartnerID, previousFingerprint sql.NullString
 		var recordedAt time.Time
 
-		err := rows.Scan(&id, &shipmentIDScanned, &sequence, &stage, &responsiblePartyID,
+		err := rows.Scan(&id, &shipmentID, &sequence, &stage, &responsiblePartyID,
 			&assignedPartnerID, &recordedAt, &previousFingerprint, &fingerprint)
 		if err != nil {
-			return nil, fmt.Errorf("scan update row: %w", mapPgError(err))
+			return nil, fmt.Errorf("scan update: %w", mapPgError(err))
 		}
 
 		update := Update{
 			ID:                 id,
-			ShipmentID:         shipmentIDScanned,
+			ShipmentID:         shipmentID,
 			Sequence:           sequence,
 			Stage:              stage,
 			ResponsiblePartyID: responsiblePartyID,
@@ -251,11 +252,9 @@ func (r *postgresRepository) List(ctx context.Context, shipmentID string) ([]Upd
 		}
 		updates = append(updates, update)
 	}
-
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("iterate updates: %w", mapPgError(err))
 	}
-
 	return updates, nil
 }
 

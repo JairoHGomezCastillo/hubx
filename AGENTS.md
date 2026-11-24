@@ -28,7 +28,7 @@ Traffic: `MFE -> gateway (/api/*, StripPrefix) -> API -> PostgreSQL`. The MFE ne
 `specify -> clarify -> plan -> tasks -> implement -> analyze -> pr`, artifacts in `specs/NNN-name/`. The final
 artifact is a PR to the story's release branch, a mandatory input of every story request (`release/vX.Y.Z[-name]`; `hubx-lead` creates it from `main` if new, after your confirmation) whose body is `specs/NNN-name/pr.md` (`hubx-lead` pushes the story branch
 and opens it; a human reviews and merges). Each spec opens with `Source: backlog HU-xx` or `Source: user description`. Implement order: qa-seguridad `red` -> backend-go and
-frontend-react in parallel -> qa-seguridad `verify` -> devops. TDD is mandatory.
+frontend-react in parallel -> qa-seguridad `verify` -> devops deploys the story branch to staging and records `deploy.md`. TDD is mandatory.
 
 ## 4. Agents (single entry point: `hubx-lead`)
 `hubx-lead` (orchestrates, edits only specs/backlog/contracts/memory.md and the docs: README.md, docs/), `backend-go` (hubx-api, hubx-gw, config),
@@ -42,6 +42,7 @@ CI, deploy). Each edits only its own paths.
 - Go mocks: `go -C hubx-api generate ./...` (gomock via `go tool mockgen`)
 - Releases: merge `release/vX.Y.Z[-name]` or `hotfix/vX.Y.Z` into `main`; CI tags `vX.Y.Z` and publishes the GitHub Release (never tag by hand)
 - Environments: every push builds images `ghcr.io/<owner>/hubx-<svc>:<sha>`; Actions → deploy deploys any ref to `staging` (also automatic for PRs merged into an integration branch); setup in `deploy/README.md`
+- Review a story PR (human tool, not part of the agents' flow): `bash scripts/review-story.sh <PR> [--fast]`, or `/review-story <PR>` in Claude Code (posts the review on the PR: `scripts/review-comment.sh`)
 - Agent zones: `make agents-zones` (each `[agent:<role>]` commit only touches that role's paths; CI on PRs to release)
 - Security: `gosec ./...`, `govulncheck -C hubx-api ./...`, `govulncheck -C hubx-gw ./...`
 - Health: `curl -s http://localhost:8080/health` and `curl -s http://localhost:8080/api/health`

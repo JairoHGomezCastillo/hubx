@@ -6,6 +6,7 @@
 import { useAuth } from '../contexts/AuthContext';
 import { navigateTo } from '../services/navigation';
 import { RecordUpdateContainer } from '../features/shipment-updates/RecordUpdateContainer';
+import { ViewTraceabilityContainer } from '../features/traceability/ViewTraceabilityContainer';
 
 export function Dashboard() {
   const { user, signOut } = useAuth();
@@ -54,6 +55,8 @@ export function Dashboard() {
       )}
 
       <RecordUpdateContainer onSessionExpired={handleSignOut} />
+
+      <ViewTraceabilityContainer onSessionExpired={handleSignOut} />
 
       {user?.role === 'operator' && (
         <div style={{ marginTop: '32px' }}>
