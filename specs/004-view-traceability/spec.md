@@ -2,9 +2,9 @@
 
 **Feature Branch**: `004-view-traceability`
 
-**Created**: 2026-11-25
+**Created**: 2026-11-24
 
-**Status**: Clarified
+**Status**: Implemented (verify green, PR pending)
 
 **Input**: Backlog HU-04 (View a shipment's traceability)
 
@@ -127,7 +127,7 @@ signed-in ground partner all get the same "no shipment exists with that code" an
 
 ## Clarifications
 
-### Session 2026-11-25
+### Session 2026-11-24
 
 No business rule was missing: the backlog's conversation, cross-cutting rules 1, 4 and 6 and decision 7 cover
 visibility, ordering and the fields shown. The following points were resolved as interface decisions within the

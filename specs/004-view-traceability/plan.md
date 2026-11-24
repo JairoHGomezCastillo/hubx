@@ -1,6 +1,6 @@
 # Implementation Plan: View a shipment's traceability
 
-**Branch**: `004-view-traceability` | **Date**: 2026-11-25 | **Spec**: [spec.md](./spec.md) |
+**Branch**: `004-view-traceability` | **Date**: 2026-11-24 | **Spec**: [spec.md](./spec.md) |
 **Release branch**: `release/v0.4.0-ledger`
 
 ## Summary

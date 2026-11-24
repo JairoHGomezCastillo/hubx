@@ -1,6 +1,6 @@
 # HTTP contract: HU-04 View a shipment's traceability
 
-Branch: `004-view-traceability` | Date: 2026-11-25 | Status: agreed for implementation
+Branch: `004-view-traceability` | Date: 2026-11-24 | Status: agreed for implementation
 
 The browser calls `/api/...`; the gateway validates the JWT, strips `/api` and forwards to hubx-api with the shared
 secret. hubx-api validates the JWT on its own (constitution Principle II). This operation is read-only: it never
