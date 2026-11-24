@@ -127,6 +127,13 @@
 - Verify subagent evidence by rerunning the commands: in HU-02 frontend-react reported `ok` with test/build marked
   `not_run` (shell denied) and the build was actually broken. Text split across elements (`<strong>Code:</strong> X`)
   breaks `getByText` in both unit tests and `@e2e`.
+- Deployed 2026-11-24 (v0.3.0): Render free (hubx-mfe, hubx-gw, hubx-api from `deploy/render.yaml`, Blueprint on
+  `main`) + Neon PostgreSQL (direct URL as `DB_URL`, entered by hand). Migrations run once from a laptop. The Neon
+  password was rotated after being exposed in a chat; never paste connection strings in chats or the repo.
+- Docs ownership (2026-11-24): `hubx-lead` owns `README.md` and `docs/`; when it closes a story it reconciles
+  "Pending" here and updates the docs. Facts that live in config are generated, not copied: the README's model
+  table comes from `make agents-sync` (checked by `make agents-check`). devops records deploy smoke evidence in
+  `deploy/README.md`; QA cites evidence for every claim in `qa-report.md`.
 - A full green Cucumber summary (`46 scenarios (46 passed)`) is valid evidence for an individual scenario when
   `cucumber.mjs` runs `strict: true`: an undefined step would fail the suite. In HU-03 the `progress` formatter printed
   only dots, so the literal line for the expired-session scenario could not be captured; the two green full-suite runs
@@ -139,9 +146,6 @@
   awaiting review. HU-03 is the first story delivered straight to `main` after v0.1.0 was merged.
 - Gateway security headers, CORS and rate limiting (constitution VI) are not implemented in `hubx-gw` yet; HU-02's
   qa-report records it as an open pre-existing finding (API8, corrected 2026-11-24). Needs its own story.
-- HU-02 PR open against `release/v0.3.0-create-shipment` (created by a human at 52837ed = v0.2.0); awaiting review.
-- Make the `agents-check` CI job (`.github/workflows/agents.yml`) a required check in the rulesets once it has run green.
-- hubx-api `main.go` still reads `PORT` directly; wire `internal/config`.
+- hubx-api `main.go` loads `internal/config` but still reads the port from `PORT` directly (works on Render).
 - hubx-gw has no config reader yet (reads `PORT`/`API_URL`).
-- gosec G304 in `hubx-api/internal/config/config.go:102` (owner B, item 5): blocks "gosec without findings".
 - 0002_seed_ledger: shipments in later stages with chained updates (owner C).
