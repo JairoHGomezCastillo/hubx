@@ -164,6 +164,9 @@
   silently falls back to the default demo user and the scenario tests the wrong caller.
 - Generated mocks expose test bugs the sub-agent never compiled: in HU-04 the first `go test` after `go generate`
   found an unused import and a missing `shipment_id` column. A sub-agent's `ok` without a test run is not evidence.
+- Deploy validation by devops (2026-11-24): after QA's verify the lead pushes the story branch and devops deploys it
+  to staging through the CD (`gh workflow run deploy.yml -f environment=staging -f ref=<branch>`, only staging; production
+  is denied), follows the run and writes `specs/NNN-*/deploy.md`. review-story warns when it is missing.
 ## Pending
 - Move production to image-backed services and call deploy.yml (environment `production`) from release.yml after
   tagging; then delete deploy/render.yaml's repo-built services (owner A, after the 2026-11-24 delivery).

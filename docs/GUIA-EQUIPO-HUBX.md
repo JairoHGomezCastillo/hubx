@@ -169,7 +169,7 @@ El número sale siempre del backlog (HU-0X → `00X`). El lead ejecuta `.specify
 
 **3. Pruebas primero.** El lead delega en `qa-seguridad` (`red`): `hubx-bender/features/HU0X_<nombre>.feature` con los escenarios del backlog copiados tal cual (Cucumber), sus pasos en Playwright contra el gateway y al menos un escenario `@e2e` con el camino feliz en el navegador. Todo en rojo y por la razón correcta (constitución 1.4.0).
 
-**4. Implementación.** `backend-go` (dominio en `internal/<dominio>`, handlers en `internal/handlers/<dominio>`, pruebas en `test/` y mocks generados con gomock en `mocks/`) y `frontend-react` con TDD contra el contrato del plan. La historia no está terminada si su `@e2e` está en rojo, aunque la API esté en verde. Luego `qa-seguridad` (`verify`): suite, `gosec`, `govulncheck` y tabla OWASP en `qa-report.md`. Con hallazgos, vuelven como `fix`.
+**4. Implementación.** `backend-go` (dominio en `internal/<dominio>`, handlers en `internal/handlers/<dominio>`, pruebas en `test/` y mocks generados con gomock en `mocks/`) y `frontend-react` con TDD contra el contrato del plan. La historia no está terminada si su `@e2e` está en rojo, aunque la API esté en verde. Después del `verify`, el lead empuja la rama y `devops` la despliega en staging con el CD (`gh workflow run deploy.yml`), espera el smoke y deja la evidencia en `specs/0X-<nombre>/deploy.md`. Luego `qa-seguridad` (`verify`): suite, `gosec`, `govulncheck` y tabla OWASP en `qa-report.md`. Con hallazgos, vuelven como `fix`.
 
 **5. Analyze.** `/speckit.analyze` y corrige las desviaciones.
 
