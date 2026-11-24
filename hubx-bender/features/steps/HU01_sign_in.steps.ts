@@ -60,28 +60,9 @@ Then(
 
     if (this.page) {
       // E2E: verify the dashboard shows email and role
-      // Known bug: the MFE navigates with window.location (full reload) which drops the in-memory token.
-      // After signing in successfully, the page navigates to /dashboard but loses the token on reload,
-      // then ProtectedRoute redirects back to /sign-in.
-      
-      // Wait a moment for all navigations to settle
-      await this.ui.waitForTimeout(1000);
-      
-      // Check where we ended up - should be /dashboard but bug causes redirect to /sign-in
-      const currentURL = this.ui.url();
-      
-      if (currentURL.includes('/sign-in')) {
-        // We're back at sign-in - this is the bug!
-        // The test expects to find email/role on the dashboard, so this will fail with a helpful message
-        throw new Error(
-          `Navigation bug detected: After successful sign-in, the app redirected to ${currentURL} instead of staying on /dashboard. ` +
-          `This happens because window.location causes a full reload, losing the in-memory token.`
-        );
-      }
-      
-      // If we somehow made it to dashboard, verify the content
+      await expect(this.ui).toHaveURL(/\/dashboard$/);
       await expect(this.ui.getByText(email)).toBeVisible();
-      await expect(this.ui.getByText(role, { exact: false })).toBeVisible();
+      await expect(this.ui.getByText(new RegExp(`Role:\\s*${role}`))).toBeVisible();
     } else {
       // API: verify 200, token, user object and JWT structure
       expect(this.response?.status()).toBe(200);
