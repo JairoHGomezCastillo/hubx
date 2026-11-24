@@ -113,7 +113,8 @@ Contrast of spec, plan, tasks, contract and code at the end of implement.
 6. **QA report inaccuracy.** `qa-report.md` section 3 (API8) says security headers, CORS and rate limiting are applied
    at the gateway; `hubx-gw/AGENTS.md` lists them as future work and `hubx-gw/cmd/gw/main.go` applies only JWT
    validation. Constitution VI requires them; this predates HU-02 and is not introduced by it. The report also says
-   "ready to merge", which is a human decision.
+   "ready to merge", which is a human decision. **Corrected** by qa-seguridad (commit f5ff052): API8 is now an OPEN
+   medium finding, out of scope for HU-02.
 7. **Gateway-secret and body-cap checks** were verified by code review in QA, not by an acceptance scenario.
 8. **HU-01 deviation 9 closed**: the API's `RequireAuth` now guards `POST /shipments`.
 9. **Clarification Q2 (weight with more than one decimal)**: closed by a human decision on 2026-11-24 (Option A,

@@ -119,8 +119,8 @@
   breaks `getByText` in both unit tests and `@e2e`.
 ## Pending
 - Gateway security headers, CORS and rate limiting (constitution VI) are not implemented in `hubx-gw` yet; HU-02's
-  qa-report states otherwise.
-- Create `release/v0.3.0-create-shipment` (human) and open the HU-02 PR against it.
+  qa-report records it as an open pre-existing finding (API8, corrected 2026-11-24). Needs its own story.
+- HU-02 PR open against `release/v0.3.0-create-shipment` (created by a human at 52837ed = v0.2.0); awaiting review.
 - Make the `agents-check` CI job (`.github/workflows/agents.yml`) a required check in the rulesets once it has run green.
 - hubx-api `main.go` still reads `PORT` directly; wire `internal/config`.
 - hubx-gw has no config reader yet (reads `PORT`/`API_URL`).
