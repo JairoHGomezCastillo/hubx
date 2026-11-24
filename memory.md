@@ -70,6 +70,16 @@
   Weight is a JSON number literal `^[0-9]+(\.[0-9])?$` in [0.1, 5000]; more than one decimal (0.15) is
   rejected with the weight-range message (human decision 2026-11-24, Option A; not deduced from the schema). Customer indicated by email. The API's `RequireAuth` now guards its first route. HU-02 ships in
   v0.3.0 (`release/v0.3.0-create-shipment`), not v0.2.0.
+- HU-03 (2026-11-24): `POST /api/shipments/{code}/updates` records an immutable chained update and projects the stage in
+  one transaction; no migration (reuses 0001). Contract `contracts/hu03-record-update.md`. `RequireSessionAuth` was added
+  in hubx-api for the HU-03 routes only, so HU-01/HU-02 keep their flat `UNAUTHORIZED` 401 body while HU-03 returns the
+  nested `SESSION_EXPIRED` body. The gateway emits that nested body only on the two HU-03 routes and never excludes a
+  route from JWT validation or alters `Authorization` (Constitution II). Assignment is operator-only from
+  "At destination airport"; the assigned partner records Out for delivery and Delivered; no reassignment, no going back.
+  QA fixtures create fresh shipments through the gateway and sign in as the assigned ground partner for the last two
+  transitions, keeping `HBX-SEED-0001` in Created for the `@e2e`. Delivered from branch `003-record-update-sync`
+  (renamed from `003-record-update` after the original remote branch was deleted) with PR target `main`, by human
+  decision after v0.1.0 was merged; HU-03 does not ship in a release branch.
 ## Conventions
 - PR title (2026-11-21): `<type>(<scope>): <gitmoji> <short description> [agent:role]`, scope `HU-xx` or an area;
   mapping in hubx-lead step 10. Commits keep their own format below.
@@ -115,6 +125,13 @@
   `scripts/agents/hubx-lead.kiro.json`. The lead may not write `qa-report.md` (opencode and Claude Code block it; in
   Kiro only CI catches it, because a lead deny would also block qa-seguridad). Historical exceptions with their
   reason: `scripts/agent-zones-exceptions.txt` (63e4726, 9b5b037, 936abb1).
+- A full green Cucumber summary (`46 scenarios (46 passed)`) is valid evidence for an individual scenario when
+  `cucumber.mjs` runs `strict: true`: an undefined step would fail the suite. In HU-03 the `progress` formatter printed
+  only dots, so the literal line for the expired-session scenario could not be captured; the two green full-suite runs
+  and the strict mode were recorded instead of inventing output.
+- `speckit.analyze` is read-only and may surface plan drift after implementation. In HU-03 it found six deviations
+  (branch name, gateway error body, MFE tests and file names); the lead corrected spec/plan/tasks and recorded them in
+  `pr.md`. The gateway change was a contract requirement and did not weaken the two-validation rule.
 - Verify subagent evidence by rerunning the commands: in HU-02 frontend-react reported `ok` with test/build marked
   `not_run` (shell denied) and the build was actually broken. Text split across elements (`<strong>Code:</strong> X`)
   breaks `getByText` in both unit tests and `@e2e`.
@@ -129,6 +146,8 @@
   the smoke must first poll `GET <gw>/api/health` until 200 (up to ~2 min) and only then run Cucumber. Smoke tags:
   `@smoke` (read-only: health, sign-in) for production, `@needs-secret` (Expired session) never runs on deployments.
 ## Pending
+- HU-03 PR from `003-record-update-sync` to `main` (all 46 scenarios green, gosec 0 issues, both govulncheck clean);
+  awaiting review. HU-03 is the first story delivered straight to `main` after v0.1.0 was merged.
 - Gateway security headers, CORS and rate limiting (constitution VI) are not implemented in `hubx-gw` yet; HU-02's
   qa-report records it as an open pre-existing finding (API8, corrected 2026-11-24). Needs its own story.
 - hubx-api `main.go` loads `internal/config` but still reads the port from `PORT` directly (works on Render).

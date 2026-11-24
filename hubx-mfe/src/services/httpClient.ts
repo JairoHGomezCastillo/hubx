@@ -11,6 +11,12 @@ export interface ApiError {
   message: string;
 }
 
+/** HU-01 sends `message` at the root; HU-03's contract nests it under `error`. */
+interface UnauthorizedBody {
+  message?: string;
+  error?: { code?: string; message?: string };
+}
+
 interface FetchOptions extends RequestInit {
   headers?: HeadersInit;
 }
@@ -40,14 +46,15 @@ export async function fetchWithAuth(url: string, options: FetchOptions = {}): Pr
 
   // Handle 401 Unauthorized - session expired or invalid token
   if (response.status === 401) {
-    const errorData = await response.json().catch(() => null) as ApiError | null;
+    const errorData = await response.json().catch(() => null) as UnauthorizedBody | null;
     
     // Clear token and redirect to sign-in
     authService.clearToken();
     
-    // Check if the error message indicates session expiration
-    const isSessionExpired = errorData?.message?.includes('Session expired') ||
-                            errorData?.message?.includes('expired');
+    // Accept both error shapes so the expired-session notice is always stored.
+    const message = errorData?.message ?? errorData?.error?.message;
+    const isSessionExpired = message?.includes('Session expired') === true ||
+                            message?.includes('expired') === true;
     
     if (isSessionExpired) {
       // Show notification (in a real app, this would use a toast/notification system)
@@ -59,7 +66,7 @@ export async function fetchWithAuth(url: string, options: FetchOptions = {}): Pr
     navigateTo('/sign-in');
     
     // Throw error to prevent further processing
-    throw new Error(errorData?.message || 'Unauthorized');
+    throw new Error(message || 'Unauthorized');
   }
 
   return response;

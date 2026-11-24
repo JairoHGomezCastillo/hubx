@@ -16,6 +16,8 @@ import (
 	"hubx-api/internal/handlers/auth"
 	"hubx-api/internal/handlers/health"
 	"hubx-api/internal/handlers/shipment"
+	"hubx-api/internal/ledger"
+	domainshipment "hubx-api/internal/shipment"
 )
 
 // port lee el puerto desde el entorno con un valor por defecto seguro.
@@ -85,6 +87,16 @@ func main() {
 
 	// Register shipment module (first protected route, closes HU-01 deviation 9)
 	shipment.Register(mux, db, authMiddleware.RequireAuth)
+
+	// HU-03: the ledger chain and the shipment stage rules share the HU-01
+	// middleware and the same pgx-backed database handle.
+	ledgerRepo := ledger.NewPostgresRepository(ledger.NewDB(db))
+	shipmentRepo := domainshipment.NewPostgresRepository(domainshipment.NewDB(db))
+	recorder := domainshipment.NewRecorder(shipmentRepo, shipmentRepo, ledgerRepo)
+	// HU-03 uses the session-error middleware variant: its contract reports
+	// every rejected JWT as SESSION_EXPIRED. HU-01/HU-02 keep RequireAuth.
+	shipment.RegisterUpdates(mux, authMiddleware.RequireSessionAuth, recorder,
+		shipment.NewClaimsPrincipalSource(), shipmentRepo, shipmentRepo)
 
 	// The gateway shared secret guards every route: all legitimate traffic
 	// enters through the gateway, which injects X-Gateway-Secret.

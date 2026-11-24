@@ -3,7 +3,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { AuthProvider } from './contexts/AuthContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { SignIn } from './pages/SignIn';
 import { Dashboard } from './pages/Dashboard';
@@ -11,6 +11,17 @@ import { CreateShipment } from './pages/CreateShipment';
 import { navigateTo } from './services/navigation';
 
 type Route = 'sign-in' | 'dashboard' | 'home' | 'create-shipment';
+
+/** The root path is not a destination: enter the app through sign-in or the dashboard. */
+function HomeRedirect() {
+  const { isAuthenticated } = useAuth();
+
+  useEffect(() => {
+    navigateTo(isAuthenticated ? '/dashboard' : '/sign-in');
+  }, [isAuthenticated]);
+
+  return null;
+}
 
 function App() {
   const [route, setRoute] = useState<Route>('home');
@@ -50,30 +61,7 @@ function App() {
           <CreateShipment />
         </ProtectedRoute>
       )}
-      {route === 'home' && (
-        <main style={{ maxWidth: '800px', margin: '100px auto', padding: '20px', textAlign: 'center' }}>
-          <h1>HUBX</h1>
-          <p>Air cargo traceability platform</p>
-          <div style={{ marginTop: '32px' }}>
-            <button
-              onClick={() => navigateTo('/sign-in')}
-              style={{
-                padding: '12px 24px',
-                fontSize: '16px',
-                backgroundColor: '#007bff',
-                color: 'white',
-                textDecoration: 'none',
-                borderRadius: '4px',
-                display: 'inline-block',
-                border: 'none',
-                cursor: 'pointer',
-              }}
-            >
-              Sign In
-            </button>
-          </div>
-        </main>
-      )}
+      {route === 'home' && <HomeRedirect />}
     </AuthProvider>
   );
 }
