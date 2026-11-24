@@ -26,20 +26,31 @@ Endpoint (through the gateway): `POST /api/auth/sign-in` → `200 {token, user:{
 |---|---|
 | `hubx-api` | New `internal/auth` module: handler, service, repository, JWT, `RequireAuth` middleware; wired in `main.go`; `jwt.expiration.hours=1`, `JWT_SECRET` from env. |
 | `hubx-gw` | `internal/middleware/auth.go`: JWT validation on all routes except `GET /health`, `GET /api/health`, `POST /api/auth/sign-in`; `Authorization` forwarded untouched. |
-| `hubx-mfe` | Sign-in page, auth context, HTTP client; **JWT kept in memory** (not localStorage), per `hubx-mfe/AGENTS.md`. |
-| `hubx-bender` | `tests/HU01_sign_in.spec.ts`: 7 scenarios through the gateway. |
+| `hubx-mfe` | Sign-in page, auth context, HTTP client; **JWT kept in memory** (not localStorage), per `hubx-mfe/AGENTS.md`; client-side history-API navigation (no full-page reload). |
+| `hubx-bender` | `features/HU01_sign_in.feature` (backlog Gherkin verbatim) + `features/steps/HU01_sign_in.steps.ts`: the HU-01 scenarios through the gateway plus one `@e2e` browser happy path. |
 | infra | `compose.yaml` injects `JWT_SECRET` into the gateway; `scripts/test-integration.sh` passes it to bender; new `.github/workflows/ci.yml`. |
 
 Migration `0001_baseline_schema.sql` (already on the base branch) seeds the demo users; no new migration.
 
 ## Evidence
 
-- **Integration**: `make test-integration` → **9/9 pass** (7 HU-01 scenarios + 2 health smoke tests).
-- **Unit**: `go -C hubx-api test ./...` and `go -C hubx-gw test ./...` green; `npm --prefix hubx-mfe run test` → 28 pass;
-  MFE `typecheck` and `build` clean (TypeScript strict).
-- **Security**: `govulncheck` clean on both Go modules after upgrading `golang-jwt/jwt/v5` v5.2.1 → **v5.2.2**
-  (fixes GO-2025-3553, HIGH). `gosec` on `hubx-gw` clean; `hubx-api` has one pre-existing MEDIUM G304 in the baseline
-  config reader (hardcoded path, not user input), tracked in `memory.md` and out of scope for HU-01.
+- **Integration**: `make test-integration` → **12 scenarios / 65 steps pass** (Cucumber + Playwright): the HU-01
+  scenarios (the "Each role signs in" outline over operator / ground partner / customer, email normalization, wrong
+  password, unknown email, incomplete data, expired session), the two health smoke scenarios, and one `@e2e` browser
+  happy path (operator signs in through the MFE and sees the dashboard with their email and `Role: operator`).
+
+  ```
+  12 scenarios (12 passed)
+  65 steps (65 passed)
+  ```
+
+- **Unit**: `go -C hubx-api test ./...` and `go -C hubx-gw test ./...` green (black-box `test/` subpackages);
+  `npm --prefix hubx-mfe run test` → 28 pass; MFE strict `tsc -b` typecheck and `build` clean.
+- **Security**: `gosec ./...` → **0 issues** (1 justified `#nosec G304` in the baseline config reader: path from
+  internal config, not request input). `govulncheck -C hubx-gw ./...` → **No vulnerabilities found**;
+  `govulncheck -C hubx-api ./...` → **0 vulnerabilities in code**, with 1 vulnerability reported in a required-but-not-
+  called module. Earlier upgrades stand: `golang-jwt/jwt/v5` v5.2.1 → v5.2.2 (GO-2025-3553) and `golang.org/x/crypto`
+  v0.32.0 → v0.58.0 (GO-2026-6355 / 6354 / 6303).
 - Full QA write-up: [`specs/001-sign-in/qa-report.md`](qa-report.md).
 
 ## Decisions and deviations
@@ -66,8 +77,33 @@ Changes made after the first review of this PR:
 - **Spec hygiene**: technology decisions (JWT, bcrypt, token shape) moved from `spec.md` to `plan.md`; `ground_partner`
   corrected to `ground partner` in plan, quickstart and contract; `RequireAuth`-not-wired recorded as deviation 9.
 
-Final state: `govulncheck` clean on both Go modules; `gosec` 0 issues on both; `make test-integration` 9/9;
-Go + MFE unit tests green. See [`qa-report.md`](qa-report.md) (verdict PASS).
+Final state (after the review round): `govulncheck` clean on both Go modules; `gosec` 0 issues on both; Go + MFE unit
+tests green. See [`qa-report.md`](qa-report.md) (verdict PASS).
+
+## Constitution 1.4.0 adaptation (before merge)
+
+Constitution 1.4.0 landed on the base branch after HU-01's first delivery. This round adapts HU-01 to it without
+changing behavior (the acceptance scenarios stayed the source of truth). Tasks T100–T109 in `tasks.md`.
+
+- **Acceptance tests → Cucumber.** `hubx-bender/tests/HU01_sign_in.spec.ts` became `features/HU01_sign_in.feature`
+  (backlog Gherkin verbatim) + `features/steps/HU01_sign_in.steps.ts`. The "Each role signs in" outline has a plain
+  `Examples:` (3 roles, API) and an `@e2e Examples:` (operator); the same steps run in the browser when a page exists
+  and via the API otherwise.
+- **Mandatory `@e2e` + the navigation bug it caught.** The new `@e2e` operator happy path was **red** while every API
+  scenario and all 28 MFE unit tests were green: after sign-in the MFE changed route with `window.location` (a full
+  page reload), which dropped the **in-memory** JWT, so the app bounced back to `/sign-in` and never showed the
+  dashboard. `frontend-react` fixed it by navigating client-side with the history API (keeping the token in memory per
+  `hubx-mfe/AGENTS.md`); the `@e2e` is now green. This is deviation 10 in `tasks.md` and the concrete payoff of the
+  1.4.0 `@e2e` requirement.
+- **1.4.0 package layout.** `hubx-api/internal/auth` was split into a domain package (no `net/http`) and HTTP transport
+  in `internal/handlers/auth`; the health handler moved to `internal/handlers/health`. Every package with tests now has
+  a `test/` black-box subpackage (`package test`), and `mocks/` for `Repository`/`Service` are generated with gomock
+  via `go tool mockgen` (`go.uber.org/mock v0.6.0`, human-approved). `hubx-gw` got the same `test/` layout (no mocks: no
+  injected interface). `go mod tidy -diff` is empty for both modules.
+
+Commits this round: `d1606e5`, `b0d40ea` (`qa-seguridad` red), `85c3f66`, `55a683a` (`backend-go` layout + tidy),
+`12d2778` (`frontend-react` navigation fix), plus this `qa-seguridad` verify. Final: `make test-integration`
+**12 scenarios / 65 steps green** including the `@e2e`.
 
 ## Notes for the reviewer
 

@@ -376,3 +376,82 @@ Recorded at the end of implement; all tasks complete, 9/9 integration tests gree
    protected resource (shipments) and add an API-level test that a protected route rejects a missing/expired token
    even when called directly. Tracked here and in `plan.md` (Technical Decisions implementation note).
 
+---
+
+## Phase 6: Constitution 1.4.0 adaptation (before merging PR #13)
+
+Constitution 1.4.0 adds three requirements that the initial HU-01 delivery predated: (a) acceptance tests in Cucumber
+with the backlog Gherkin verbatim plus a mandatory `@e2e` browser happy path per story; (b) the `internal/handlers/<domain>`
+layout with domain packages free of `net/http`, `test/` black-box subpackages and gomock-generated `mocks/`; (c) gomock
+via `go tool mockgen`. These tasks adapt HU-01 to 1.4.0 without changing behavior. TDD order kept: QA red → backend +
+frontend → QA verify.
+
+### 6.1 QA red (Cucumber migration + @e2e)
+
+**Agent**: `qa-seguridad` · **Owned paths**: `hubx-bender/`
+
+- [x] **T100** [QA] Migrate `tests/HU01_sign_in.spec.ts` to `features/HU01_sign_in.feature` (backlog Gherkin verbatim) +
+  `features/steps/HU01_sign_in.steps.ts`; delete `tests/`. Split the "Each role signs in" outline into a plain
+  `Examples:` (3 roles, API) and an `@e2e Examples:` (operator); the same steps run in the browser when `this.page`
+  exists and via the API otherwise; `{role}` parameter type so "ground partner" is captured whole; scenario state on
+  `HubxWorld`. **Evidence**: commit `d1606e5`; API scenarios green, `@e2e` red.
+- [x] **T101** [QA] Add the `@e2e` operator happy path (signs in through the MFE, lands on `/dashboard`, dashboard shows
+  email and `Role: operator`); assert by role/label, never CSS; never call the API in `@e2e`. **Evidence**: commit
+  `b0d40ea` (plain assertions: `toHaveURL(/\/dashboard$/)` + role-line locator); `@e2e` red because the MFE reloaded on
+  navigation and bounced to `/sign-in` — the real navigation bug, not a timeout or undefined steps.
+
+### 6.2 Backend restructure to 1.4.0 layout (no behavior change)
+
+**Agent**: `backend-go` · **Owned paths**: `hubx-api/`, `hubx-gw/`
+
+- [x] **T102** [API] Split `internal/auth` into domain (`internal/auth`, no `net/http`: service, repository, jwt, user,
+  `ErrInvalidCredentials`) and HTTP transport (`internal/handlers/auth`: handler, middleware, gateway-secret, register).
+  Update `cmd/api/main.go` wiring. **Evidence**: commit `85c3f66`.
+- [x] **T103** [API] Add gomock tooling (human-approved `go -C hubx-api get -tool go.uber.org/mock/mockgen@v0.6.0`,
+  published 2025-08-18) and generate `mocks/` for `Repository` and `Service` via `//go:generate go tool mockgen`;
+  `go -C hubx-api generate ./...` clean. **Evidence**: commit `85c3f66`; `go.uber.org/mock v0.6.0` a direct require
+  after `go mod tidy` (commit `55a683a`).
+- [x] **T104** [API] Move every package's tests to a `test/` black-box subpackage using `package test`: auth,
+  handlers/auth, config, migrate. Move the health handler from `internal/health` to `internal/handlers/health` with its
+  `test/`. **Evidence**: commits `85c3f66` (auth, handlers/auth) and `55a683a` (config, migrate, handlers/health).
+- [x] **T105** [GW] Apply the same layout to `hubx-gw`: `internal/middleware/test/` (`package test`); gomock tooling added
+  but no `mocks/` (no injected interface to mock). `go mod tidy -diff` empty; `go.sum` completed. **Evidence**: commits
+  `85c3f66` and `55a683a`.
+- [x] **T106** [API] Keep the shared `writeError` HTTP helper encoding with `json.NewEncoder(...).Encode(errorResponse{})`
+  (orchestrator review caught a raw `w.Write` introduced in the move that tripped gosec G104 and changed the encoding
+  path; restored to preserve behavior). **Evidence**: folded into commit `85c3f66`; gosec 0 issues.
+
+### 6.3 Frontend fix (navigation bug found by the @e2e)
+
+**Agent**: `frontend-react` · **Owned paths**: `hubx-mfe/src/`
+
+- [x] **T107** [MFE] Navigate inside the app without reloading: replace `window.location` with a client-side
+  `navigateTo()` helper (history API) on the sign-in success path, `ProtectedRoute` redirect, sign-out, the home
+  action and the 401 session-expiry redirect in `httpClient`. Token stays in memory. Dashboard renders the user's
+  email and a `Role: <role>` line. **Evidence**: commit `12d2778`; 28 MFE unit tests + strict typecheck + build green;
+  the `@e2e` turns green (`make test-integration` 12/12).
+
+### 6.4 QA verify (final)
+
+**Agent**: `qa-seguridad` · **Owned paths**: `hubx-bender/`, `specs/001-sign-in/qa-report.md`
+
+- [x] **T108** [QA] `make test-integration` → **12 scenarios / 65 steps green**, including the `@e2e`.
+- [x] **T109** [QA] `gosec ./...` → 0 issues (1 justified nosec); `govulncheck -C hubx-api ./...` and
+  `govulncheck -C hubx-gw ./...` clean (hubx-api reports 1 vuln in a required-but-not-called module). Rewrite
+  `qa-report.md` to the real Cucumber/1.4.0 state (scenario → feature:line → API/E2E → result, OWASP).
+
+### Phase 6 deviations
+
+10. **The navigation bug was found by the `@e2e`, not by API tests or unit tests.** Every API scenario and all 28 MFE
+    unit tests were green while the browser flow was broken: after a successful sign-in the MFE changed route with
+    `window.location` (a full page reload), which dropped the in-memory JWT, so `ProtectedRoute` bounced the user back
+    to `/sign-in` and the dashboard never rendered. The mandatory `@e2e` scenario (constitution 1.4.0 Principle V)
+    exposed it, and `frontend-react` fixed it with client-side history-API navigation (T107), keeping the token in
+    memory per `hubx-mfe/AGENTS.md`. This is the concrete payoff of the new `@e2e` requirement.
+11. **`@e2e` reuse of the role outline.** Rather than a separate invented browser scenario, the "Each role signs in"
+    outline carries a second `@e2e Examples:` block (operator only); the same step definitions act on the browser when
+    a page exists and via the API otherwise. Keeps the backlog Gherkin verbatim and avoids duplicate scenarios.
+12. **`go mod tidy` promoted the mock tool to a direct dependency.** `go.uber.org/mock` moved from `// indirect` to a
+    direct `require` in `hubx-api/go.mod` (the `tool` directive uses it); `hubx-gw/go.sum` was completed. `go mod
+    tidy -diff` is empty for both modules.
+
