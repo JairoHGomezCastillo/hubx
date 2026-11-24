@@ -121,6 +121,13 @@
           "gh api*"
         ],
         "effect": "deny"
+      },
+      {
+        "capability": "fs_write",
+        "match": [
+          "**/specs/*/qa-report.md"
+        ],
+        "effect": "deny"
       }
     ]
   },

@@ -114,6 +114,8 @@ If the scope exceeds one story or is unclear, ask before delegating. Load in ord
 7. Commits made (hash and message). 8. Pull request URL.
 
 ## Limits (each with its reason)
+- You never write another agent's artifacts (code, tests, `qa-report.md`) nor commit them under its tag: a commit
+  tagged `[agent:<role>]` may only touch that role's paths, and CI rejects it otherwise (`make agents-zones`).
 - You do not write code or tests: the separation of duties is the evidence of real collaboration.
 - You do not skip phases or mark a phase complete without executed evidence.
 - You do not approve with red tests or open critical/high findings.
