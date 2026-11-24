@@ -57,19 +57,19 @@ All HU-05 scenarios were written and ran red for the right reason (404 on the mi
 
 **Command**: `make test-integration`  
 **Exit code**: 0  
-**Result excerpt**:
+**Result excerpt (after PR #33 review fix)**:
 
 ```
 1 hook (1 passed)
 59 scenarios (59 passed)
 382 steps (382 passed)
-0m 48.906s (0m 48.742s executing your code)
+0m 52.047s (0m 51.895s executing your code)
 ```
 
 **Tamper test evidence**: The logs show that the tamper test scenario (HU-05 line 24, "Update improperly altered") executed and passed:
 
 ```
-Tampered update 2 of HBX-589C5339 to stage "Out for delivery"
+Tampered update 2 of HBX-5D4A0BB8 to stage "Out for delivery"
 ```
 
 This line appears in the console output during the test run, confirming that the tamper helper (`hubx-bender/features/support/tamper.ts`) intentionally modified the second update of a 3-update shipment, and the API's `VerifyIntegrity` correctly detected it.
@@ -78,14 +78,12 @@ This line appears in the console output during the test run, confirming that the
 
 | Scenario | Feature line | Test type | Result |
 |----------|-------------|-----------|--------|
-| Intact chain (operator) | features/HU05_verify-integrity.feature:9 | API | passed |
-| Intact chain (ground partner) | features/HU05_verify-integrity.feature:13 | API | passed |
-| Intact chain (customer) | features/HU05_verify-integrity.feature:17 | API | passed |
+| Intact chain (operator) | features/HU05_verify-integrity.feature:9-10 | @e2e (browser, operator) | passed |
+| Intact chain (operator, ground partner, customer) | features/HU05_verify-integrity.feature:9-17 | API (3 roles) | passed |
 | Shipment without updates | features/HU05_verify-integrity.feature:19 | API | passed |
-| Update improperly altered | features/HU05_verify-integrity.feature:24 | API | passed (tamper log: "Tampered update 2 of HBX-589C5339...") |
+| Update improperly altered | features/HU05_verify-integrity.feature:24 | API | passed (tamper log: "Tampered update 2 of HBX-5D4A0BB8...") |
 | Code that matches no shipment | features/HU05_verify-integrity.feature:34 | API | passed |
 | Shipment the participant cannot see | features/HU05_verify-integrity.feature:39 | API | passed |
-| Operator verifies in browser | features/HU05_verify-integrity.feature:44 | @e2e | passed |
 
 **Regression**: 51 scenarios from HU-01, HU-02, HU-03 and HU-04 all passed.
 
@@ -151,20 +149,44 @@ No vulnerabilities found.
 
 ---
 
+## PR #33 Review Fix: @e2e Uses Backlog Scenario Verbatim (2026-11-24)
+
+**Finding**: The original `@e2e` scenario "Operator verifies in browser" (line 44) used invented Gherkin steps that did not appear in the backlog. Constitution V requires that feature files copy the backlog Gherkin verbatim, and that at least one `@e2e` browser scenario per story exists.
+
+**Resolution**:
+- **Deleted**: The invented scenario at line 44 was removed.
+- **Replaced with**: An `@e2e Examples:` block on the backlog "Intact chain" Scenario Outline (lines 9-17), with the operator row (line 10) tagged `@e2e`. This follows the HU-01 pattern: the backlog Gherkin runs unchanged in both API and browser modes.
+- **Implementation**: The shared When and Then steps in `hubx-bender/features/steps/HU05_verify-integrity.steps.ts` now dispatch based on `this.page`:
+  - If `this.page` is set (by the `Before({ tags: '@e2e' })` hook in `features/support/hooks.ts`), the steps use `this.ui` (Playwright page) to drive the MFE in the browser.
+  - Otherwise, the steps use `this.api` (Playwright request) to call the gateway API.
+- **Browser assertions**: The MFE displays the text "The chain is intact." and "3 updates checked." (from `hubx-mfe/src/pages/VerifyIntegrity.tsx`); the `@e2e` step asserts these exact strings with `expect(this.ui.locator('body')).toContainText(...)`.
+
+**Verification**: `make test-integration` ran from the worktree and confirmed all 59 scenarios passed (382 steps passed), including the `@e2e` scenario (the operator row of "Intact chain"). The tamper scenario log line `Tampered update 2 of HBX-5D4A0BB8 to stage "Out for delivery"` confirms the tamper test still executed and passed.
+
+**Evidence**:
+```
+1 hook (1 passed)
+59 scenarios (59 passed)
+382 steps (382 steps passed)
+0m 52.047s (0m 51.895s executing your code)
+```
+
+---
+
 ## Gherkin Coverage
 
 All 8 HU-05 scenarios passed after the fix:
 
 | Scenario | Feature line | Test type | Result |
 |----------|-------------|-----------|--------|
-| Intact chain (operator) | features/HU05_verify-integrity.feature:9 | API | passed |
-| Intact chain (ground partner) | features/HU05_verify-integrity.feature:13 | API | passed |
-| Intact chain (customer) | features/HU05_verify-integrity.feature:17 | API | passed |
+| Intact chain (operator) | features/HU05_verify-integrity.feature:9-10 | @e2e (browser, operator) | passed |
+| Intact chain (operator, ground partner, customer) | features/HU05_verify-integrity.feature:9-17 | API (all 3 roles) | passed |
 | Shipment without updates | features/HU05_verify-integrity.feature:19 | API | passed |
 | Update improperly altered | features/HU05_verify-integrity.feature:24 | API | passed |
 | Code that matches no shipment | features/HU05_verify-integrity.feature:34 | API | passed |
 | Shipment the participant cannot see | features/HU05_verify-integrity.feature:39 | API | passed |
-| Operator verifies in browser | features/HU05_verify-integrity.feature:44 | @e2e | passed |
+
+**@e2e coverage**: The backlog "Intact chain" scenario outline (operator row, line 10) runs in the browser with the `@e2e` tag, reusing the backlog Gherkin verbatim. The When and Then steps dispatch to `this.ui` (browser) when `this.page` is set, otherwise to `this.api` (gateway).
 
 **Step consolidation**: The two previously ambiguous steps are now defined once in `features/steps/common.steps.ts` (lines 320-349) and shared by HU-04 and HU-05 without ambiguity. Cucumber strict mode passed.
 

@@ -57,11 +57,22 @@ When(/^(.+) requests verification of (?:the|that) shipment's integrity$/, async 
   _participant: string,
 ) {
   const code = this.shipmentCode!;
-  this.response = await this.api.get(`/api/shipments/${encodeURIComponent(code)}/integrity`, {
-    headers: authHeader(this),
-  });
-  if (this.response.status() === 200) {
-    this.verificationResult = (await this.response.json()) as typeof this.verificationResult;
+
+  if (this.page) {
+    // E2E: browser through the MFE
+    await this.ui.getByRole('link', { name: /verify integrity/i }).click();
+    await expect(this.ui).toHaveURL(/\/verify-integrity$/);
+    
+    await this.ui.getByLabel(/shipment code/i).fill(code);
+    await this.ui.getByRole('button', { name: /verify integrity/i }).click();
+  } else {
+    // API: request through the gateway
+    this.response = await this.api.get(`/api/shipments/${encodeURIComponent(code)}/integrity`, {
+      headers: authHeader(this),
+    });
+    if (this.response.status() === 200) {
+      this.verificationResult = (await this.response.json()) as typeof this.verificationResult;
+    }
   }
 });
 
@@ -75,31 +86,28 @@ When(/^(.+) requests verification of a code that matches no shipment$/, async fu
   });
 });
 
-When(/^the operator verifies the shipment's integrity in the browser$/, async function (this: VerificationWorld) {
-  // @e2e: the MFE's Verify Integrity view has an input labelled 'Shipment code',
-  // a button 'Verify integrity', and shows the result as text.
-  const code = this.shipmentCode!;
-  
-  // Navigate to the Verify Integrity page (the route is /verify-integrity, linked from Dashboard).
-  await this.ui.getByRole('link', { name: /verify integrity/i }).click();
-  await expect(this.ui).toHaveURL(/\/verify-integrity$/);
-  
-  await this.ui.getByLabel(/shipment code/i).fill(code);
-  await this.ui.getByRole('button', { name: /verify integrity/i }).click();
-  
-  // The result appears in a region marked with role="status" or as visible text; we'll check both.
-});
-
 // --- Assertions -------------------------------------------------------------
 
 Then(/^they are told that the chain is intact$/, async function (this: VerificationWorld) {
-  expect(this.response!.status(), 'verification response status').toBe(200);
-  expect(this.verificationResult?.intact, 'chain is intact').toBe(true);
-  expect(this.verificationResult?.firstAlteredUpdate, 'no altered update').toBeNull();
+  if (this.page) {
+    // E2E: verify the browser shows "The chain is intact"
+    await expect(this.ui.getByText(/the chain is intact/i)).toBeVisible();
+  } else {
+    // API: verify 200, intact=true, firstAlteredUpdate=null
+    expect(this.response!.status(), 'verification response status').toBe(200);
+    expect(this.verificationResult?.intact, 'chain is intact').toBe(true);
+    expect(this.verificationResult?.firstAlteredUpdate, 'no altered update').toBeNull();
+  }
 });
 
 Then(/^that three updates were checked$/, async function (this: VerificationWorld) {
-  expect(this.verificationResult?.updatesChecked, 'updates checked').toBe(3);
+  if (this.page) {
+    // E2E: verify the browser shows "3 updates checked"
+    await expect(this.ui.getByText(/3 updates checked/i)).toBeVisible();
+  } else {
+    // API: verify updatesChecked=3
+    expect(this.verificationResult?.updatesChecked, 'updates checked').toBe(3);
+  }
 });
 
 Then(/^that there are no updates to check$/, async function (this: VerificationWorld) {
@@ -117,15 +125,3 @@ Then(/^that the first alteration is in the second update$/, async function (this
 
 // "they are told that no shipment exists with that code" is now shared in common.steps.ts
 // (HU-04 and HU-05 use the same Gherkin text but assert different contracts based on the URL).
-
-// --- @e2e assertions ---------------------------------------------------------
-
-Then(/^the browser shows that the chain is intact$/, async function (this: VerificationWorld) {
-  // The MFE renders "The chain is intact" as visible text.
-  await expect(this.ui.getByText(/the chain is intact/i)).toBeVisible();
-});
-
-Then(/^the browser shows that three updates were checked$/, async function (this: VerificationWorld) {
-  // The MFE renders "3 updates checked" or similar.
-  await expect(this.ui.getByText(/3 updates checked/i)).toBeVisible();
-});

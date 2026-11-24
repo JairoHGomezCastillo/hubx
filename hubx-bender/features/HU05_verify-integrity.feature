@@ -16,6 +16,11 @@ Feature: Verify the integrity of a shipment's chain
       | the customer who owns the shipment          |
       | the ground partner assigned to the shipment |
 
+    @e2e
+    Examples:
+      | participant |
+      | an operator |
+
   Scenario: Shipment without updates
     Given a shipment has no updates recorded
     And an operator has signed in
@@ -41,11 +46,3 @@ Feature: Verify the integrity of a shipment's chain
     And a customer who does not own it has signed in
     When the customer requests verification of that shipment's integrity
     Then they are told that no shipment exists with that code
-
-  @e2e
-  Scenario: Verify an intact chain in the browser
-    Given a shipment has three updates recorded without alterations
-    And an operator has signed in
-    When the operator verifies the shipment's integrity in the browser
-    Then the browser shows that the chain is intact
-    And the browser shows that three updates were checked
