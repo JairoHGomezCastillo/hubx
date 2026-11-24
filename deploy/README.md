@@ -106,3 +106,37 @@ curl -s https://<hubx-gw-url>.onrender.com/api/health | jq .
 
 "Expired session" is not run against production: it forges an expired token with the environment's `JWT_SECRET`,
 which by design never leaves Render. The HU-02 scenarios created test shipments in the Neon database.
+
+## Staging (build once, deploy any commit)
+
+Constitution 1.5.0: every push builds the images of its commit (`.github/workflows/images.yml` →
+`ghcr.io/<owner>/hubx-{api,gw,mfe}:<sha>`). `.github/workflows/deploy.yml` deploys the images of **any** commit to an
+environment: migrations → Render API (`imageUrl`) → wait for `live` → warm-up → Cucumber smoke. Staging receives every PR
+merged into an integration branch (`deploy-staging.yml`, whatever the branch is called) and any ref on demand
+(Actions → deploy → Run workflow → `staging` + branch, tag or SHA). The image tested in staging is the one promoted.
+
+One-time setup (never paste a secret in a chat or the repo):
+
+1. **Images public.** After the first `images` run on `main`, open each package (`hubx-api`, `hubx-gw`, `hubx-mfe`)
+   under the repository's Packages → Package settings → Change visibility → Public (Render pulls without credentials).
+2. **Neon.** Project `hubx` → Branches → New branch `staging` (from `main`). Copy its **direct** connection string.
+3. **Render.** New → Blueprint → this repo, branch `main`, path `deploy/render.staging.yaml`. Values asked:
+   `DB_URL` = the staging direct URL; `API_URL` = `https://hubx-api-stg.onrender.com`;
+   `GATEWAY_URL` = `https://hubx-gw-stg.onrender.com` (fix them if Render assigns other URLs). Then Account settings →
+   API keys → create one. Note each service ID (`srv-…`, in its URL or Settings).
+4. **GitHub environment `staging`** (from your own terminal; `gh secret set` reads the value from stdin, hidden):
+   ```bash
+   gh api -X PUT repos/JairoHGomezCastillo/hubx/environments/staging >/dev/null
+   gh secret set DB_URL --env staging          # paste the Neon staging direct URL, Enter
+   gh secret set RENDER_API_KEY --env staging  # paste the Render API key, Enter
+   gh variable set RENDER_SERVICE_API --env staging --body srv-...
+   gh variable set RENDER_SERVICE_GW  --env staging --body srv-...
+   gh variable set RENDER_SERVICE_MFE --env staging --body srv-...
+   gh variable set GATEWAY_URL --env staging --body https://hubx-gw-stg.onrender.com
+   gh variable set UI_URL      --env staging --body https://hubx-mfe-stg.onrender.com
+   ```
+5. **First deploy:** Actions → deploy → Run workflow → `staging`, ref `main`. Expected: migrations applied, three
+   deploys `live`, warm-up, Cucumber green (all scenarios except `@needs-secret`).
+
+Production keeps Render's repo-built services for now; it moves to the same image model (environment `production`,
+called from `release.yml` after tagging) once staging has been proven.
