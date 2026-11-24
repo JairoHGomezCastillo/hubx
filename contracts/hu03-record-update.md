@@ -115,7 +115,10 @@ Rules:
 
 1. `recorded_at` is the exact instant stored in `updates.recorded_at`, rendered in UTC with nanosecond precision
    (RFC3339Nano). The API returns the same instant in its `recordedAt` field; a third party uses that value to
-   reproduce the fingerprint.
+   reproduce the fingerprint. PostgreSQL `timestamptz` keeps microseconds, so the API truncates the instant to
+   microseconds **before** computing the fingerprint; the stored value, the returned `recordedAt` and the canonical
+   line are then the same instant (clarified by HU-05 on 2026-11-25; RFC3339Nano drops trailing zeros, e.g.
+   `2026-11-24T10:15:30.123456Z`).
 2. Null values are the single character `-`, never an empty string and never the literal `null`.
 3. Stage names are the exact English strings from the backlog glossary: `In flight`, `At destination airport`,
    `Assigned to partner`, `Out for delivery`, `Delivered`.
