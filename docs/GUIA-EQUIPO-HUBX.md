@@ -1,6 +1,6 @@
 # Guía de equipo HUBX: construir en paralelo, una rama y un PR por historia
 
-> **Nota (2026-11-20):** cada release es una rama `release/vX.Y.Z` que sale de `main`, se fusiona a `main` cuando está lista (etiqueta y GitHub Release) y se borra; la siguiente sale de `main`. La primera, `release/sdd-hubx-system`, es la v0.1.0. Donde esta guía dice `release/v1`,
+> **Nota (2026-11-20):** cada release es una rama `release/vX.Y.Z` que sale de `main`, se fusiona a `main` cuando está lista (etiqueta y GitHub Release) y se borra; la siguiente sale de `main`. La primera, `release/sdd-hubx-system`, es la v0.1.0. Las etiquetas `vX.Y.Z` y la GitHub Release las crea el CI al fusionar a `main`; un arreglo urgente sale de `main` como `hotfix/vX.Y.Z` y el CI abre el PR para llevarlo a la release abierta. Donde esta guía dice `release/v1`,
 > usa ese nombre. La puesta en marcha comprobada de cada máquina está en [`docs/setup.md`](setup.md).
 
 Entrega: **martes 24 de noviembre de 2026, 18:00**. Hoy es jueves 19. La demostración individual vale el 40 %.

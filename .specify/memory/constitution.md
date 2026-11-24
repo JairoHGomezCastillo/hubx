@@ -120,7 +120,10 @@ and master/main MUST always remain deployable.
 
 The branching model MUST follow this flow: a release branch is created from master; feature branches MUST be merged
 into that release branch; the release branch MUST be merged into master; hotfixes MUST originate from master and be
-merged into master. The per-story branch created by Spec Kit is the feature branch of this flow. Configuration MUST
+merged into master. Every release or hotfix merged into master is tagged `vX.Y.Z` (from its branch name,
+`release/vX.Y.Z[-name]` or `hotfix/vX.Y.Z`) with a GitHub Release, automatically by CI; a hotfix is then merged
+into the open release branch so the next version keeps it. Released versions are not patched afterwards (no
+backports): a fix ships as a new version. The per-story branch created by Spec Kit is the feature branch of this flow. Configuration MUST
 differ by environment using the `application.properties` mechanism defined in Principle III.
 
 ## Governance
@@ -137,9 +140,13 @@ refinements.
 
 ALL PRs and reviews MUST verify compliance with this constitution. Any added complexity MUST be explicitly justified.
 
-**Version**: 1.4.0 | **Ratified**: 2026-11-17 | **Last Amended**: 2026-11-23
+**Version**: 1.4.1 | **Ratified**: 2026-11-17 | **Last Amended**: 2026-11-24
 
-<!-- Sync Impact Report (1.3.0 -> 1.4.0, MINOR): III allows go.uber.org/mock (test only) and names the hubx-bender
+<!-- Sync Impact Report (1.4.0 -> 1.4.1, PATCH): Development Process clarifies the branching flow already in force:
+automatic vX.Y.Z tag and GitHub Release on every release/hotfix merged into main (.github/workflows/release.yml),
+hotfix synced into the open release by PR, no backports. Proposal: human decision 2026-11-24. Migration: workflow,
+scripts/release-version.sh, memory.md, AGENTS.md and team guide in the same PR.
+(1.3.0 -> 1.4.0, MINOR): III allows go.uber.org/mock (test only) and names the hubx-bender
 toolchain (Playwright, Cucumber, tsx). IV: handlers in internal/handlers/<domain>, domain in internal/<domain>,
 test/ and mocks/ sub-packages generated with mockgen. V: Go unit tests in test/ sub-packages with gomock; acceptance
 tests are Cucumber features (backlog Gherkin verbatim) with Playwright steps; one @e2e browser happy path per story

@@ -40,6 +40,7 @@ CI, deploy). Each edits only its own paths.
 - Integration (PostgreSQL + API + gateway + MFE + bender, API and `@e2e`): `make test-integration`
 - Local app: `make up`, then http://localhost:3000 (MFE; `/api` goes to the gateway)
 - Go mocks: `go -C hubx-api generate ./...` (gomock via `go tool mockgen`)
+- Releases: merge `release/vX.Y.Z[-name]` or `hotfix/vX.Y.Z` into `main`; CI tags `vX.Y.Z` and publishes the GitHub Release (never tag by hand)
 - Agent zones: `make agents-zones` (each `[agent:<role>]` commit only touches that role's paths; CI on PRs to release)
 - Security: `gosec ./...`, `govulncheck -C hubx-api ./...`, `govulncheck -C hubx-gw ./...`
 - Health: `curl -s http://localhost:8080/health` and `curl -s http://localhost:8080/api/health`
