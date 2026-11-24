@@ -1,32 +1,50 @@
 # Deploy Report: HU-05 Verify Shipment Integrity
 
+Re-validation after the PR #33 review fix (the `@e2e` scenario now reuses the backlog "Intact chain"
+scenario verbatim). Supersedes the first validation of commit 5ffb09d.
+
 ## Deployment Details
 
-**Run URL:** https://github.com/JairoHGomezCastillo/hubx/actions/runs/45493671765
+**Run URL:** https://github.com/JairoHGomezCastillo/hubx/actions/runs/45500148815
 
-**Commit:** 5ffb09d1ca827dca7fdab4cb9f4373f91a7357b8 (branch: 005-verify-integrity)
+**Commit:** 0ab4bd7924268e5a73378c01e7decd3e95107b1b (branch: 005-verify-integrity,
+`[agent:qa-seguridad] HU-05 @e2e: reuse the backlog Intact chain scenario verbatim`)
 
 **Environment:** staging
 
-**Services and State:**
-- hubx-api: live (deployed in 20s)
-- hubx-gw: live (deployed in 20s)
-- hubx-mfe: live (deployed in 20s)
+**Result:** success (deploy job in 7m35s)
 
-**Migrations:** Applied successfully
+**Services and State** (`Deploy the API, then the gateway and the MFE`):
+- hubx-api (srv-dc2s1htg1s2s739o5vs0): live (20s)
+- hubx-gw  (srv-dc2s1htg1s2s739o5vr0): live (20s)
+- hubx-mfe (srv-dc2s1kdg1s2s739o64k0): live (20s)
+
+All three deployed the image for commit 0ab4bd7
+(`ghcr.io/jairohgomezcastillo/hubx-<svc>:0ab4bd7924268e5a73378c01e7decd3e95107b1b`); `images ready for
+0ab4bd7924268e5a73378c01e7decd3e95107b1b (0s)`.
+
+**Migrations:**
 ```
-{"time":"2026-11-24T21:42:07.77537058Z","level":"INFO","msg":"migrations up to date","applied":null,"total":1}
+{"time":"2026-11-24T22:22:50.493176679Z","level":"INFO","msg":"migrations up to date","applied":null,"total":1}
+```
+Baseline 0001 only; HU-05 adds no migration.
+
+**Smoke Test Result** (Cucumber against the public staging URLs, excluding `@needs-secret`):
+```
+57 scenarios (57 passed)
+369 steps (369 passed)
+6m 2.353s (6m 2.202s executing your code)
 ```
 
-**Smoke Test Result:** 57 scenarios (57 passed)
+## Curl Health Checks (public staging URLs)
 
-## Curl Health Checks
+Captured back-to-back after warming the free-tier services. See the cold-start note below.
 
 **Command 1:**
 ```
 curl -s https://hubx-gw-stg.onrender.com/health
 ```
-**Result:** pass
+**Result:** pass `[200]`
 **Excerpt:**
 ```
 {"service":"hubx-gw","status":"ok"}
@@ -36,7 +54,7 @@ curl -s https://hubx-gw-stg.onrender.com/health
 ```
 curl -s https://hubx-gw-stg.onrender.com/api/health
 ```
-**Result:** pass
+**Result:** pass `[200]`
 **Excerpt:**
 ```
 {"status":"ok","service":"hubx-api"}
@@ -44,16 +62,24 @@ curl -s https://hubx-gw-stg.onrender.com/api/health
 
 **Command 3:**
 ```
-curl -s -w "\nStatus: %{http_code}\n" https://hubx-mfe-stg.onrender.com/
+curl -s -o /dev/null -w "%{http_code}" https://hubx-mfe-stg.onrender.com/
 ```
-**Result:** pass
-**Excerpt:**
-```
-Status: 200
-```
+**Result:** pass `[200]`
+
+## Cold-start note (not a finding)
+
+Render free-tier services sleep after ~1 minute idle. After the ~6-minute CI smoke, the services had slept, so the
+first short-timeout curl to the gateway returned the gateway's own `401 {"error":"UNAUTHORIZED","message":
+"Authorization header required"}` (and connection resets, `[000]`) during the wake window, before the request reached
+the open `/health` and `/api/health` routes. With a longer client timeout and a warm-up poll, all three endpoints
+return `200` consistently (verified 5/5 for `/health`). This matches the documented free-tier behavior (memory.md:
+the smoke polls `GET <gw>/api/health` until 200 before running Cucumber) and is why the CI smoke — the authoritative
+check — passed 57/57. The gateway binary is byte-identical to the previous passing deploy of 5ffb09d
+(`git diff 5ffb09d 0ab4bd7 -- hubx-gw/` is empty); the fix touched only hubx-bender and qa-report.md.
 
 ## Summary
 
-Deployment of HU-05 to staging completed successfully. All three services deployed and are live. Migrations were applied (baseline schema 0001, no new migrations for this story). All 57 smoke test scenarios passed, including browser-based E2E tests in Chromium. Public staging URLs confirm all three services are healthy and responding.
-
-No failures or findings. The story branch is ready for PR review and merge to the release branch.
+Re-validation of HU-05 (commit 0ab4bd7) on staging succeeded. All three services live, migrations up to date
+(no new migration), CI smoke 57/57 passed, and the public gateway `/health`, `/api/health` and the MFE `/` all
+return 200 once warm. No findings; the transient 401s were free-tier cold starts, not a regression. The branch is
+ready for the PR to merge.
