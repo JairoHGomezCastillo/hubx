@@ -5,6 +5,7 @@
 
 import { useAuth } from '../contexts/AuthContext';
 import { navigateTo } from '../services/navigation';
+import { RecordUpdateContainer } from '../features/shipment-updates/RecordUpdateContainer';
 
 export function Dashboard() {
   const { user, signOut } = useAuth();
@@ -51,6 +52,8 @@ export function Dashboard() {
           </p>
         </div>
       )}
+
+      <RecordUpdateContainer onSessionExpired={handleSignOut} />
 
       {user?.role === 'operator' && (
         <div style={{ marginTop: '32px' }}>
