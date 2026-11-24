@@ -6,8 +6,9 @@
 - Configuration via `application.properties` per service (constitution Principle III); stdlib reader, one copy per service.
 - Backlog and all artifacts in English; guide and conversation with the team in Spanish.
 - Branching: release/feature/hotfix; the Spec Kit story branch is the feature branch.
-- Release branches are `release/vX.Y.Z[-name]` (e.g. `release/v0.2.0-sign-in`), cut from `main`. Story PRs target the
-  integration branch the human chooses (any base other than `main`; agents never infer it from a name, 2026-11-24); when the release is
+- Release branches are `release/vX.Y.Z[-name]` (e.g. `release/v0.2.0-sign-in`), cut from `main`. Every story request names its
+  release branch (mandatory input with the story, 2026-11-24); hubx-lead creates it from `main` if it is new, after the
+  human confirms (`ask` permission), and never pushes to an existing one; when the release is
   ready it is merged into `main` by PR and its branch is deleted automatically; the next one is cut from `main`.
   `release/sdd-hubx-system` shipped as v0.1.0, the baseline without stories (2026-11-24); HU-01 goes in v0.2.0.
 - Tags are created only by CI (`.github/workflows/release.yml`): merging a `release/vX.Y.Z[-name]` or `hotfix/vX.Y.Z`

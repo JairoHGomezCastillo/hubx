@@ -125,7 +125,9 @@ merged into master. Every release or hotfix merged into master is tagged `vX.Y.Z
 into every open integration branch so the next version keeps it. Released versions are not patched afterwards (no
 backports): a fix ships as a new version. The per-story branch created by Spec Kit is the feature branch of this flow.
 An integration branch is any base of a story PR other than master; its name is free (today `release/*`), and agents
-and workflows MUST NOT depend on it: the story's integration branch is the one the human chooses.
+and workflows MUST NOT depend on it: the story's integration branch is the one the human chooses. A story request
+MUST name its release branch (`release/vX.Y.Z[-name]`); if it does not exist yet, hubx-lead creates it from master,
+with the human's confirmation, and never pushes to an existing one.
 
 **Environments.** CI builds the container images of every commit once (`ghcr.io/<owner>/hubx-<service>:<sha>`);
 environments deploy images, never branches, so the image tested in staging is the one promoted to production.

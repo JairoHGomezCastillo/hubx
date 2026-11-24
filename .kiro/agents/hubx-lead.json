@@ -92,7 +92,9 @@
           "gh pr list*",
           ".specify/scripts/*",
           "bash .specify/scripts/*",
-          "git branch -r*"
+          "git branch -r*",
+          "git ls-remote*",
+          "bash scripts/release-version.sh*"
         ],
         "effect": "allow"
       },
@@ -124,6 +126,9 @@
           ".specify/scripts/*",
           "bash .specify/scripts/*",
           "git branch -r*",
+          "git ls-remote*",
+          "bash scripts/release-version.sh*",
+          "git push origin origin/main:refs/heads/release/*",
           "go -C hubx-api build*",
           "go -C hubx-api vet*",
           "go -C hubx-api fmt*",
@@ -167,7 +172,17 @@
           "git merge*",
           "gh api*"
         ],
-        "effect": "deny"
+        "effect": "deny",
+        "exclude": [
+          "git push origin origin/main:refs/heads/release/*"
+        ]
+      },
+      {
+        "capability": "shell",
+        "match": [
+          "git push origin origin/main:refs/heads/release/*"
+        ],
+        "effect": "ask"
       },
       {
         "capability": "fs_write",
