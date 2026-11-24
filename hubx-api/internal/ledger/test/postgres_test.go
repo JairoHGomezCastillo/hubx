@@ -425,3 +425,182 @@ func assertAppendSQL(t *testing.T, queries []string, insertArgs []any, in ledger
 		t.Errorf("insert fingerprint = %v, want %q", insertArgs[7], ledger.Fingerprint(in))
 	}
 }
+
+func TestHU04_List(t *testing.T) {
+	recordedAt1 := time.Date(2026, 11, 25, 10, 0, 0, 0, time.UTC)
+	recordedAt2 := time.Date(2026, 11, 25, 11, 0, 0, 0, time.UTC)
+	recordedAt3 := time.Date(2026, 11, 25, 12, 0, 0, 0, time.UTC)
+	partner := assignedPartnerID
+
+	update1 := ledger.Update{
+		ID:                  1,
+		ShipmentID:          shipmentID,
+		Sequence:            1,
+		Stage:               "In flight",
+		ResponsiblePartyID:  responsiblePartyID,
+		RecordedAt:          recordedAt1,
+		Fingerprint:         firstFingerprint,
+		PreviousFingerprint: nil,
+	}
+	update2 := ledger.Update{
+		ID:                  2,
+		ShipmentID:          shipmentID,
+		Sequence:            2,
+		Stage:               "At destination airport",
+		ResponsiblePartyID:  responsiblePartyID,
+		RecordedAt:          recordedAt2,
+		Fingerprint:         "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+		PreviousFingerprint: ptr(firstFingerprint),
+	}
+	update3 := ledger.Update{
+		ID:                  3,
+		ShipmentID:          shipmentID,
+		Sequence:            3,
+		Stage:               "Assigned to partner",
+		ResponsiblePartyID:  responsiblePartyID,
+		AssignedPartnerID:   &partner,
+		RecordedAt:          recordedAt3,
+		Fingerprint:         "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+		PreviousFingerprint: ptr("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"),
+	}
+
+	tests := []struct {
+		name       string
+		setupRows  func(ctrl *gomock.Controller) *mocks.MockRows
+		setupError error
+		want       []ledger.Update
+		wantErr    bool
+	}{
+		{
+			name: "returns three updates ordered by sequence ascending",
+			setupRows: func(ctrl *gomock.Controller) *mocks.MockRows {
+				rows := mocks.NewMockRows(ctrl)
+				callNum := 0
+				rows.EXPECT().Next().DoAndReturn(func() bool {
+					callNum++
+					return callNum <= 3
+				}).Times(4)
+				scanNum := 0
+				rows.EXPECT().Scan(gomock.Any()).DoAndReturn(func(dest ...any) error {
+					scanNum++
+					var update *ledger.Update
+					switch scanNum {
+					case 1:
+						update = &update1
+					case 2:
+						update = &update2
+					case 3:
+						update = &update3
+					}
+					if len(dest) != 9 {
+						return errors.New("List scan has unexpected destinations")
+					}
+					*dest[0].(*int64) = update.ID
+					*dest[1].(*string) = update.ShipmentID
+					*dest[2].(*int) = update.Sequence
+					*dest[3].(*string) = update.Stage
+					*dest[4].(*string) = update.ResponsiblePartyID
+					if update.AssignedPartnerID != nil {
+						dest[5].(*sql.NullString).Valid = true
+						dest[5].(*sql.NullString).String = *update.AssignedPartnerID
+					}
+					*dest[6].(*time.Time) = update.RecordedAt
+					if update.PreviousFingerprint != nil {
+						dest[7].(*sql.NullString).Valid = true
+						dest[7].(*sql.NullString).String = *update.PreviousFingerprint
+					}
+					*dest[8].(*string) = update.Fingerprint
+					return nil
+				}).Times(3)
+				rows.EXPECT().Err().Return(nil)
+				rows.EXPECT().Close().Return(nil)
+				return rows
+			},
+			want: []ledger.Update{update1, update2, update3},
+		},
+		{
+			name: "returns empty non-nil slice when no updates exist",
+			setupRows: func(ctrl *gomock.Controller) *mocks.MockRows {
+				rows := mocks.NewMockRows(ctrl)
+				rows.EXPECT().Next().Return(false)
+				rows.EXPECT().Err().Return(nil)
+				rows.EXPECT().Close().Return(nil)
+				return rows
+			},
+			want: []ledger.Update{},
+		},
+		{
+			name: "scan error propagates",
+			setupRows: func(ctrl *gomock.Controller) *mocks.MockRows {
+				rows := mocks.NewMockRows(ctrl)
+				rows.EXPECT().Next().Return(true)
+				rows.EXPECT().Scan(gomock.Any()).Return(errors.New("scan failed"))
+				rows.EXPECT().Close().Return(nil)
+				return rows
+			},
+			wantErr: true,
+		},
+		{
+			name: "rows Err() propagates",
+			setupRows: func(ctrl *gomock.Controller) *mocks.MockRows {
+				rows := mocks.NewMockRows(ctrl)
+				rows.EXPECT().Next().Return(false)
+				rows.EXPECT().Err().Return(errors.New("iteration failed"))
+				rows.EXPECT().Close().Return(nil)
+				return rows
+			},
+			wantErr: true,
+		},
+		{
+			name:       "query error propagates",
+			setupError: errors.New("query failed"),
+			wantErr:    true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			db := mocks.NewMockDB(ctrl)
+			var queries []string
+
+			if tt.setupError != nil {
+				db.EXPECT().QueryContext(gomock.Any(), sqlMatcher{"FROM UPDATES", &queries}, shipmentID).Return(nil, tt.setupError)
+			} else {
+				rows := tt.setupRows(ctrl)
+				db.EXPECT().QueryContext(gomock.Any(), sqlMatcher{"FROM UPDATES", &queries}, shipmentID).Return(rows, nil)
+			}
+
+			repo := ledger.NewPostgresRepository(db)
+			got, err := repo.List(context.Background(), shipmentID)
+
+			if tt.wantErr {
+				if err == nil {
+					t.Fatal("List() expected error, got nil")
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("List() unexpected error: %v", err)
+			}
+
+			// Verify query is parameterized and ordered
+			if len(queries) > 0 {
+				query := strings.ToUpper(queries[0])
+				if strings.Contains(queries[0], shipmentID) {
+					t.Errorf("query is not parameterized: %q", queries[0])
+				}
+				if !strings.Contains(query, "ORDER BY SEQUENCE ASC") {
+					t.Errorf("query must order by sequence ascending: %q", queries[0])
+				}
+			}
+
+			if got == nil {
+				t.Fatal("List() returned nil, want non-nil slice")
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("List() = %+v, want %+v", got, tt.want)
+			}
+		})
+	}
+}

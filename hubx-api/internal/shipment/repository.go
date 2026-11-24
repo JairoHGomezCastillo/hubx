@@ -44,6 +44,18 @@ type GroundPartnerRepository interface {
 	List(ctx context.Context) ([]GroundPartner, error)
 }
 
+// Party is a user resolved by ID, with their display name and role.
+type Party struct {
+	ID   string
+	Name string
+	Role string
+}
+
+// PartyRepository resolves parties by their identifiers in a single query.
+type PartyRepository interface {
+	Parties(ctx context.Context, ids []string) (map[string]Party, error)
+}
+
 // PgRepository implements Repository using PostgreSQL.
 type PgRepository struct {
 	db *sql.DB
