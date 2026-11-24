@@ -165,7 +165,7 @@ function RecordUpdate({ groundPartners, onRecordUpdate, onSessionExpired }: Reco
   return (
     <section aria-labelledby="record-update-heading">
       <h2 id="record-update-heading">Record an update</h2>
-      <form onSubmit={handleFormSubmit}>
+      <form noValidate onSubmit={handleFormSubmit}>
         <div>
           <label htmlFor="shipment-code">Shipment code</label>
           <input
