@@ -1,0 +1,29 @@
+name: main-source
+
+# Only a release or a hotfix may enter main (constitution, Development Process): a PR into main must come from
+# release/vX.Y.Z[-name] or hotfix/vX.Y.Z[-name]. Required check in the `protect-main` ruleset. Story branches go to a
+# release branch first.
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, reopened, synchronize, edited]
+
+permissions:
+  contents: read
+
+jobs:
+  release-source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v7
+      - name: The source branch is a release or a hotfix
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          if bash scripts/release-version.sh "$HEAD_REF"; then
+            echo "OK: $HEAD_REF may be merged into main" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "::error::$HEAD_REF cannot be merged into main: open the PR against a release branch (release/vX.Y.Z[-name]); only releases and hotfixes reach main"
+            exit 1
+          fi

@@ -149,6 +149,9 @@
   `main`); `deploy.yml` deploys any ref to a GitHub environment through the Render API (`imageUrl`), with migrations,
   warm-up and smoke. Staging (`hubx-*-stg`, Neon branch `staging`) gets every PR merged into an integration branch.
   Transitional: production still uses Render's repo-built autodeploy from `main`, without migrations or smoke in CI.
+- Only `release/vX.Y.Z[-name]` and `hotfix/vX.Y.Z[-name]` may be merged into `main`: required check `release-source`
+  (`.github/workflows/main-source.yml`) in `protect-main`, added after HU-03 (PR #23) reached `main` from a story
+  branch (2026-11-24). The admin's pull-request bypass can still skip it: use it only for releases and hotfixes.
 ## Pending
 - Move production to image-backed services and call deploy.yml (environment `production`) from release.yml after
   tagging; then delete deploy/render.yaml's repo-built services (owner A, after the 2026-11-24 delivery).
