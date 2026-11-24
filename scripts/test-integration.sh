@@ -34,4 +34,10 @@ bash scripts/wait-ui.sh "http://localhost:$ui_port" 90
 [ -d hubx-bender/node_modules ] || npm --prefix hubx-bender ci --no-audit --no-fund
 npm --prefix hubx-bender run browsers >/dev/null
 
-BENDER_BASE_URL=http://localhost:8080 BENDER_UI_URL="http://localhost:$ui_port" npm --prefix hubx-bender run test
+# Load .env to pass JWT_SECRET to bender (HU-01 forges an expired token for the session-expiration scenario).
+set -a
+source .env
+set +a
+
+BENDER_BASE_URL=http://localhost:8080 BENDER_UI_URL="http://localhost:$ui_port" JWT_SECRET="$JWT_SECRET" \
+  npm --prefix hubx-bender run test

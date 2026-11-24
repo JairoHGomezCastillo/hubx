@@ -43,6 +43,35 @@ make down
 `make help` lists every target (`test`, `security`, `psql`, `logs`, `reset`...). Local secrets are generated at random
 in a git-ignored `.env` on first run; nothing has to be configured by hand.
 
+## Authentication (HU-01)
+
+Sign in through the gateway with a preloaded demo user to obtain a one-hour JWT:
+
+```bash
+curl -s -X POST http://localhost:8080/api/auth/sign-in \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"operator@hubx.co","password":"Hubx-Demo-2026"}'
+# -> {"token":"<jwt>","user":{"email":"operator@hubx.co","role":"operator"}}
+```
+
+The email is normalized (lowercased and trimmed) before lookup. Wrong password and unknown email return the same
+`401 Invalid credentials` so neither reveals which field failed. Use the token on protected endpoints with
+`Authorization: Bearer <token>`; once it expires the gateway and API answer `401 Session expired. Please sign in again.`
+
+Demo users seeded by migration `0001` (all with password `Hubx-Demo-2026`):
+
+| Email | Role |
+|---|---|
+| `operator@hubx.co` | operator |
+| `rapido@hubx.co` | ground partner |
+| `ana@hubx.co` | customer |
+
+The JWT is signed with `JWT_SECRET` (generated locally in `.env`); it is never stored in the repository. The MFE keeps
+the token in memory only (never in `localStorage`). See [`docs/setup.md`](docs/setup.md) for the full demo user list.
+
+Continuous integration ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) builds and unit-tests all services,
+runs `gosec` and `govulncheck`, and then runs `make test-integration` on a clean stack.
+
 ## How we work
 
 | Document | What it holds |

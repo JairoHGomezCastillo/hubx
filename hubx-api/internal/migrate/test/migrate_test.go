@@ -1,4 +1,4 @@
-package migrate
+package test
 
 import (
 	"context"
@@ -9,6 +9,8 @@ import (
 	"testing/fstest"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
+
+	"hubx-api/internal/migrate"
 )
 
 func TestLoad_SortsByVersionAndIgnoresNonSQL(t *testing.T) {
@@ -19,7 +21,7 @@ func TestLoad_SortsByVersionAndIgnoresNonSQL(t *testing.T) {
 		"README.md":                {Data: []byte("docs")},
 	}
 
-	got, err := Load(fsys)
+	got, err := migrate.Load(fsys)
 	if err != nil {
 		t.Fatalf("Load: %v", err)
 	}
@@ -32,11 +34,11 @@ func TestLoad_SortsByVersionAndIgnoresNonSQL(t *testing.T) {
 }
 
 func TestLoad_ChecksumIgnoresLineEndings(t *testing.T) {
-	lf, err := Load(fstest.MapFS{"0001_a.sql": {Data: []byte("SELECT 1;\nSELECT 2;\n")}})
+	lf, err := migrate.Load(fstest.MapFS{"0001_a.sql": {Data: []byte("SELECT 1;\nSELECT 2;\n")}})
 	if err != nil {
 		t.Fatal(err)
 	}
-	crlf, err := Load(fstest.MapFS{"0001_a.sql": {Data: []byte("SELECT 1;\r\nSELECT 2;\r\n")}})
+	crlf, err := migrate.Load(fstest.MapFS{"0001_a.sql": {Data: []byte("SELECT 1;\r\nSELECT 2;\r\n")}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -54,7 +56,7 @@ func TestLoad_RejectsInvalidFiles(t *testing.T) {
 	}
 	for name, fsys := range cases {
 		t.Run(name, func(t *testing.T) {
-			if _, err := Load(fsys); err == nil {
+			if _, err := migrate.Load(fsys); err == nil {
 				t.Fatal("expected an error")
 			}
 		})
@@ -84,18 +86,18 @@ func testDB(t *testing.T) *sql.DB {
 func TestApply_IsIdempotent(t *testing.T) {
 	db := testDB(t)
 	ctx := context.Background()
-	migs, err := Load(fstest.MapFS{
+	migs, err := migrate.Load(fstest.MapFS{
 		"0001_probe.sql": {Data: []byte("CREATE TABLE migrate_probe (id int);\nINSERT INTO migrate_probe VALUES (1);")},
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	first, err := Apply(ctx, db, migs)
+	first, err := migrate.Apply(ctx, db, migs)
 	if err != nil {
 		t.Fatalf("first Apply: %v", err)
 	}
-	second, err := Apply(ctx, db, migs)
+	second, err := migrate.Apply(ctx, db, migs)
 	if err != nil {
 		t.Fatalf("second Apply: %v", err)
 	}
@@ -110,13 +112,13 @@ func TestApply_IsIdempotent(t *testing.T) {
 
 func TestApply_FailedMigrationLeavesNoTrace(t *testing.T) {
 	db := testDB(t)
-	migs, err := Load(fstest.MapFS{
+	migs, err := migrate.Load(fstest.MapFS{
 		"0001_probe.sql": {Data: []byte("CREATE TABLE migrate_probe (id int);\nSELECT * FROM missing_table;")},
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Apply(context.Background(), db, migs); err == nil {
+	if _, err := migrate.Apply(context.Background(), db, migs); err == nil {
 		t.Fatal("expected an error")
 	}
 	var exists bool
@@ -128,12 +130,12 @@ func TestApply_FailedMigrationLeavesNoTrace(t *testing.T) {
 func TestApply_RejectsEditedMigration(t *testing.T) {
 	db := testDB(t)
 	ctx := context.Background()
-	original, _ := Load(fstest.MapFS{"0001_probe.sql": {Data: []byte("CREATE TABLE migrate_probe (id int);")}})
-	if _, err := Apply(ctx, db, original); err != nil {
+	original, _ := migrate.Load(fstest.MapFS{"0001_probe.sql": {Data: []byte("CREATE TABLE migrate_probe (id int);")}})
+	if _, err := migrate.Apply(ctx, db, original); err != nil {
 		t.Fatal(err)
 	}
-	edited, _ := Load(fstest.MapFS{"0001_probe.sql": {Data: []byte("CREATE TABLE migrate_probe (id bigint);")}})
-	if _, err := Apply(ctx, db, edited); !errors.Is(err, ErrChecksumMismatch) {
+	edited, _ := migrate.Load(fstest.MapFS{"0001_probe.sql": {Data: []byte("CREATE TABLE migrate_probe (id bigint);")}})
+	if _, err := migrate.Apply(ctx, db, edited); !errors.Is(err, migrate.ErrChecksumMismatch) {
 		t.Fatalf("got %v, want ErrChecksumMismatch", err)
 	}
 }
