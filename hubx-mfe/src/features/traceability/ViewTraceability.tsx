@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
 import type { TraceabilityData, TraceabilityOutcome } from '../../api/client';
+import { StageTrack } from './StageTrack';
 
 export interface ViewTraceabilityProps {
   onViewTraceability: (code: string) => Promise<TraceabilityOutcome>;
@@ -74,10 +75,10 @@ function ViewTraceability({ onViewTraceability, onSessionExpired }: ViewTraceabi
   };
 
   return (
-    <section aria-labelledby="view-traceability-heading">
+    <section className="panel" aria-labelledby="view-traceability-heading">
       <h2 id="view-traceability-heading">View traceability</h2>
-      <form noValidate onSubmit={handleFormSubmit}>
-        <div>
+      <form className="form-inline" noValidate onSubmit={handleFormSubmit}>
+        <div className="field">
           <label htmlFor="traceability-shipment-code">Shipment code</label>
           <input
             id="traceability-shipment-code"
@@ -89,24 +90,28 @@ function ViewTraceability({ onViewTraceability, onSessionExpired }: ViewTraceabi
             required
           />
         </div>
-        <button type="submit" disabled={busy}>
+        <button className="button" type="submit" disabled={busy}>
           View traceability
         </button>
       </form>
 
-      {state.kind === 'loading' && <p>Loading traceability…</p>}
+      {state.kind === 'loading' && <p className="message">Loading traceability…</p>}
 
       {state.kind === 'success' && (
-        <div>
+        <div className="traceability-result">
           <h3>Traceability of {state.data.shipmentCode}</h3>
           <p>Current stage: {state.data.stage}</p>
+          <StageTrack
+            currentStage={state.data.stage}
+            recordedStages={state.data.updates.map((update) => update.stage)}
+          />
           {state.data.updates.length === 0 ? (
-            <p>This shipment has no updates yet.</p>
+            <p className="message">This shipment has no updates yet.</p>
           ) : (
-            <ol aria-label="Updates">
+            <ol className="updates" aria-label="Updates">
               {state.data.updates.map((update) => (
                 <li key={update.sequence}>
-                  <div>Stage: {update.stage}</div>
+                  <div className="update-stage">Stage: {update.stage}</div>
                   <div>
                     Responsible party: {update.responsibleParty.name} ({update.responsibleParty.role})
                   </div>
@@ -122,11 +127,11 @@ function ViewTraceability({ onViewTraceability, onSessionExpired }: ViewTraceabi
       )}
 
       {state.kind === 'not-found' && (
-        <p role="alert">No shipment exists with that code.</p>
+        <p className="message" data-tone="bad" role="alert">No shipment exists with that code.</p>
       )}
 
       {state.kind === 'error' && (
-        <p role="alert">The traceability could not be retrieved.</p>
+        <p className="message" data-tone="bad" role="alert">The traceability could not be retrieved.</p>
       )}
     </section>
   );

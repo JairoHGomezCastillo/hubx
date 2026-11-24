@@ -2,6 +2,7 @@
  * Verify Integrity page - accessible to all signed-in users.
  */
 
+import { AppShell } from '../components/AppShell';
 import { navigateTo } from '../services/navigation';
 import { VerifyIntegrityContainer } from '../features/integrity/VerifyIntegrityContainer';
 
@@ -11,25 +12,8 @@ export function VerifyIntegrity() {
   };
 
   return (
-    <main style={{ maxWidth: '800px', margin: '40px auto', padding: '20px' }}>
-      <div style={{ marginBottom: '32px' }}>
-        <button
-          onClick={() => navigateTo('/dashboard')}
-          style={{
-            padding: '8px 16px',
-            fontSize: '14px',
-            backgroundColor: '#6c757d',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-          }}
-        >
-          Back to Dashboard
-        </button>
-      </div>
-
+    <AppShell narrow showBack>
       <VerifyIntegrityContainer onSessionExpired={handleSessionExpired} />
-    </main>
+    </AppShell>
   );
 }
