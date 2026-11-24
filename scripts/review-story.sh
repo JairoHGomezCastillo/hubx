@@ -158,6 +158,8 @@ if ! $fast; then
     else
       npm --prefix hubx-bender run browsers >/dev/null 2>&1
       set -a; [ -f .env ] && . ./.env; set +a
+      # Steps that act on the database directly (e.g. HU-05's tamper scenario) reach the stack by its project name.
+      export BENDER_COMPOSE_PROJECT="$project"
       for run in 1 2; do
         res=$(cd hubx-bender && npx cucumber-js 2>&1 | grep -E 'scenarios \(' | tail -1)
         if [ -z "$res" ]; then
