@@ -16,7 +16,7 @@ server {
 
     location /api/ {
         proxy_pass ${GATEWAY_URL};
-        proxy_set_header Host $host;
+        proxy_ssl_server_name on;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     }
 
