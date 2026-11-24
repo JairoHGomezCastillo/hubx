@@ -1,38 +1,48 @@
-package auth
+package auth_test
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"go.uber.org/mock/gomock"
+
+	domain "hubx-api/internal/auth"
+	"hubx-api/internal/auth/mocks"
+	"hubx-api/internal/handlers/auth"
 )
 
-// mockService implements Service for testing.
-type mockService struct {
-	signInFunc func(ctx context.Context, email, password string) (string, *User, error)
+type signInResponse struct {
+	Token string   `json:"token"`
+	User  userInfo `json:"user"`
 }
 
-func (m *mockService) SignIn(ctx context.Context, email, password string) (string, *User, error) {
-	if m.signInFunc != nil {
-		return m.signInFunc(ctx, email, password)
-	}
-	return "", nil, errors.New("not implemented")
+type userInfo struct {
+	Email string `json:"email"`
+	Role  string `json:"role"`
 }
 
-func TestHandler_SignIn_Success(t *testing.T) {
-	service := &mockService{
-		signInFunc: func(ctx context.Context, email, password string) (string, *User, error) {
-			return "test-jwt-token", &User{
-				Email: "operator@hubx.co",
-				Role:  "operator",
-			}, nil
-		},
-	}
+type errorResponse struct {
+	Error   string `json:"error"`
+	Message string `json:"message"`
+}
 
-	handler := NewHandler(service)
+func TestHU01_Handler_SignIn_Success(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	service := mocks.NewMockService(ctrl)
+	service.EXPECT().
+		SignIn(gomock.Any(), "operator@hubx.co", "test-password").
+		Return("test-jwt-token", &domain.User{
+			Email: "operator@hubx.co",
+			Role:  "operator",
+		}, nil)
+
+	handler := auth.NewHandler(service)
 
 	body := `{"email":"operator@hubx.co","password":"test-password"}`
 	req := httptest.NewRequest(http.MethodPost, "/auth/sign-in", bytes.NewBufferString(body))
@@ -61,9 +71,12 @@ func TestHandler_SignIn_Success(t *testing.T) {
 	}
 }
 
-func TestHandler_SignIn_MissingPassword(t *testing.T) {
-	service := &mockService{}
-	handler := NewHandler(service)
+func TestHU01_Handler_SignIn_MissingPassword(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	service := mocks.NewMockService(ctrl)
+	handler := auth.NewHandler(service)
 
 	body := `{"email":"operator@hubx.co"}`
 	req := httptest.NewRequest(http.MethodPost, "/auth/sign-in", bytes.NewBufferString(body))
@@ -89,9 +102,12 @@ func TestHandler_SignIn_MissingPassword(t *testing.T) {
 	}
 }
 
-func TestHandler_SignIn_MissingEmail(t *testing.T) {
-	service := &mockService{}
-	handler := NewHandler(service)
+func TestHU01_Handler_SignIn_MissingEmail(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	service := mocks.NewMockService(ctrl)
+	handler := auth.NewHandler(service)
 
 	body := `{"password":"test-password"}`
 	req := httptest.NewRequest(http.MethodPost, "/auth/sign-in", bytes.NewBufferString(body))
@@ -114,9 +130,12 @@ func TestHandler_SignIn_MissingEmail(t *testing.T) {
 	}
 }
 
-func TestHandler_SignIn_BothFieldsMissing(t *testing.T) {
-	service := &mockService{}
-	handler := NewHandler(service)
+func TestHU01_Handler_SignIn_BothFieldsMissing(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	service := mocks.NewMockService(ctrl)
+	handler := auth.NewHandler(service)
 
 	body := `{}`
 	req := httptest.NewRequest(http.MethodPost, "/auth/sign-in", bytes.NewBufferString(body))
@@ -139,14 +158,16 @@ func TestHandler_SignIn_BothFieldsMissing(t *testing.T) {
 	}
 }
 
-func TestHandler_SignIn_InvalidCredentials(t *testing.T) {
-	service := &mockService{
-		signInFunc: func(ctx context.Context, email, password string) (string, *User, error) {
-			return "", nil, ErrInvalidCredentials
-		},
-	}
+func TestHU01_Handler_SignIn_InvalidCredentials(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
 
-	handler := NewHandler(service)
+	service := mocks.NewMockService(ctrl)
+	service.EXPECT().
+		SignIn(gomock.Any(), "operator@hubx.co", "wrong-password").
+		Return("", nil, domain.ErrInvalidCredentials)
+
+	handler := auth.NewHandler(service)
 
 	body := `{"email":"operator@hubx.co","password":"wrong-password"}`
 	req := httptest.NewRequest(http.MethodPost, "/auth/sign-in", bytes.NewBufferString(body))
@@ -172,14 +193,16 @@ func TestHandler_SignIn_InvalidCredentials(t *testing.T) {
 	}
 }
 
-func TestHandler_SignIn_InternalError(t *testing.T) {
-	service := &mockService{
-		signInFunc: func(ctx context.Context, email, password string) (string, *User, error) {
-			return "", nil, errors.New("database connection failed")
-		},
-	}
+func TestHU01_Handler_SignIn_InternalError(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
 
-	handler := NewHandler(service)
+	service := mocks.NewMockService(ctrl)
+	service.EXPECT().
+		SignIn(gomock.Any(), "operator@hubx.co", "test-password").
+		Return("", nil, errors.New("database connection failed"))
+
+	handler := auth.NewHandler(service)
 
 	body := `{"email":"operator@hubx.co","password":"test-password"}`
 	req := httptest.NewRequest(http.MethodPost, "/auth/sign-in", bytes.NewBufferString(body))
@@ -202,9 +225,12 @@ func TestHandler_SignIn_InternalError(t *testing.T) {
 	}
 }
 
-func TestHandler_SignIn_MalformedJSON(t *testing.T) {
-	service := &mockService{}
-	handler := NewHandler(service)
+func TestHU01_Handler_SignIn_MalformedJSON(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	service := mocks.NewMockService(ctrl)
+	handler := auth.NewHandler(service)
 
 	body := `{"email":"operator@hubx.co","password":` // Invalid JSON
 	req := httptest.NewRequest(http.MethodPost, "/auth/sign-in", bytes.NewBufferString(body))
@@ -227,17 +253,19 @@ func TestHandler_SignIn_MalformedJSON(t *testing.T) {
 	}
 }
 
-func TestHandler_SignIn_GroundPartnerRole(t *testing.T) {
-	service := &mockService{
-		signInFunc: func(ctx context.Context, email, password string) (string, *User, error) {
-			return "test-jwt-token", &User{
-				Email: "rapido@hubx.co",
-				Role:  "ground partner", // With space
-			}, nil
-		},
-	}
+func TestHU01_Handler_SignIn_GroundPartnerRole(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
 
-	handler := NewHandler(service)
+	service := mocks.NewMockService(ctrl)
+	service.EXPECT().
+		SignIn(gomock.Any(), "rapido@hubx.co", "test-password").
+		Return("test-jwt-token", &domain.User{
+			Email: "rapido@hubx.co",
+			Role:  "ground partner", // With space
+		}, nil)
+
+	handler := auth.NewHandler(service)
 
 	body := `{"email":"rapido@hubx.co","password":"test-password"}`
 	req := httptest.NewRequest(http.MethodPost, "/auth/sign-in", bytes.NewBufferString(body))

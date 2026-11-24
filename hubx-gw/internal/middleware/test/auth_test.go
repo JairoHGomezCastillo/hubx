@@ -1,4 +1,4 @@
-package middleware
+package middleware_test
 
 import (
 	"encoding/json"
@@ -8,12 +8,19 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+
+	"hubx-gw/internal/middleware"
 )
+
+type errorResponse struct {
+	Error   string `json:"error"`
+	Message string `json:"message"`
+}
 
 // generateTestToken creates a valid JWT for testing.
 func generateTestToken(secret string, expirationHours int) (string, error) {
 	now := time.Now()
-	claims := Claims{
+	claims := middleware.Claims{
 		Sub:   "550e8400-e29b-41d4-a716-446655440000",
 		Email: "operator@hubx.co",
 		Role:  "operator",
@@ -27,7 +34,7 @@ func generateTestToken(secret string, expirationHours int) (string, error) {
 	return token.SignedString([]byte(secret))
 }
 
-func TestJWTValidation_ValidToken(t *testing.T) {
+func TestHU01_JWTValidation_ValidToken(t *testing.T) {
 	secret := "test-secret-key-32-bytes-long!!"
 	token, err := generateTestToken(secret, 1)
 	if err != nil {
@@ -38,9 +45,9 @@ func TestJWTValidation_ValidToken(t *testing.T) {
 		"/health": true,
 	}
 
-	middleware := JWTValidation(secret, excludedPaths)
+	middlewareFunc := middleware.JWTValidation(secret, excludedPaths)
 	
-	handler := middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := middlewareFunc(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("success"))
 	}))
@@ -59,7 +66,7 @@ func TestJWTValidation_ValidToken(t *testing.T) {
 	}
 }
 
-func TestJWTValidation_ExcludedPath(t *testing.T) {
+func TestHU01_JWTValidation_ExcludedPath(t *testing.T) {
 	secret := "test-secret-key-32-bytes-long!!"
 
 	excludedPaths := map[string]bool{
@@ -68,9 +75,9 @@ func TestJWTValidation_ExcludedPath(t *testing.T) {
 		"/api/auth/sign-in": true,
 	}
 
-	middleware := JWTValidation(secret, excludedPaths)
+	middlewareFunc := middleware.JWTValidation(secret, excludedPaths)
 	
-	handler := middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := middlewareFunc(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("success"))
 	}))
@@ -108,13 +115,13 @@ func TestJWTValidation_ExcludedPath(t *testing.T) {
 	}
 }
 
-func TestJWTValidation_MissingToken(t *testing.T) {
+func TestHU01_JWTValidation_MissingToken(t *testing.T) {
 	secret := "test-secret-key-32-bytes-long!!"
 	excludedPaths := map[string]bool{}
 
-	middleware := JWTValidation(secret, excludedPaths)
+	middlewareFunc := middleware.JWTValidation(secret, excludedPaths)
 	
-	handler := middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := middlewareFunc(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		t.Error("handler should not be called when token is missing")
 		w.WriteHeader(http.StatusOK)
 	}))
@@ -142,13 +149,13 @@ func TestJWTValidation_MissingToken(t *testing.T) {
 	}
 }
 
-func TestJWTValidation_ExpiredToken(t *testing.T) {
+func TestHU01_JWTValidation_ExpiredToken(t *testing.T) {
 	secret := "test-secret-key-32-bytes-long!!"
 	excludedPaths := map[string]bool{}
 
 	// Create an expired token
 	now := time.Now()
-	claims := Claims{
+	claims := middleware.Claims{
 		Sub:   "550e8400-e29b-41d4-a716-446655440000",
 		Email: "operator@hubx.co",
 		Role:  "operator",
@@ -164,9 +171,9 @@ func TestJWTValidation_ExpiredToken(t *testing.T) {
 		t.Fatalf("Failed to create expired token: %v", err)
 	}
 
-	middleware := JWTValidation(secret, excludedPaths)
+	middlewareFunc := middleware.JWTValidation(secret, excludedPaths)
 	
-	handler := middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := middlewareFunc(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		t.Error("handler should not be called when token is expired")
 		w.WriteHeader(http.StatusOK)
 	}))
@@ -194,7 +201,7 @@ func TestJWTValidation_ExpiredToken(t *testing.T) {
 	}
 }
 
-func TestJWTValidation_InvalidSignature(t *testing.T) {
+func TestHU01_JWTValidation_InvalidSignature(t *testing.T) {
 	secret := "test-secret-key-32-bytes-long!!"
 	wrongSecret := "wrong-secret-key-32-bytes-long!!"
 	excludedPaths := map[string]bool{}
@@ -205,9 +212,9 @@ func TestJWTValidation_InvalidSignature(t *testing.T) {
 		t.Fatalf("Failed to generate token: %v", err)
 	}
 
-	middleware := JWTValidation(secret, excludedPaths)
+	middlewareFunc := middleware.JWTValidation(secret, excludedPaths)
 	
-	handler := middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := middlewareFunc(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		t.Error("handler should not be called when signature is invalid")
 		w.WriteHeader(http.StatusOK)
 	}))
@@ -235,13 +242,13 @@ func TestJWTValidation_InvalidSignature(t *testing.T) {
 	}
 }
 
-func TestJWTValidation_MalformedToken(t *testing.T) {
+func TestHU01_JWTValidation_MalformedToken(t *testing.T) {
 	secret := "test-secret-key-32-bytes-long!!"
 	excludedPaths := map[string]bool{}
 
-	middleware := JWTValidation(secret, excludedPaths)
+	middlewareFunc := middleware.JWTValidation(secret, excludedPaths)
 	
-	handler := middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := middlewareFunc(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		t.Error("handler should not be called when token is malformed")
 		w.WriteHeader(http.StatusOK)
 	}))
@@ -269,13 +276,13 @@ func TestJWTValidation_MalformedToken(t *testing.T) {
 	}
 }
 
-func TestJWTValidation_InvalidAuthorizationFormat(t *testing.T) {
+func TestHU01_JWTValidation_InvalidAuthorizationFormat(t *testing.T) {
 	secret := "test-secret-key-32-bytes-long!!"
 	excludedPaths := map[string]bool{}
 
-	middleware := JWTValidation(secret, excludedPaths)
+	middlewareFunc := middleware.JWTValidation(secret, excludedPaths)
 	
-	handler := middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := middlewareFunc(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		t.Error("handler should not be called when authorization format is invalid")
 		w.WriteHeader(http.StatusOK)
 	}))
@@ -317,44 +324,6 @@ func TestJWTValidation_InvalidAuthorizationFormat(t *testing.T) {
 
 			if resp.Error != "UNAUTHORIZED" {
 				t.Errorf("response.Error = %q; want %q", resp.Error, "UNAUTHORIZED")
-			}
-		})
-	}
-}
-
-func TestValidateToken(t *testing.T) {
-	secret := "test-secret-key-32-bytes-long!!"
-
-	tests := []struct {
-		name    string
-		token   string
-		wantErr error
-	}{
-		{
-			name: "valid token",
-			token: func() string {
-				token, _ := generateTestToken(secret, 1)
-				return token
-			}(),
-			wantErr: nil,
-		},
-		{
-			name:    "malformed token",
-			token:   "not-a-jwt",
-			wantErr: ErrInvalidToken,
-		},
-		{
-			name:    "empty token",
-			token:   "",
-			wantErr: ErrInvalidToken,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := validateToken(tt.token, secret)
-			if err != tt.wantErr {
-				t.Errorf("validateToken() error = %v; want %v", err, tt.wantErr)
 			}
 		})
 	}

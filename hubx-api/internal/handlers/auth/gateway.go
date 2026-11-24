@@ -2,7 +2,6 @@ package auth
 
 import (
 	"crypto/subtle"
-	"encoding/json"
 	"net/http"
 )
 
@@ -21,12 +20,7 @@ func RequireGatewaySecret(gatewaySecret string) func(http.Handler) http.Handler 
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			got := []byte(r.Header.Get(GatewaySecretHeader))
 			if subtle.ConstantTimeCompare(got, expected) != 1 {
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(http.StatusUnauthorized)
-				_ = json.NewEncoder(w).Encode(errorResponse{
-					Error:   "UNAUTHORIZED",
-					Message: "Request must come through the gateway",
-				})
+				writeError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Request must come through the gateway")
 				return
 			}
 			next.ServeHTTP(w, r)

@@ -1,23 +1,25 @@
-package auth
+package auth_test
 
 import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"hubx-api/internal/handlers/auth"
 )
 
-func TestRequireGatewaySecret(t *testing.T) {
+func TestHU01_RequireGatewaySecret(t *testing.T) {
 	const secret = "shared-gateway-secret"
 
 	next := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte("reached"))
 	})
-	handler := RequireGatewaySecret(secret)(next)
+	handler := auth.RequireGatewaySecret(secret)(next)
 
 	t.Run("accepts request with correct secret", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/health", nil)
-		req.Header.Set(GatewaySecretHeader, secret)
+		req.Header.Set(auth.GatewaySecretHeader, secret)
 		rec := httptest.NewRecorder()
 
 		handler.ServeHTTP(rec, req)
@@ -46,7 +48,7 @@ func TestRequireGatewaySecret(t *testing.T) {
 
 	t.Run("rejects request with wrong secret", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/health", nil)
-		req.Header.Set(GatewaySecretHeader, "wrong-secret")
+		req.Header.Set(auth.GatewaySecretHeader, "wrong-secret")
 		rec := httptest.NewRecorder()
 
 		handler.ServeHTTP(rec, req)

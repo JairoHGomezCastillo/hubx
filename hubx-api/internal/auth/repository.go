@@ -12,6 +12,8 @@ var (
 	ErrUserNotFound = errors.New("user not found")
 )
 
+//go:generate go tool mockgen -source=repository.go -destination=mocks/repository_mock.go -package=mocks
+
 // Repository defines persistence operations for users.
 type Repository interface {
 	FindUserByEmail(ctx context.Context, email string) (*User, error)

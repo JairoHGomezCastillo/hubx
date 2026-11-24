@@ -13,6 +13,8 @@ var (
 	ErrInvalidCredentials = errors.New("invalid credentials")
 )
 
+//go:generate go tool mockgen -source=service.go -destination=mocks/service_mock.go -package=mocks
+
 // Service defines authentication business logic.
 type Service interface {
 	SignIn(ctx context.Context, email, password string) (string, *User, error)

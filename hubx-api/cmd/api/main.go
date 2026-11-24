@@ -12,8 +12,8 @@ import (
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 
-	"hubx-api/internal/auth"
 	"hubx-api/internal/config"
+	"hubx-api/internal/handlers/auth"
 	"hubx-api/internal/health"
 )
 

@@ -1,4 +1,4 @@
-package auth
+package auth_test
 
 import (
 	"encoding/json"
@@ -8,26 +8,29 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+
+	domain "hubx-api/internal/auth"
+	"hubx-api/internal/handlers/auth"
 )
 
-func TestMiddleware_RequireAuth_ValidToken(t *testing.T) {
+func TestHU01_Middleware_RequireAuth_ValidToken(t *testing.T) {
 	secret := "test-secret-key-32-bytes-long!!"
-	middleware := NewMiddleware(secret)
+	middleware := auth.NewMiddleware(secret)
 
 	// Generate a valid token
-	user := &User{
+	user := &domain.User{
 		ID:    "550e8400-e29b-41d4-a716-446655440000",
 		Email: "operator@hubx.co",
 		Role:  "operator",
 	}
-	token, err := GenerateToken(user, secret, 1)
+	token, err := domain.GenerateToken(user, secret, 1)
 	if err != nil {
 		t.Fatalf("Failed to generate token: %v", err)
 	}
 
 	// Handler that checks claims were injected
 	handler := middleware.RequireAuth(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		claims := GetClaims(r.Context())
+		claims := auth.GetClaims(r.Context())
 		if claims == nil {
 			t.Error("claims not found in context")
 			w.WriteHeader(http.StatusInternalServerError)
@@ -53,9 +56,9 @@ func TestMiddleware_RequireAuth_ValidToken(t *testing.T) {
 	}
 }
 
-func TestMiddleware_RequireAuth_MissingToken(t *testing.T) {
+func TestHU01_Middleware_RequireAuth_MissingToken(t *testing.T) {
 	secret := "test-secret-key-32-bytes-long!!"
-	middleware := NewMiddleware(secret)
+	middleware := auth.NewMiddleware(secret)
 
 	handler := middleware.RequireAuth(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		t.Error("handler should not be called when token is missing")
@@ -85,9 +88,9 @@ func TestMiddleware_RequireAuth_MissingToken(t *testing.T) {
 	}
 }
 
-func TestMiddleware_RequireAuth_InvalidFormat(t *testing.T) {
+func TestHU01_Middleware_RequireAuth_InvalidFormat(t *testing.T) {
 	secret := "test-secret-key-32-bytes-long!!"
-	middleware := NewMiddleware(secret)
+	middleware := auth.NewMiddleware(secret)
 
 	handler := middleware.RequireAuth(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		t.Error("handler should not be called when authorization format is invalid")
@@ -136,13 +139,13 @@ func TestMiddleware_RequireAuth_InvalidFormat(t *testing.T) {
 	}
 }
 
-func TestMiddleware_RequireAuth_ExpiredToken(t *testing.T) {
+func TestHU01_Middleware_RequireAuth_ExpiredToken(t *testing.T) {
 	secret := "test-secret-key-32-bytes-long!!"
-	middleware := NewMiddleware(secret)
+	middleware := auth.NewMiddleware(secret)
 
 	// Create an expired token
 	now := time.Now()
-	claims := Claims{
+	claims := domain.Claims{
 		Sub:   "550e8400-e29b-41d4-a716-446655440000",
 		Email: "operator@hubx.co",
 		Role:  "operator",
@@ -186,18 +189,18 @@ func TestMiddleware_RequireAuth_ExpiredToken(t *testing.T) {
 	}
 }
 
-func TestMiddleware_RequireAuth_InvalidSignature(t *testing.T) {
+func TestHU01_Middleware_RequireAuth_InvalidSignature(t *testing.T) {
 	secret := "test-secret-key-32-bytes-long!!"
 	wrongSecret := "wrong-secret-key-32-bytes-long!!"
-	middleware := NewMiddleware(secret)
+	middleware := auth.NewMiddleware(secret)
 
 	// Generate a token with wrong secret
-	user := &User{
+	user := &domain.User{
 		ID:    "550e8400-e29b-41d4-a716-446655440000",
 		Email: "operator@hubx.co",
 		Role:  "operator",
 	}
-	token, err := GenerateToken(user, wrongSecret, 1)
+	token, err := domain.GenerateToken(user, wrongSecret, 1)
 	if err != nil {
 		t.Fatalf("Failed to generate token: %v", err)
 	}
@@ -230,9 +233,9 @@ func TestMiddleware_RequireAuth_InvalidSignature(t *testing.T) {
 	}
 }
 
-func TestMiddleware_RequireAuth_MalformedToken(t *testing.T) {
+func TestHU01_Middleware_RequireAuth_MalformedToken(t *testing.T) {
 	secret := "test-secret-key-32-bytes-long!!"
-	middleware := NewMiddleware(secret)
+	middleware := auth.NewMiddleware(secret)
 
 	handler := middleware.RequireAuth(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		t.Error("handler should not be called when token is malformed")
@@ -262,22 +265,22 @@ func TestMiddleware_RequireAuth_MalformedToken(t *testing.T) {
 	}
 }
 
-func TestGetClaims(t *testing.T) {
+func TestHU01_GetClaims(t *testing.T) {
 	secret := "test-secret-key-32-bytes-long!!"
-	middleware := NewMiddleware(secret)
+	middleware := auth.NewMiddleware(secret)
 
-	user := &User{
+	user := &domain.User{
 		ID:    "550e8400-e29b-41d4-a716-446655440000",
 		Email: "operator@hubx.co",
 		Role:  "operator",
 	}
-	token, err := GenerateToken(user, secret, 1)
+	token, err := domain.GenerateToken(user, secret, 1)
 	if err != nil {
 		t.Fatalf("Failed to generate token: %v", err)
 	}
 
 	handler := middleware.RequireAuth(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		claims := GetClaims(r.Context())
+		claims := auth.GetClaims(r.Context())
 		if claims == nil {
 			t.Error("GetClaims() returned nil")
 			return

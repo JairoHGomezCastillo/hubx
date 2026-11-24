@@ -1,11 +1,13 @@
-package auth
+package auth_test
 
 import (
 	"context"
 	"testing"
+
+	"hubx-api/internal/auth"
 )
 
-func TestNormalizeEmail(t *testing.T) {
+func TestHU01_NormalizeEmail(t *testing.T) {
 	tests := []struct {
 		name  string
 		input string
@@ -50,7 +52,7 @@ func TestNormalizeEmail(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := NormalizeEmail(tt.input)
+			got := auth.NormalizeEmail(tt.input)
 			if got != tt.want {
 				t.Errorf("NormalizeEmail(%q) = %q; want %q", tt.input, got, tt.want)
 			}
@@ -58,10 +60,10 @@ func TestNormalizeEmail(t *testing.T) {
 	}
 }
 
-// TestFindUserByEmail_NotFound tests that the repository returns ErrUserNotFound
+// TestHU01_FindUserByEmail_ErrorHandling tests that the repository returns ErrUserNotFound
 // when the user does not exist. This requires a real database or mock, so we
 // test the error condition via service tests with a mock repository.
-func TestFindUserByEmail_ErrorHandling(t *testing.T) {
+func TestHU01_FindUserByEmail_ErrorHandling(t *testing.T) {
 	// This test is a placeholder. Full database integration tests are run
 	// via hubx-bender. Unit testing the repository requires either testcontainers
 	// or a mock DB, which is beyond the minimal scope for HU-01.

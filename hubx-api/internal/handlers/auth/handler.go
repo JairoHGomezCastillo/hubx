@@ -6,6 +6,8 @@ import (
 	"log/slog"
 	"net/http"
 	"strings"
+
+	domain "hubx-api/internal/auth"
 )
 
 // signInRequest represents the POST /auth/sign-in request body.
@@ -34,11 +36,11 @@ type errorResponse struct {
 
 // Handler handles authentication HTTP requests.
 type Handler struct {
-	service Service
+	service domain.Service
 }
 
 // NewHandler creates a new authentication handler.
-func NewHandler(service Service) *Handler {
+func NewHandler(service domain.Service) *Handler {
 	return &Handler{service: service}
 }
 
@@ -62,7 +64,7 @@ func (h *Handler) SignIn(w http.ResponseWriter, r *http.Request) {
 	// Call service
 	token, user, err := h.service.SignIn(r.Context(), email, password)
 	if err != nil {
-		if errors.Is(err, ErrInvalidCredentials) {
+		if errors.Is(err, domain.ErrInvalidCredentials) {
 			h.writeError(w, http.StatusUnauthorized, "INVALID_CREDENTIALS", "Invalid credentials")
 			return
 		}

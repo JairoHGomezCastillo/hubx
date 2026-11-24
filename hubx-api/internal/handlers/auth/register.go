@@ -3,6 +3,8 @@ package auth
 import (
 	"database/sql"
 	"net/http"
+
+	domain "hubx-api/internal/auth"
 )
 
 // Config holds the configuration values needed by the auth module.
@@ -15,10 +17,10 @@ type Config struct {
 // authentication middleware for use by other modules.
 func Register(mux *http.ServeMux, db *sql.DB, cfg Config) *Middleware {
 	// Create repository
-	repo := NewPostgresRepository(db)
+	repo := domain.NewPostgresRepository(db)
 	
 	// Create service
-	service := NewAuthService(repo, cfg.JWTSecret, cfg.ExpirationHours)
+	service := domain.NewAuthService(repo, cfg.JWTSecret, cfg.ExpirationHours)
 	
 	// Create handler
 	handler := NewHandler(service)

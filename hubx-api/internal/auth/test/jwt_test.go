@@ -1,15 +1,17 @@
-package auth
+package auth_test
 
 import (
 	"testing"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+
+	"hubx-api/internal/auth"
 )
 
-func TestGenerateToken(t *testing.T) {
+func TestHU01_GenerateToken(t *testing.T) {
 	secret := "test-secret-key-32-bytes-long!!"
-	user := &User{
+	user := &auth.User{
 		ID:    "550e8400-e29b-41d4-a716-446655440000",
 		Email: "operator@hubx.co",
 		Role:  "operator",
@@ -17,7 +19,7 @@ func TestGenerateToken(t *testing.T) {
 
 	tests := []struct {
 		name             string
-		user             *User
+		user             *auth.User
 		secret           string
 		expirationHours  int
 	}{
@@ -29,7 +31,7 @@ func TestGenerateToken(t *testing.T) {
 		},
 		{
 			name: "generate token for ground partner",
-			user: &User{
+			user: &auth.User{
 				ID:    "00000000-0000-4000-8000-000000000002",
 				Email: "rapido@hubx.co",
 				Role:  "ground partner",
@@ -41,7 +43,7 @@ func TestGenerateToken(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			token, err := GenerateToken(tt.user, tt.secret, tt.expirationHours)
+			token, err := auth.GenerateToken(tt.user, tt.secret, tt.expirationHours)
 			if err != nil {
 				t.Fatalf("GenerateToken() error = %v", err)
 			}
@@ -50,14 +52,14 @@ func TestGenerateToken(t *testing.T) {
 			}
 
 			// Verify the token can be parsed and contains correct claims
-			parsed, err := jwt.ParseWithClaims(token, &Claims{}, func(token *jwt.Token) (interface{}, error) {
+			parsed, err := jwt.ParseWithClaims(token, &auth.Claims{}, func(token *jwt.Token) (interface{}, error) {
 				return []byte(tt.secret), nil
 			})
 			if err != nil {
 				t.Fatalf("Failed to parse generated token: %v", err)
 			}
 
-			claims, ok := parsed.Claims.(*Claims)
+			claims, ok := parsed.Claims.(*auth.Claims)
 			if !ok {
 				t.Fatal("Failed to cast claims")
 			}
@@ -83,20 +85,20 @@ func TestGenerateToken(t *testing.T) {
 	}
 }
 
-func TestValidateToken_Success(t *testing.T) {
+func TestHU01_ValidateToken_Success(t *testing.T) {
 	secret := "test-secret-key-32-bytes-long!!"
-	user := &User{
+	user := &auth.User{
 		ID:    "550e8400-e29b-41d4-a716-446655440000",
 		Email: "operator@hubx.co",
 		Role:  "operator",
 	}
 
-	token, err := GenerateToken(user, secret, 1)
+	token, err := auth.GenerateToken(user, secret, 1)
 	if err != nil {
 		t.Fatalf("GenerateToken() error = %v", err)
 	}
 
-	claims, err := ValidateToken(token, secret)
+	claims, err := auth.ValidateToken(token, secret)
 	if err != nil {
 		t.Fatalf("ValidateToken() error = %v", err)
 	}
@@ -112,12 +114,12 @@ func TestValidateToken_Success(t *testing.T) {
 	}
 }
 
-func TestValidateToken_ExpiredToken(t *testing.T) {
+func TestHU01_ValidateToken_ExpiredToken(t *testing.T) {
 	secret := "test-secret-key-32-bytes-long!!"
 	
 	// Create an expired token (exp in the past)
 	now := time.Now()
-	claims := Claims{
+	claims := auth.Claims{
 		Sub:   "550e8400-e29b-41d4-a716-446655440000",
 		Email: "operator@hubx.co",
 		Role:  "operator",
@@ -133,36 +135,36 @@ func TestValidateToken_ExpiredToken(t *testing.T) {
 		t.Fatalf("Failed to create expired token: %v", err)
 	}
 
-	_, err = ValidateToken(tokenString, secret)
-	if err != ErrExpiredToken {
+	_, err = auth.ValidateToken(tokenString, secret)
+	if err != auth.ErrExpiredToken {
 		t.Errorf("ValidateToken() error = %v; want ErrExpiredToken", err)
 	}
 }
 
-func TestValidateToken_InvalidSignature(t *testing.T) {
+func TestHU01_ValidateToken_InvalidSignature(t *testing.T) {
 	secret := "test-secret-key-32-bytes-long!!"
 	wrongSecret := "wrong-secret-key-32-bytes-long!!"
 	
-	user := &User{
+	user := &auth.User{
 		ID:    "550e8400-e29b-41d4-a716-446655440000",
 		Email: "operator@hubx.co",
 		Role:  "operator",
 	}
 
 	// Generate token with one secret
-	token, err := GenerateToken(user, secret, 1)
+	token, err := auth.GenerateToken(user, secret, 1)
 	if err != nil {
 		t.Fatalf("GenerateToken() error = %v", err)
 	}
 
 	// Try to validate with wrong secret
-	_, err = ValidateToken(token, wrongSecret)
-	if err != ErrInvalidToken {
+	_, err = auth.ValidateToken(token, wrongSecret)
+	if err != auth.ErrInvalidToken {
 		t.Errorf("ValidateToken() error = %v; want ErrInvalidToken", err)
 	}
 }
 
-func TestValidateToken_MalformedToken(t *testing.T) {
+func TestHU01_ValidateToken_MalformedToken(t *testing.T) {
 	secret := "test-secret-key-32-bytes-long!!"
 
 	tests := []struct {
@@ -185,8 +187,8 @@ func TestValidateToken_MalformedToken(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := ValidateToken(tt.token, secret)
-			if err != ErrInvalidToken {
+			_, err := auth.ValidateToken(tt.token, secret)
+			if err != auth.ErrInvalidToken {
 				t.Errorf("ValidateToken() error = %v; want ErrInvalidToken", err)
 			}
 		})
