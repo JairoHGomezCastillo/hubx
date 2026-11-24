@@ -117,12 +117,12 @@
 - Verify subagent evidence by rerunning the commands: in HU-02 frontend-react reported `ok` with test/build marked
   `not_run` (shell denied) and the build was actually broken. Text split across elements (`<strong>Code:</strong> X`)
   breaks `getByText` in both unit tests and `@e2e`.
+- Deployed 2026-11-24 (v0.3.0): Render free (hubx-mfe, hubx-gw, hubx-api from `deploy/render.yaml`, Blueprint on
+  `main`) + Neon PostgreSQL (direct URL as `DB_URL`, entered by hand). Migrations run once from a laptop. The Neon
+  password was rotated after being exposed in a chat; never paste connection strings in chats or the repo.
 ## Pending
 - Gateway security headers, CORS and rate limiting (constitution VI) are not implemented in `hubx-gw` yet; HU-02's
   qa-report records it as an open pre-existing finding (API8, corrected 2026-11-24). Needs its own story.
-- HU-02 PR open against `release/v0.3.0-create-shipment` (created by a human at 52837ed = v0.2.0); awaiting review.
-- Make the `agents-check` CI job (`.github/workflows/agents.yml`) a required check in the rulesets once it has run green.
-- hubx-api `main.go` still reads `PORT` directly; wire `internal/config`.
+- hubx-api `main.go` loads `internal/config` but still reads the port from `PORT` directly (works on Render).
 - hubx-gw has no config reader yet (reads `PORT`/`API_URL`).
-- gosec G304 in `hubx-api/internal/config/config.go:102` (owner B, item 5): blocks "gosec without findings".
 - 0002_seed_ledger: shipments in later stages with chained updates (owner C).
