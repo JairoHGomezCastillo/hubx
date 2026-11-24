@@ -167,9 +167,9 @@ El número sale siempre del backlog (HU-0X → `00X`). El lead ejecuta `.specify
 
 **2. Flujo.** `specify` → `clarify` → `plan` → `tasks`. Tras cada paso, lee lo producido antes de continuar. Revisa que `spec.md` abra con `Source: backlog HU-0X`, no hable de tecnología y referencie (no copie) las reglas transversales.
 
-**3. Pruebas primero.** El lead delega en `qa-seguridad` (`red`): pruebas de integración en `hubx-bender`, en rojo y por la razón correcta.
+**3. Pruebas primero.** El lead delega en `qa-seguridad` (`red`): `hubx-bender/features/HU0X_<nombre>.feature` con los escenarios del backlog copiados tal cual (Cucumber), sus pasos en Playwright contra el gateway y al menos un escenario `@e2e` con el camino feliz en el navegador. Todo en rojo y por la razón correcta (constitución 1.4.0).
 
-**4. Implementación.** `backend-go` y `frontend-react` con TDD contra el contrato del plan. Luego `qa-seguridad` (`verify`): suite, `gosec`, `govulncheck` y tabla OWASP en `qa-report.md`. Con hallazgos, vuelven como `fix`.
+**4. Implementación.** `backend-go` (dominio en `internal/<dominio>`, handlers en `internal/handlers/<dominio>`, pruebas en `test/` y mocks generados con gomock en `mocks/`) y `frontend-react` con TDD contra el contrato del plan. La historia no está terminada si su `@e2e` está en rojo, aunque la API esté en verde. Luego `qa-seguridad` (`verify`): suite, `gosec`, `govulncheck` y tabla OWASP en `qa-report.md`. Con hallazgos, vuelven como `fix`.
 
 **5. Analyze.** `/speckit.analyze` y corrige las desviaciones.
 

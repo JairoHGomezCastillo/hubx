@@ -44,7 +44,8 @@
           "npm --prefix hubx-mfe run*",
           "npm --prefix hubx-mfe test*",
           "git status*",
-          "git diff*"
+          "git diff*",
+          "make test-integration*"
         ],
         "effect": "allow"
       },
@@ -65,7 +66,8 @@
           "npm --prefix hubx-mfe test*",
           "git status*",
           "git diff*",
-          "npm --prefix hubx-mfe install*"
+          "npm --prefix hubx-mfe install*",
+          "make test-integration*"
         ],
         "effect": "deny"
       }

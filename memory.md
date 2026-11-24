@@ -50,6 +50,13 @@
 - hubx-lead runs on Claude Opus 5.5 in every tool (2026-11-23): Claude Code `claude-opus-5-5`, opencode
   `opencode/claude-opus-5-5` (needs OpenCode credits; Copilot does not serve it), Kiro IDE `claude-opus-5.5` (the
   kiro-cli 3.5 catalog does not list it, the IDE does).
+- Constitution 1.4.0 (2026-11-23): Go domain in `internal/<domain>`, handlers in `internal/handlers/<domain>`, unit
+  tests in `test/` sub-packages with gomock mocks generated into `mocks/` (`go.uber.org/mock` v0.6.0 as a module tool:
+  `go tool mockgen`). hubx-bender is Cucumber 13.3.0 + Playwright 1.65.0 (+ tsx 4.23.15): one feature per story with
+  the backlog Gherkin verbatim, and one `@e2e` browser happy path per story. Reason: HU-01's sign-in bug passed every
+  API test and only failed in the browser.
+- The MFE runs in the local stack (`hubx-mfe/Dockerfile`: Vite build served by nginx, `/api` proxied to the gateway,
+  same origin) on http://localhost:3000; `make test-integration` starts it and runs the `@e2e` scenarios in Chromium.
 ## Conventions
 - PR title (2026-11-21): `<type>(<scope>): <gitmoji> <short description> [agent:role]`, scope `HU-xx` or an area;
   mapping in hubx-lead step 10. Commits keep their own format below.
@@ -87,6 +94,9 @@
   union of its sub-agents' allows. In Kiro the lead could therefore write code; only its instructions stop it, so check
   its commits with `git diff --stat`. Claude Code's guard applies the lead's own rules and lets each sub-agent's guard
   judge that sub-agent's calls (`agent_type`). opencode scopes sub-agents by their own permissions (checked 2026-11-19).
+- Delegation honesty: a commit tagged `[agent:<role>]` must contain work that agent wrote and ran itself. HU-01's
+  implementation was partly done by the orchestrator because Kiro blocked the sub-agents (docs/sdd-agent-blockers.md);
+  the lead now stops and reports instead of doing a sub-agent's work.
 ## Pending
 - Make the `agents-check` CI job (`.github/workflows/agents.yml`) a required check in the rulesets once it has run green.
 - hubx-api `main.go` still reads `PORT` directly; wire `internal/config`.

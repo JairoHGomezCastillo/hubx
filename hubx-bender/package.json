@@ -2,14 +2,19 @@
   "name": "hubx-bender",
   "version": "1.0.0",
   "private": true,
-  "description": "HUBX QA workspace: API integration tests through the gateway (Playwright Test, API mode).",
+  "description": "HUBX QA workspace: BDD acceptance tests with Cucumber and Playwright (API through the gateway, @e2e in the browser).",
   "type": "module",
   "scripts": {
-    "test": "playwright test",
-    "test:report": "playwright show-report"
+    "test": "cucumber-js",
+    "test:api": "cucumber-js --tags \"not @e2e\"",
+    "test:e2e": "cucumber-js --tags @e2e",
+    "browsers": "playwright install chromium"
   },
   "devDependencies": {
+    "@cucumber/cucumber": "13.3.0",
     "@playwright/test": "1.65.0",
-    "@types/node": "22.20.5"
+    "@types/node": "22.20.5",
+    "playwright": "1.65.0",
+    "tsx": "4.23.15"
   }
 }

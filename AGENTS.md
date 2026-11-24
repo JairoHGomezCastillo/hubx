@@ -15,7 +15,7 @@ talk only over the HTTP contract.
 | `hubx-gw` | Gateway: single entry point, reverse proxy, CORS, security headers, rate limit | Go (stdlib) |
 | `hubx-api` | Domain API, ledger, auth, PostgreSQL access (only service that touches the DB) | Go (stdlib `net/http`) |
 | `hubx-mfe` | Frontend | React + TypeScript strict + Vite |
-| `hubx-bender` | QA workspace: API integration tests via gateway (not a running component) | Playwright Test (API mode) |
+| `hubx-bender` | QA workspace: BDD acceptance tests, API through the gateway and one `@e2e` browser happy path per story (not a running component) | Cucumber + Playwright (TypeScript) |
 
 Traffic: `MFE -> gateway (/api/*, StripPrefix) -> API -> PostgreSQL`. The MFE never calls the API directly.
 
@@ -37,7 +37,9 @@ CI, deploy). Each edits only its own paths.
 
 ## 5. Commands
 - Unit tests: `go -C hubx-api test ./...`, `go -C hubx-gw test ./...`, `npm --prefix hubx-mfe run test`
-- Integration (PostgreSQL + API + gateway + bender): `make test-integration`
+- Integration (PostgreSQL + API + gateway + MFE + bender, API and `@e2e`): `make test-integration`
+- Local app: `make up`, then http://localhost:3000 (MFE; `/api` goes to the gateway)
+- Go mocks: `go -C hubx-api generate ./...` (gomock via `go tool mockgen`)
 - Security: `gosec ./...`, `govulncheck -C hubx-api ./...`, `govulncheck -C hubx-gw ./...`
 - Health: `curl -s http://localhost:8080/health` and `curl -s http://localhost:8080/api/health`
 

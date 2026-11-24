@@ -37,7 +37,12 @@ the `hubx-mfe` `AGENTS.md`; `hubx-mfe/src` and `vite.config.ts`.
 
 ## Rules
 - React + strict TypeScript + Vite. No `any`, `@ts-ignore` or unsafe casts.
-- JWT token only in memory; never in `localStorage`.
+- JWT token only in memory; never in `localStorage`. Consequence: navigate inside the app (history API + route state),
+  never with `window.location` after sign-in, or the reload loses the session.
+- Accessible markup: every input has a `<label>`, every action is a `<button>` or link with visible text, and each
+  screen has a heading. The `@e2e` scenarios of `qa-seguridad` locate elements by role and label.
+- You do not write the `@e2e` scenarios (they belong to `qa-seguridad` in `hubx-bender`); run them with
+  `make test-integration` before delivering.
 - Request and response types come from the plan's contract.
 - Backlog vocabulary (shipment, stage, update, fingerprint, responsible party). UI language: as defined in the spec; do not invent business texts.
 

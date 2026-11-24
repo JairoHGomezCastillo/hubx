@@ -61,7 +61,7 @@ gh --version | head -1; gosec -version; govulncheck -version; opencode --version
 git clone https://github.com/JairoHGomezCastillo/hubx.git && cd hubx
 git switch release/sdd-hubx-system        # o la rama en la que vayas a trabajar
 gh auth login --hostname github.com --git-protocol https --web
-npm --prefix hubx-bender ci
+npm --prefix hubx-bender ci && npm --prefix hubx-bender run browsers
 npm --prefix hubx-mfe ci
 ```
 
@@ -93,8 +93,12 @@ make security             # gosec + govulncheck en ambos servicios
 make psql                 # consola SQL de la base local (requiere make up)
 ```
 
-Resultado esperado de `make test-integration`: `9 passed` — los 2 smoke de salud (`SMOKE_gateway_health`,
-`SMOKE_api_health_through_gateway`) y los 7 de HU-01 Sign in (`HU01_sign_in.spec.ts`), en unos 35 s la primera vez.
+Resultado esperado de `make test-integration`: los 3 escenarios de `features/health.feature` (gateway, API por el
+gateway y el `@e2e` en Chromium a través del MFE) más los de HU-01 Sign in (`features/HU01_sign_in.feature`, con su
+`@e2e`). La primera vez descarga Chromium (`npm --prefix hubx-bender run browsers`) y construye la imagen del MFE.
+
+Con `make up`, el MFE queda en http://localhost:3000 (nginx sirve el build y reenvía `/api` al gateway). Para ver el
+navegador en los `@e2e`: `HEADED=1 npm --prefix hubx-bender run test:e2e`.
 
 Probar el sign-in a mano (usuarios demo de la sección 4):
 

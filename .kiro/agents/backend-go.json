@@ -54,7 +54,11 @@
           "go -C hubx-gw fmt*",
           "go -C hubx-gw mod tidy*",
           "git status*",
-          "git diff*"
+          "git diff*",
+          "go -C hubx-api generate*",
+          "go -C hubx-api tool*",
+          "go -C hubx-gw generate*",
+          "go -C hubx-gw tool*"
         ],
         "effect": "allow"
       },
@@ -85,7 +89,11 @@
           "git status*",
           "git diff*",
           "go -C hubx-api get*",
-          "go -C hubx-gw get*"
+          "go -C hubx-gw get*",
+          "go -C hubx-api generate*",
+          "go -C hubx-api tool*",
+          "go -C hubx-gw generate*",
+          "go -C hubx-gw tool*"
         ],
         "effect": "deny"
       }
