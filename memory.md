@@ -167,6 +167,10 @@
 - Deploy validation by devops (2026-11-24): after QA's verify the lead pushes the story branch and devops deploys it
   to staging through the CD (`gh workflow run deploy.yml -f environment=staging -f ref=<branch>`, only staging; production
   is denied), follows the run and writes `specs/NNN-*/deploy.md`. review-story warns when it is missing.
+- devops refused its own step 7 on HU-05 citing "deployment with platform credentials: human confirmation" (an old limit);
+  the limit now separates credentials (human only) from triggering the staging CD (devops, no confirmation), 2026-11-24.
+- Demo mode: the deploy validation (lead step 6d, ~10-12 min on the free tier) is skipped only when the human asks for it
+  in the request ("sin validación de despliegue"); recorded in pr.md; staging still validates on merge.
 ## Pending
 - Move production to image-backed services and call deploy.yml (environment `production`) from release.yml after
   tagging; then delete deploy/render.yaml's repo-built services (owner A, after the 2026-11-24 delivery).
