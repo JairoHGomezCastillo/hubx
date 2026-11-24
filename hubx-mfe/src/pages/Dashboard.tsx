@@ -52,6 +52,25 @@ export function Dashboard() {
         </div>
       )}
 
+      {user?.role === 'operator' && (
+        <div style={{ marginTop: '32px' }}>
+          <button
+            onClick={() => navigateTo('/shipments/new')}
+            style={{
+              padding: '12px 24px',
+              fontSize: '16px',
+              backgroundColor: '#28a745',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+            }}
+          >
+            Create shipment
+          </button>
+        </div>
+      )}
+
       <div style={{ marginTop: '32px' }}>
         <p style={{ color: '#666' }}>
           Welcome to HUBX. Role-specific features will be added in future stories.

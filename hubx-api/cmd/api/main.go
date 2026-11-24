@@ -15,6 +15,7 @@ import (
 	"hubx-api/internal/config"
 	"hubx-api/internal/handlers/auth"
 	"hubx-api/internal/handlers/health"
+	"hubx-api/internal/handlers/shipment"
 )
 
 // port lee el puerto desde el entorno con un valor por defecto seguro.
@@ -82,8 +83,8 @@ func main() {
 		ExpirationHours: cfg.GetInt("jwt.expiration.hours", 1),
 	})
 
-	// Future modules will use authMiddleware to protect their routes
-	_ = authMiddleware
+	// Register shipment module (first protected route, closes HU-01 deviation 9)
+	shipment.Register(mux, db, authMiddleware.RequireAuth)
 
 	// The gateway shared secret guards every route: all legitimate traffic
 	// enters through the gateway, which injects X-Gateway-Secret.

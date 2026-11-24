@@ -64,6 +64,11 @@
   API test and only failed in the browser.
 - The MFE runs in the local stack (`hubx-mfe/Dockerfile`: Vite build served by nginx, `/api` proxied to the gateway,
   same origin) on http://localhost:3000; `make test-integration` starts it and runs the `@e2e` scenarios in Chromium.
+- HU-02 (2026-11-24): `POST /api/shipments` (`contracts/shipments-create.md`), no migration (reuses `shipments` from
+  0001), no update recorded on creation. Code `HBX-` + 8 upper hex from `crypto/rand`, retried on `shipments_code_key`.
+  Weight is a JSON number literal `^[0-9]+(\.[0-9])?$` in [0.1, 5000]; more than one decimal (0.15) is
+  rejected with the weight-range message (human decision 2026-11-24, Option A; not deduced from the schema). Customer indicated by email. The API's `RequireAuth` now guards its first route. HU-02 ships in
+  v0.3.0 (`release/v0.3.0-create-shipment`), not v0.2.0.
 ## Conventions
 - PR title (2026-11-21): `<type>(<scope>): <gitmoji> <short description> [agent:role]`, scope `HU-xx` or an area;
   mapping in hubx-lead step 10. Commits keep their own format below.
@@ -109,7 +114,13 @@
   `scripts/agents/hubx-lead.kiro.json`. The lead may not write `qa-report.md` (opencode and Claude Code block it; in
   Kiro only CI catches it, because a lead deny would also block qa-seguridad). Historical exceptions with their
   reason: `scripts/agent-zones-exceptions.txt` (63e4726, 9b5b037, 936abb1).
+- Verify subagent evidence by rerunning the commands: in HU-02 frontend-react reported `ok` with test/build marked
+  `not_run` (shell denied) and the build was actually broken. Text split across elements (`<strong>Code:</strong> X`)
+  breaks `getByText` in both unit tests and `@e2e`.
 ## Pending
+- Gateway security headers, CORS and rate limiting (constitution VI) are not implemented in `hubx-gw` yet; HU-02's
+  qa-report records it as an open pre-existing finding (API8, corrected 2026-11-24). Needs its own story.
+- HU-02 PR open against `release/v0.3.0-create-shipment` (created by a human at 52837ed = v0.2.0); awaiting review.
 - Make the `agents-check` CI job (`.github/workflows/agents.yml`) a required check in the rulesets once it has run green.
 - hubx-api `main.go` still reads `PORT` directly; wire `internal/config`.
 - hubx-gw has no config reader yet (reads `PORT`/`API_URL`).

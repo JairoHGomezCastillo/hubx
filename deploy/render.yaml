@@ -1,0 +1,49 @@
+services:
+  - type: web
+    name: hubx-api
+    runtime: docker
+    plan: free
+    dockerContext: ./hubx-api
+    dockerfilePath: ./hubx-api/Dockerfile
+    # The API returns 401 without the gateway secret, so it has no healthCheckPath.
+    envVars:
+      # Neon DIRECT connection string (not the pooled one), with sslmode=require.
+      # Set in the Render dashboard during Blueprint creation.
+      - key: DB_URL
+        sync: false
+      - fromGroup: hubx-secrets
+
+  - type: web
+    name: hubx-gw
+    runtime: docker
+    plan: free
+    dockerContext: ./hubx-gw
+    dockerfilePath: ./hubx-gw/Dockerfile
+    healthCheckPath: /health
+    envVars:
+      # Public HTTPS URL of hubx-api. A Blueprint cannot resolve a service's
+      # public .onrender.com URL (fromService host is the private name only),
+      # so set this by hand after the first deploy. See deploy/README.md.
+      - key: API_URL
+        sync: false
+      - fromGroup: hubx-secrets
+
+  - type: web
+    name: hubx-mfe
+    runtime: docker
+    plan: free
+    dockerContext: ./hubx-mfe
+    dockerfilePath: ./hubx-mfe/Dockerfile
+    envVars:
+      # Public HTTPS URL of hubx-gw. Same limitation as API_URL above:
+      # set by hand after the gateway's first deploy. See deploy/README.md.
+      - key: GATEWAY_URL
+        sync: false
+
+envVarGroups:
+  - name: hubx-secrets
+    envVars:
+      - key: JWT_SECRET
+        generateValue: true
+      - key: GATEWAY_SECRET
+        generateValue: true
