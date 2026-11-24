@@ -5,7 +5,7 @@ name: agents
 on:
   pull_request:
   push:
-    branches: [main, "release/**", "hotfix/**"]
+    branches: ["**"]
 
 permissions:
   contents: read
@@ -22,6 +22,6 @@ jobs:
         with:
           node-version: 24
       - run: make agents-check
-      # Story PRs into a release branch: each [agent:<role>] commit stays inside its role's paths.
-      - if: github.event_name == 'pull_request' && startsWith(github.base_ref, 'release/')
+      # PRs into any integration branch (every base except main): each [agent:<role>] commit stays inside its zone.
+      - if: github.event_name == 'pull_request' && github.base_ref != 'main'
         run: make agents-zones BASE=origin/${{ github.base_ref }}
