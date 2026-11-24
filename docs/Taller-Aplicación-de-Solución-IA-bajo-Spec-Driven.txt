@@ -1,0 +1,136 @@
+Taller: Aplicación de Solución IA bajo Spec-Driven Development (SDD)
+Due 24 November 2026 18:00
+•
+Multiple submissions allowed
+Instructions
+1. Objetivo
+Construir y desplegar una aplicación funcional de principio a fin, integrando Frontend, Backend, Base de Datos, DevOps y Ciberseguridad, utilizando Spec-Driven Development (SDD) y herramientas de Inteligencia Artificial.
+
+
+El taller busca demostrar cómo las especificaciones estructuradas permiten desarrollar software de manera rigurosa, incremental, verificable y eficiente.
+
+
+Se valorará especialmente la capacidad de utilizar arquitecturas multiagente, en las que diferentes agentes de IA colaboren en actividades de análisis, desarrollo, pruebas e integración.
+
+
+OBLIGATORIO: Soluciones de SW asociados al dominio.
+
+2. Requisitos técnicos
+Cada equipo deberá cumplir los siguientes requisitos:
+
+Aplicación completa: Solución seleccionada libremente por el equipo.
+
+Frontend: Interfaz funcional e integrada.
+
+Backend: Servicios, APIs y lógica de negocio.
+
+Base de datos: Persistencia de información.
+
+SDD: Uso de herramientas como GitHub Spec Kit (preferida) u OpenSpec.
+
+DevOps: Aplicación desplegada en un entorno accesible, preferiblemente gratuito.
+
+Calidad y ciberseguridad: Pruebas automatizadas, validaciones y prácticas básicas de seguridad.
+
+Backlog: Aproximadamente 10 historias de usuario, de las cuales 5 estarán desarrolladas, correspondiendo a la línea base y otras 5 se desarrollarán en clase-  lo lógico es que esas 5 sean independientes para que no haya conflicto en e de desarrollo concurrente - .
+
+3. Modalidades de desarrollo y calificación
+Los equipos podrán elegir entre dos modalidades.
+
+Modalidad A: SDD con IA — Nota máxima 4.5
+El equipo desarrolla la aplicación mediante especificaciones estructuradas, utilizando herramientas de IA para implementar, verificar y desplegar las funcionalidades.
+
+Debe evidenciar el proceso completo:
+
+Especificación → Planificación → Tareas → Implementación → Pruebas → Despliegue.
+
+Modalidad B: SDD con equipo de agentes de IA — Nota máxima 5.0
+Además de cumplir los requisitos de la modalidad A, el equipo implementará una arquitectura colaborativa de dos o más agentes de IA con responsabilidades diferenciadas.
+
+Son válidas diferentes topologías, por ejemplo:
+
+Agente coordinador o líder técnico + agente desarrollador + agente de testing.
+
+Agente de requerimientos + agente de arquitectura + agente desarrollador.
+
+Agentes especializados en frontend, backend, seguridad y pruebas.
+
+Otras configuraciones multiagente justificadas por el equipo.
+
+No se evaluará la cantidad de agentes, sino su colaboración efectiva y el valor que aportan al desarrollo.
+
+Los agentes deben participar realmente en la ejecución del trabajo, no limitarse a representar roles descritos en un documento.
+
+4. Demostración presencial obligatoria
+La demostración tendrá dos momentos.
+
+Fase 1. Presentación de la línea base
+Cada equipo presentará:
+
+La aplicación funcionando y desplegada.
+
+Aproximadamente 5 historias de usuario implementadas y 5 pendientes por implementar.
+
+Las especificaciones utilizadas.
+
+Las pruebas automatizadas y los controles de seguridad.
+
+La arquitectura de agentes, cuando corresponda.
+
+Fase 2. Desarrollo individual en vivo
+Todos los estudiantes, sin excepción, deberán construir una historia de usuario durante la demostración, desde su propio computador.
+
+El profesor asignará una historia de usuario o funcionalidad incremental relacionada con la aplicación.
+
+Cada estudiante deberá demostrar personalmente que puede:
+
+Elaborar o ajustar la especificación de la historia asignada.
+
+Ejecutar el proceso SDD utilizando IA y, cuando corresponda, su arquitectura de agentes.
+
+Implementar, probar y ejecutar la funcionalidad integrada con la aplicación existente.
+
+Se estima un tiempo de 5 a 10 minutos por especificación, dependiendo de su complejidad.
+
+La demostración debe evidenciar dominio individual del proceso. No será suficiente observar cómo otro integrante del equipo ejecuta las herramientas.
+
+5. Rúbrica de evaluación
+Criterio	Peso	Qué se evalúa
+1. Producto funcional	30 %	Aplicación integrada, historias implementadas, despliegue, pruebas y seguridad.
+2. Aplicación de SDD	30 %	Calidad y trazabilidad de especificaciones, planificación, implementación y validación.
+3. Demostración individual	40 %	Capacidad de cada estudiante para construir una nueva historia en vivo, desde su computador, utilizando SDD.
+Total	100 %	
+Cálculo de la nota
+La rúbrica produce una calificación base entre 0 y 5.0.
+
+Modalidad A — SDD: Nota final = mínimo entre la nota base y 4.5.
+
+Modalidad B — SDD multiagente: Nota final = nota base, hasta 5.0, siempre que se demuestre colaboración efectiva entre agentes.
+
+La simple declaración de una arquitectura multiagente no habilita la nota máxima de 5.0. Su funcionamiento debe demostrarse.
+
+6. Evidencias de entrega
+Cada equipo deberá entregar:
+
+Repositorio del código fuente.
+
+Especificaciones y backlog de historias de usuario.
+
+Instrucciones de instalación y ejecución.
+
+Enlace a la aplicación desplegada.
+
+Evidencias de pruebas y controles de seguridad.
+
+Descripción de la arquitectura multiagente, si aplica.
+
+7. Consideraciones finales
+La evaluación no consiste únicamente en entregar software funcionando. Consiste en demostrar que cada estudiante domina un proceso de ingeniería de software asistido por IA, guiado por especificaciones.
+
+
+
+El uso de múltiples agentes no garantiza una mejor solución. Se espera que los estudiantes comprendan cómo coordinar agentes, gestionar su complejidad y verificar la calidad de sus resultados.
+
+
+
+La capacidad de construir software incrementalmente, con especificaciones claras y resultados verificables, constituye el aprendizaje central de este taller.

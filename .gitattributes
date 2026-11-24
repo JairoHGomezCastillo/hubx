@@ -1,0 +1,5 @@
+# Same line endings on every machine: LF everywhere (Makefile, shell scripts, Go, SQL, YAML).
+* text=auto eol=lf
+*.png binary
+*.ico binary
+*.jpg binary

@@ -1,0 +1,111 @@
+{
+  "name": "backend-go",
+  "description": "Implements or repairs ONE Go module in hubx-api or hubx-gw using TDD. Call it in the implement and fix phases, when tasks.md assigns backend tasks.",
+  "model": "claude-sonnet-4.5",
+  "prompt": "file://../agent-prompts/backend-go.md",
+  "tools": [
+    "read",
+    "write",
+    "shell"
+  ],
+  "permissions": {
+    "rules": [
+      {
+        "capability": "fs_read",
+        "match": [
+          "**/.env",
+          "**/.env.*"
+        ],
+        "exclude": [
+          "**/.env.example"
+        ],
+        "effect": "ask"
+      },
+      {
+        "capability": "fs_write",
+        "match": [
+          "**"
+        ],
+        "exclude": [
+          "**/hubx-api/**",
+          "**/hubx-gw/**",
+          "**/go.work.sum"
+        ],
+        "effect": "deny"
+      },
+      {
+        "capability": "fs_write",
+        "match": [
+          "**/hubx-api/**",
+          "**/hubx-gw/**",
+          "**/go.work.sum"
+        ],
+        "effect": "allow"
+      },
+      {
+        "capability": "shell",
+        "match": [
+          "go -C hubx-api build*",
+          "go -C hubx-api test*",
+          "go -C hubx-api vet*",
+          "go -C hubx-api fmt*",
+          "go -C hubx-api mod tidy*",
+          "go -C hubx-gw build*",
+          "go -C hubx-gw test*",
+          "go -C hubx-gw vet*",
+          "go -C hubx-gw fmt*",
+          "go -C hubx-gw mod tidy*",
+          "git status*",
+          "git diff*",
+          "go -C hubx-api generate*",
+          "go -C hubx-api tool*",
+          "go -C hubx-gw generate*",
+          "go -C hubx-gw tool*"
+        ],
+        "effect": "allow"
+      },
+      {
+        "capability": "shell",
+        "match": [
+          "go -C hubx-api get*",
+          "go -C hubx-gw get*"
+        ],
+        "effect": "ask"
+      },
+      {
+        "capability": "shell",
+        "match": [
+          "*"
+        ],
+        "exclude": [
+          "go -C hubx-api build*",
+          "go -C hubx-api test*",
+          "go -C hubx-api vet*",
+          "go -C hubx-api fmt*",
+          "go -C hubx-api mod tidy*",
+          "go -C hubx-gw build*",
+          "go -C hubx-gw test*",
+          "go -C hubx-gw vet*",
+          "go -C hubx-gw fmt*",
+          "go -C hubx-gw mod tidy*",
+          "git status*",
+          "git diff*",
+          "go -C hubx-api get*",
+          "go -C hubx-gw get*",
+          "go -C hubx-api generate*",
+          "go -C hubx-api tool*",
+          "go -C hubx-gw generate*",
+          "go -C hubx-gw tool*"
+        ],
+        "effect": "deny"
+      }
+    ]
+  },
+  "resources": [
+    "file://AGENTS.md",
+    "file://memory.md",
+    "file://.specify/memory/constitution.md",
+    "file://hubx-api/AGENTS.md",
+    "file://hubx-gw/AGENTS.md"
+  ]
+}

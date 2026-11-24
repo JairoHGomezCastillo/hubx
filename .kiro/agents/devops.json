@@ -1,0 +1,103 @@
+{
+  "name": "devops",
+  "description": "Platform and deployment. Maintains the Makefile (incl. make test-integration), Dockerfiles, compose, GitHub Actions CI and the deployment of hubx-api, hubx-gw and hubx-mfe. Does not touch business logic or application.properties. Call it for infrastructure, CI and deployment.",
+  "model": "claude-haiku-4.5",
+  "prompt": "file://../agent-prompts/devops.md",
+  "tools": [
+    "read",
+    "write",
+    "shell"
+  ],
+  "permissions": {
+    "rules": [
+      {
+        "capability": "fs_read",
+        "match": [
+          "**/.env",
+          "**/.env.*"
+        ],
+        "exclude": [
+          "**/.env.example"
+        ],
+        "effect": "ask"
+      },
+      {
+        "capability": "fs_write",
+        "match": [
+          "**"
+        ],
+        "exclude": [
+          "**/Makefile",
+          "**/go.work",
+          "**/Dockerfile*",
+          "**/compose.yaml",
+          "**/docker-compose*.yml",
+          "**/docker-compose*.yaml",
+          "**/.github/**",
+          "**/scripts/**",
+          "**/deploy/**",
+          "**/specs/*/deploy.md"
+        ],
+        "effect": "deny"
+      },
+      {
+        "capability": "fs_write",
+        "match": [
+          "**/Makefile",
+          "**/go.work",
+          "**/Dockerfile*",
+          "**/compose.yaml",
+          "**/docker-compose*.yml",
+          "**/docker-compose*.yaml",
+          "**/.github/**",
+          "**/scripts/**",
+          "**/deploy/**",
+          "**/specs/*/deploy.md"
+        ],
+        "effect": "allow"
+      },
+      {
+        "capability": "shell",
+        "match": [
+          "make *",
+          "docker compose*",
+          "docker build*",
+          "go -C hubx-api build*",
+          "go -C hubx-gw build*",
+          "npm --prefix hubx-mfe run build*",
+          "curl -s*",
+          "git status*",
+          "git diff*"
+        ],
+        "effect": "allow"
+      },
+      {
+        "capability": "shell",
+        "match": [
+          "*"
+        ],
+        "exclude": [
+          "make *",
+          "docker compose*",
+          "docker build*",
+          "go -C hubx-api build*",
+          "go -C hubx-gw build*",
+          "npm --prefix hubx-mfe run build*",
+          "curl -s*",
+          "git status*",
+          "git diff*"
+        ],
+        "effect": "deny"
+      }
+    ]
+  },
+  "resources": [
+    "file://AGENTS.md",
+    "file://memory.md",
+    "file://.specify/memory/constitution.md",
+    "file://hubx-api/AGENTS.md",
+    "file://hubx-gw/AGENTS.md",
+    "file://hubx-mfe/AGENTS.md",
+    "file://hubx-bender/AGENTS.md"
+  ]
+}
