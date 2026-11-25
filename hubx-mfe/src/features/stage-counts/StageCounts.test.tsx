@@ -4,29 +4,27 @@
 
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import StageCounts from './StageCounts';
 import type { StageCountOutcome } from '../../services/stageCountService';
 
 describe('StageCounts', () => {
-  it('should render heading and button', () => {
+  it('should render heading and start loading', () => {
     const mockFetch = vi.fn().mockResolvedValue({ kind: 'success', data: { stages: [], total: 0 } });
     render(<StageCounts onGetStageCounts={mockFetch} onSessionExpired={vi.fn()} />);
 
     expect(screen.getByRole('heading', { name: /shipment count by stage/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /load stage counts/i })).toBeInTheDocument();
+    expect(screen.getByText(/loading stage counts/i)).toBeInTheDocument();
+    expect(mockFetch).toHaveBeenCalledTimes(1);
   });
 
-  it('should show loading state when fetching', async () => {
+  it('should show loading state immediately', async () => {
     const mockFetch = vi.fn().mockImplementation(
       () => new Promise(() => {}) // Never resolves
     );
     render(<StageCounts onGetStageCounts={mockFetch} onSessionExpired={vi.fn()} />);
 
-    const button = screen.getByRole('button', { name: /load stage counts/i });
-    await userEvent.click(button);
-
     expect(screen.getByText(/loading stage counts/i)).toBeInTheDocument();
+    expect(mockFetch).toHaveBeenCalledTimes(1);
   });
 
   it('should render six stages in journey order with counts', async () => {
@@ -43,9 +41,6 @@ describe('StageCounts', () => {
     };
     const mockFetch = vi.fn().mockResolvedValue({ kind: 'success', data: mockData });
     render(<StageCounts onGetStageCounts={mockFetch} onSessionExpired={vi.fn()} />);
-
-    const button = screen.getByRole('button', { name: /load stage counts/i });
-    await userEvent.click(button);
 
     await waitFor(() => {
       expect(screen.getByRole('region', { name: /stage counts/i })).toBeInTheDocument();
@@ -82,9 +77,6 @@ describe('StageCounts', () => {
     const mockFetch = vi.fn().mockResolvedValue({ kind: 'success', data: mockData });
     render(<StageCounts onGetStageCounts={mockFetch} onSessionExpired={vi.fn()} />);
 
-    const button = screen.getByRole('button', { name: /load stage counts/i });
-    await userEvent.click(button);
-
     await waitFor(() => {
       expect(screen.getByRole('region', { name: /stage counts/i })).toBeInTheDocument();
     });
@@ -105,9 +97,6 @@ describe('StageCounts', () => {
     } as StageCountOutcome);
     render(<StageCounts onGetStageCounts={mockFetch} onSessionExpired={vi.fn()} />);
 
-    const button = screen.getByRole('button', { name: /load stage counts/i });
-    await userEvent.click(button);
-
     await waitFor(() => {
       expect(screen.getByText(/you do not have permission to see that information/i)).toBeInTheDocument();
     });
@@ -120,9 +109,6 @@ describe('StageCounts', () => {
     const mockSessionExpired = vi.fn();
     render(<StageCounts onGetStageCounts={mockFetch} onSessionExpired={mockSessionExpired} />);
 
-    const button = screen.getByRole('button', { name: /load stage counts/i });
-    await userEvent.click(button);
-
     await waitFor(() => {
       expect(mockSessionExpired).toHaveBeenCalledTimes(1);
     });
@@ -131,9 +117,6 @@ describe('StageCounts', () => {
   it('should show error message on failure', async () => {
     const mockFetch = vi.fn().mockResolvedValue({ kind: 'error' } as StageCountOutcome);
     render(<StageCounts onGetStageCounts={mockFetch} onSessionExpired={vi.fn()} />);
-
-    const button = screen.getByRole('button', { name: /load stage counts/i });
-    await userEvent.click(button);
 
     await waitFor(() => {
       expect(screen.getByText(/the stage counts could not be loaded/i)).toBeInTheDocument();

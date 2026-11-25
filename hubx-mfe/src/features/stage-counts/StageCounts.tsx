@@ -3,7 +3,7 @@
  * Operator-only feature from HU-09.
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { StageCountOutcome } from '../../services/stageCountService';
 
 interface StageCountsProps {
@@ -12,39 +12,43 @@ interface StageCountsProps {
 }
 
 type ViewState =
-  | { kind: 'idle' }
   | { kind: 'loading' }
   | { kind: 'success'; stages: Array<{ stage: string; count: number }>; total: number }
   | { kind: 'forbidden'; message: string }
   | { kind: 'error' };
 
 export default function StageCounts({ onGetStageCounts, onSessionExpired }: StageCountsProps) {
-  const [state, setState] = useState<ViewState>({ kind: 'idle' });
+  const [state, setState] = useState<ViewState>({ kind: 'loading' });
 
-  const handleLoad = async () => {
-    setState({ kind: 'loading' });
-    const outcome = await onGetStageCounts();
+  useEffect(() => {
+    let mounted = true;
 
-    if (outcome.kind === 'success') {
-      setState({ kind: 'success', stages: outcome.data.stages, total: outcome.data.total });
-    } else if (outcome.kind === 'forbidden') {
-      setState({ kind: 'forbidden', message: outcome.message });
-    } else if (outcome.kind === 'session-expired') {
-      onSessionExpired();
-    } else {
-      setState({ kind: 'error' });
-    }
-  };
+    const fetchStageCounts = async () => {
+      const outcome = await onGetStageCounts();
+
+      if (!mounted) return;
+
+      if (outcome.kind === 'success') {
+        setState({ kind: 'success', stages: outcome.data.stages, total: outcome.data.total });
+      } else if (outcome.kind === 'forbidden') {
+        setState({ kind: 'forbidden', message: outcome.message });
+      } else if (outcome.kind === 'session-expired') {
+        onSessionExpired();
+      } else {
+        setState({ kind: 'error' });
+      }
+    };
+
+    fetchStageCounts();
+
+    return () => {
+      mounted = false;
+    };
+  }, [onGetStageCounts, onSessionExpired]);
 
   return (
     <div className="stage-counts">
       <h2>Shipment count by stage</h2>
-
-      {state.kind === 'idle' && (
-        <button type="button" onClick={handleLoad}>
-          Load stage counts
-        </button>
-      )}
 
       {state.kind === 'loading' && <p>Loading stage counts...</p>}
 
