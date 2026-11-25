@@ -38,16 +38,16 @@ func (m *Middleware) RequireAuth(next http.Handler) http.Handler {
 			writeError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Authorization header required")
 			return
 		}
-		
+
 		// Check Bearer scheme
 		parts := strings.SplitN(authHeader, " ", 2)
 		if len(parts) != 2 || parts[0] != "Bearer" {
 			writeError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Invalid authorization header format")
 			return
 		}
-		
+
 		token := parts[1]
-		
+
 		// Validate token
 		claims, err := domain.ValidateToken(token, m.jwtSecret)
 		if err != nil {
@@ -59,7 +59,7 @@ func (m *Middleware) RequireAuth(next http.Handler) http.Handler {
 			writeError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Invalid token")
 			return
 		}
-		
+
 		// Inject claims into context
 		ctx := context.WithValue(r.Context(), ClaimsContextKey, claims)
 		next.ServeHTTP(w, r.WithContext(ctx))

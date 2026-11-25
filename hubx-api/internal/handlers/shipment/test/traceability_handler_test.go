@@ -16,9 +16,9 @@ import (
 )
 
 const (
-	testCode       = "HBX-TEST0001"
-	operatorID     = "11111111-1111-4111-8111-111111111111"
-	operatorEmail  = "operator@hubx.co"
+	testCode        = "HBX-TEST0001"
+	operatorID      = "11111111-1111-4111-8111-111111111111"
+	operatorEmail   = "operator@hubx.co"
 	testPrincipalID = "22222222-2222-4222-8222-222222222222"
 )
 
@@ -57,8 +57,8 @@ func TestHU04_TraceabilityHandler_Success(t *testing.T) {
 					Name: "Laura Operator",
 					Role: "operator",
 				},
-				AssignedPartner: nil,
-				RecordedAt:      "2026-11-25T12:00:00.5Z",
+				AssignedPartner:     nil,
+				RecordedAt:          "2026-11-25T12:00:00.5Z",
 				PreviousFingerprint: ptrString("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"),
 				Fingerprint:         "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
 			},

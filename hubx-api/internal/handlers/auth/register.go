@@ -18,16 +18,16 @@ type Config struct {
 func Register(mux *http.ServeMux, db *sql.DB, cfg Config) *Middleware {
 	// Create repository
 	repo := domain.NewPostgresRepository(db)
-	
+
 	// Create service
 	service := domain.NewAuthService(repo, cfg.JWTSecret, cfg.ExpirationHours)
-	
+
 	// Create handler
 	handler := NewHandler(service)
-	
+
 	// Register routes
 	mux.HandleFunc("POST /auth/sign-in", handler.SignIn)
-	
+
 	// Create and return middleware for use by other modules
 	middleware := NewMiddleware(cfg.JWTSecret)
 	return middleware

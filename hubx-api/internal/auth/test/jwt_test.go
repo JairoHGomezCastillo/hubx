@@ -18,10 +18,10 @@ func TestHU01_GenerateToken(t *testing.T) {
 	}
 
 	tests := []struct {
-		name             string
-		user             *auth.User
-		secret           string
-		expirationHours  int
+		name            string
+		user            *auth.User
+		secret          string
+		expirationHours int
 	}{
 		{
 			name:            "generate token for operator",
@@ -116,7 +116,7 @@ func TestHU01_ValidateToken_Success(t *testing.T) {
 
 func TestHU01_ValidateToken_ExpiredToken(t *testing.T) {
 	secret := "test-secret-key-32-bytes-long!!"
-	
+
 	// Create an expired token (exp in the past)
 	now := time.Now()
 	claims := auth.Claims{
@@ -128,7 +128,7 @@ func TestHU01_ValidateToken_ExpiredToken(t *testing.T) {
 			ExpiresAt: jwt.NewNumericDate(now.Add(-1 * time.Hour)), // Expired 1 hour ago
 		},
 	}
-	
+
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenString, err := token.SignedString([]byte(secret))
 	if err != nil {
@@ -144,7 +144,7 @@ func TestHU01_ValidateToken_ExpiredToken(t *testing.T) {
 func TestHU01_ValidateToken_InvalidSignature(t *testing.T) {
 	secret := "test-secret-key-32-bytes-long!!"
 	wrongSecret := "wrong-secret-key-32-bytes-long!!"
-	
+
 	user := &auth.User{
 		ID:    "550e8400-e29b-41d4-a716-446655440000",
 		Email: "operator@hubx.co",

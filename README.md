@@ -36,7 +36,7 @@ npm --prefix hubx-bender ci && npm --prefix hubx-mfe ci
 make up                                   # PostgreSQL, migrations, API and gateway
 curl -s http://localhost:8080/health      # gateway
 curl -s http://localhost:8080/api/health  # API through the gateway
-make test-integration                     # isolated clean stack + hubx-bender, then tear down
+make test-integration                     # isolated clean stack + hubx-bender (then an @empty-db pass on emptied shipments), then tear down
 make down
 ```
 

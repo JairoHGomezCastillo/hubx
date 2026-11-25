@@ -47,7 +47,7 @@ func TestHU01_Handler_SignIn_Success(t *testing.T) {
 	body := `{"email":"operator@hubx.co","password":"test-password"}`
 	req := httptest.NewRequest(http.MethodPost, "/auth/sign-in", bytes.NewBufferString(body))
 	req.Header.Set("Content-Type", "application/json")
-	
+
 	w := httptest.NewRecorder()
 	handler.SignIn(w, req)
 
@@ -81,7 +81,7 @@ func TestHU01_Handler_SignIn_MissingPassword(t *testing.T) {
 	body := `{"email":"operator@hubx.co"}`
 	req := httptest.NewRequest(http.MethodPost, "/auth/sign-in", bytes.NewBufferString(body))
 	req.Header.Set("Content-Type", "application/json")
-	
+
 	w := httptest.NewRecorder()
 	handler.SignIn(w, req)
 
@@ -112,7 +112,7 @@ func TestHU01_Handler_SignIn_MissingEmail(t *testing.T) {
 	body := `{"password":"test-password"}`
 	req := httptest.NewRequest(http.MethodPost, "/auth/sign-in", bytes.NewBufferString(body))
 	req.Header.Set("Content-Type", "application/json")
-	
+
 	w := httptest.NewRecorder()
 	handler.SignIn(w, req)
 
@@ -140,7 +140,7 @@ func TestHU01_Handler_SignIn_BothFieldsMissing(t *testing.T) {
 	body := `{}`
 	req := httptest.NewRequest(http.MethodPost, "/auth/sign-in", bytes.NewBufferString(body))
 	req.Header.Set("Content-Type", "application/json")
-	
+
 	w := httptest.NewRecorder()
 	handler.SignIn(w, req)
 
@@ -172,7 +172,7 @@ func TestHU01_Handler_SignIn_InvalidCredentials(t *testing.T) {
 	body := `{"email":"operator@hubx.co","password":"wrong-password"}`
 	req := httptest.NewRequest(http.MethodPost, "/auth/sign-in", bytes.NewBufferString(body))
 	req.Header.Set("Content-Type", "application/json")
-	
+
 	w := httptest.NewRecorder()
 	handler.SignIn(w, req)
 
@@ -207,7 +207,7 @@ func TestHU01_Handler_SignIn_InternalError(t *testing.T) {
 	body := `{"email":"operator@hubx.co","password":"test-password"}`
 	req := httptest.NewRequest(http.MethodPost, "/auth/sign-in", bytes.NewBufferString(body))
 	req.Header.Set("Content-Type", "application/json")
-	
+
 	w := httptest.NewRecorder()
 	handler.SignIn(w, req)
 
@@ -235,7 +235,7 @@ func TestHU01_Handler_SignIn_MalformedJSON(t *testing.T) {
 	body := `{"email":"operator@hubx.co","password":` // Invalid JSON
 	req := httptest.NewRequest(http.MethodPost, "/auth/sign-in", bytes.NewBufferString(body))
 	req.Header.Set("Content-Type", "application/json")
-	
+
 	w := httptest.NewRecorder()
 	handler.SignIn(w, req)
 
@@ -270,7 +270,7 @@ func TestHU01_Handler_SignIn_GroundPartnerRole(t *testing.T) {
 	body := `{"email":"rapido@hubx.co","password":"test-password"}`
 	req := httptest.NewRequest(http.MethodPost, "/auth/sign-in", bytes.NewBufferString(body))
 	req.Header.Set("Content-Type", "application/json")
-	
+
 	w := httptest.NewRecorder()
 	handler.SignIn(w, req)
 
