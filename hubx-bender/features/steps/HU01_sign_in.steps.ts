@@ -215,13 +215,6 @@ When('the operator tries to view a shipment', async function (this: HubxWorld) {
 Then(
   'they are told their session expired and are asked to sign in again',
   async function (this: HubxWorld) {
-    // HU-03 has the same Gherkin text with a different contract body. Its
-    // expired-session When step sets this flag; the shared definition keeps a
-    // single (non-ambiguous) step for both stories.
-    if (this.hu03ExpiredSession) {
-      await assertError(this.response!, 401, 'SESSION_EXPIRED', 'Session expired; sign in again.');
-      return;
-    }
     expect(this.response?.status()).toBe(401);
     const body = await this.response?.json();
     expect(body.error).toBe('UNAUTHORIZED');

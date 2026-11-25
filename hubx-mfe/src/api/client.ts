@@ -25,6 +25,28 @@ export type GroundPartnersOutcome =
   | { kind: 'noResponse' }
   | { kind: 'unauthorized' };
 
+/** Traceability response from GET /api/shipments/{code}/traceability. */
+export interface TraceabilityData {
+  shipmentCode: string;
+  stage: string;
+  updates: Array<{
+    sequence: number;
+    stage: string;
+    responsibleParty: { id: string; name: string; role: string };
+    assignedPartner: { id: string; name: string } | null;
+    recordedAt: string;
+    previousFingerprint: string | null;
+    fingerprint: string;
+  }>;
+}
+
+/** Explicit outcome of viewing traceability. */
+export type TraceabilityOutcome =
+  | { kind: 'ok'; data: TraceabilityData }
+  | { kind: 'not-found' }
+  | { kind: 'session-expired' }
+  | { kind: 'error' };
+
 interface ErrorBody {
   error?: { code?: string; message?: string };
 }
@@ -140,4 +162,57 @@ export async function recordUpdate(shipmentCode: string, body: RecordUpdateBody)
   } catch {
     return { kind: 'noResponse' };
   }
+}
+
+/** GET /api/shipments/{code}/traceability — view the ledger of a shipment. */
+export async function getTraceability(code: string): Promise<TraceabilityOutcome> {
+  const path = `/api/shipments/${encodeURIComponent(code)}/traceability`;
+  const result = await request('GET', path);
+  if ('outcome' in result) {
+    return result.outcome.kind === 'unauthorized' ? { kind: 'session-expired' } : { kind: 'error' };
+  }
+
+  const { response } = result;
+  if (!response.ok) {
+    if (response.status === 404) {
+      return { kind: 'not-found' };
+    }
+    return { kind: 'error' };
+  }
+
+  try {
+    const data: unknown = await response.json();
+    if (!isTraceabilityData(data)) {
+      return { kind: 'error' };
+    }
+    return { kind: 'ok', data };
+  } catch {
+    return { kind: 'error' };
+  }
+}
+
+function isTraceabilityData(value: unknown): value is TraceabilityData {
+  if (!isRecord(value) || typeof value.shipmentCode !== 'string' || typeof value.stage !== 'string') {
+    return false;
+  }
+  if (!Array.isArray(value.updates)) {
+    return false;
+  }
+  return value.updates.every(
+    (update) =>
+      isRecord(update) &&
+      typeof update.sequence === 'number' &&
+      typeof update.stage === 'string' &&
+      isRecord(update.responsibleParty) &&
+      typeof update.responsibleParty.id === 'string' &&
+      typeof update.responsibleParty.name === 'string' &&
+      typeof update.responsibleParty.role === 'string' &&
+      (update.assignedPartner === null ||
+        (isRecord(update.assignedPartner) &&
+          typeof update.assignedPartner.id === 'string' &&
+          typeof update.assignedPartner.name === 'string')) &&
+      typeof update.recordedAt === 'string' &&
+      (update.previousFingerprint === null || typeof update.previousFingerprint === 'string') &&
+      typeof update.fingerprint === 'string',
+  );
 }

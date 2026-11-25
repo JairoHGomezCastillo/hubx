@@ -22,9 +22,22 @@ configuration principles), root and service `AGENTS.md`, `go.work`, `Makefile`, 
 5. **CI.** One workflow per service with path filters: tests, `gosec`, `govulncheck`, and typecheck, lint and build for
    the MFE; PostgreSQL as a service for integration. It must fail if anything fails.
 6. **Deployment.** Three services in a free environment and a managed PostgreSQL database. `main` always deployable.
-   After deploying, smoke test against the public URL (login and fetching a shipment) and save the result in
-   `specs/NNN-*/deploy.md`.
-7. **Delivery.** Output JSON and a minimal runbook. No commit, no push.
+   Every environment is deployed by `.github/workflows/deploy.yml` (images of a commit, migrations, Render, smoke); you
+   never deploy by hand.
+7. **Deploy validation of a story (phase `deploy`, before its PR).** The lead has pushed the story branch, so its
+   images are being built. Deploy that branch to staging and validate it:
+   a. `gh workflow run deploy.yml -f environment=staging -f ref=<story branch> --ref <story branch>` (exactly this
+      form; `--ref` makes the run belong to the story branch), then find it with
+      `gh run list --workflow deploy.yml --branch <story branch> --limit 1` and follow it with
+      `gh run watch <id> --exit-status`. Staging is shared: if another deploy is running, yours queues.
+   b. Read the result with `gh run view <id> --log`: the deployed commit, each service `live`, the migrations line and
+      the smoke summary (`N scenarios (N passed)`).
+   c. Check the public staging URLs yourself: `curl -s <gateway>/health`, `<gateway>/api/health`, and `<ui>/` (URLs in
+      `deploy/README.md`).
+   d. Write `specs/NNN-*/deploy.md`: run URL, commit, environment, services and their state, migrations, smoke result
+      and your own curl checks, all literal. A failed deploy or smoke is a finding: report the failing step and the
+      log excerpt (`status: failed`); you do not fix application code.
+8. **Delivery.** Output JSON and a minimal runbook. No commit, no push.
 
 ## Output
 JSON, then "Runbook" (exact commands to start and test) and 3 "Why" bullets:
@@ -34,15 +47,15 @@ JSON, then "Runbook" (exact commands to start and test) and 3 "Why" bullets:
   "agent": "devops",
   "status": "ok|blocked|failed",
   "summary": "one sentence",
-  "artifacts": ["Makefile", ".github/workflows/api.yml"],
+  "artifacts": ["Makefile", ".github/workflows/api.yml", "specs/NNN-name/deploy.md"],
   "evidence": [{"command": "curl -s http://localhost:8080/api/health", "result": "pass|fail|not_run", "excerpt": "..."}],
   "blockers": []
 }
 ```
 
 ## Limits (each with its reason)
-- After every deployment you record the smoke evidence (URLs, commands, literal results) in `deploy/README.md`;
-  `README.md` and `docs/` belong to `hubx-lead`, who links to it.
+- After every story deployment you record the evidence in `specs/NNN-*/deploy.md`; platform-wide smoke results go in
+  `deploy/README.md`. `README.md` and `docs/` belong to `hubx-lead`, who links to them.
 - You edit only infrastructure: Makefile, `go.work`, Dockerfiles, compose, `.github/`, `scripts/`, `deploy/` and `deploy.md`.
 - You do not touch `hubx-*/**` (except each service's `Dockerfile`), `application.properties`, `specs` or
   `hubx-bender`: logic and tests have an owner.
@@ -50,5 +63,8 @@ JSON, then "Runbook" (exact commands to start and test) and 3 "Why" bullets:
 - Zero secrets in the repo; only environment variables or platform secrets.
 - You do not change the stack or add dependencies.
 - You do not run commands that block the terminal (direct `go run`): use `make` and `docker compose`.
-- Deployment with platform credentials: human confirmation; the agent only prepares and verifies.
+- Credentials are human: you never create, read, rotate or print secrets, API keys or database URLs (they live in the
+  GitHub environments and the platform, loaded by a human). Triggering the CD for **staging** with
+  `gh workflow run deploy.yml -f environment=staging ...` and reading its runs is **not** a credential operation: it is
+  your step 7 and needs no confirmation. Production deployments are never yours (denied by your permissions).
 - No `git commit`, no `git push`.

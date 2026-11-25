@@ -150,6 +150,10 @@
           "docker build*",
           "npm --prefix hubx-mfe run build*",
           "curl -s*",
+          "gh workflow run deploy.yml -f environment=staging *",
+          "gh run list*",
+          "gh run watch*",
+          "gh run view*",
           "go -C hubx-api get*",
           "go -C hubx-gw get*",
           "npm --prefix hubx-mfe install*",
@@ -235,7 +239,11 @@
           "docker compose*",
           "docker build*",
           "npm --prefix hubx-mfe run build*",
-          "curl -s*"
+          "curl -s*",
+          "gh workflow run deploy.yml -f environment=staging *",
+          "gh run list*",
+          "gh run watch*",
+          "gh run view*"
         ],
         "effect": "allow"
       },
