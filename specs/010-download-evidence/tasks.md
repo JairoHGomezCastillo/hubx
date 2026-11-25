@@ -19,7 +19,11 @@
 
 ## Phase 1: Setup (Shared Infrastructure)
 
-- [ ] T001 Confirm branch `010-download-evidence`, `Source: backlog HU-10` in `specs/010-download-evidence/spec.md`, and the agreed `contracts/hu10-download-evidence.md`
+- [x] T001 Confirm branch `010-download-evidence`, `Source: backlog HU-10` in `specs/010-download-evidence/spec.md`, and the agreed `contracts/hu10-download-evidence.md`
+
+  Evidence: `create-new-feature.sh --number 010 --short-name download-evidence` returned
+  `BRANCH_NAME":"010-download-evidence"`; `git branch --show-current` = `010-download-evidence`; spec line 3 is
+  `Source: backlog HU-10`; contract committed in `2137e43` and corrected in `a893dad`.
 
 ---
 
@@ -55,7 +59,11 @@ Chromium via the MFE download button.
 
 ### Tests for US1 (written first in Phase 2)
 
-- [ ] T006 [QA] Verify US1 scenarios in `hubx-bender/features/HU10_download-evidence.feature` are red before implementation and green afterwards, including the third-party fingerprint-check scenario
+- [x] T006 [QA] Verify US1 scenarios in `hubx-bender/features/HU10_download-evidence.feature` are red before implementation and green afterwards, including the third-party fingerprint-check scenario
+
+  Evidence: red run `66 scenarios (59 passed, 7 failed)` (commit `e2e7b06`); final green run `66 scenarios (66 passed)`,
+  with "Evidence for a shipment with updates" (`@e2e`) and "Verification by a third party" both listed as `passed` in
+  `specs/010-download-evidence/qa-report.md` (commit `6a647de`).
 
 ### Implementation for US1 — API
 
@@ -103,7 +111,10 @@ Chromium via the MFE download button.
 
   Evidence: commit `2f9c9ae`; `pdf_test.go` asserts `The shipment has no updates yet.` and `go -C hubx-api test ./...` is green.
 
-- [ ] T022 [QA] Verify the "Evidence for a shipment without updates" scenario in `hubx-bender/features/HU10_download-evidence.feature` is green through the gateway
+- [x] T022 [QA] Verify the "Evidence for a shipment without updates" scenario in `hubx-bender/features/HU10_download-evidence.feature` is green through the gateway
+
+  Evidence: `SCENARIO line=20 | Evidence for a shipment without updates | steps=7 | passed` in
+  `specs/010-download-evidence/qa-report.md` (commit `6a647de`).
 
 **Checkpoint**: US2 independently testable.
 
@@ -124,7 +135,11 @@ session (401); assert no PDF body in each case.
 
   Evidence: included in the `frontend-react` delivery above (commit `bdf93ec`); 401 is detected via `fetchWithAuth`'s
   token clearing, 403/404 messages are the exact contract strings, and unit tests verify no download is created on error.
-- [ ] T025 [QA] Verify the three refusal scenarios in `hubx-bender/features/HU10_download-evidence.feature` are green through the gateway
+- [x] T025 [QA] Verify the three refusal scenarios in `hubx-bender/features/HU10_download-evidence.feature` are green through the gateway
+
+  Evidence: `SCENARIO line=27 | Code that matches no shipment | passed`,
+  `line=39 | Role without permission: ground partner | passed`, `line=40 | ... customer | passed` and
+  `line=42 | Person who has not signed in | passed` in `specs/010-download-evidence/qa-report.md` (commit `6a647de`).
 
 **Checkpoint**: all three stories independently functional.
 
@@ -132,8 +147,17 @@ session (401); assert no PDF body in each case.
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T026 [QA] Run the full suite (`make test-integration`), `gosec ./...` and `govulncheck -C hubx-api ./...` / `-C hubx-gw ./...`; write literal evidence in `specs/010-download-evidence/qa-report.md`
-- [ ] T027 [OPS] Run `make agents-zones` and confirm no CI, Dockerfile, compose or infrastructure file changed (demo mode: no devops deploy validation)
+- [x] T026 [QA] Run the full suite (`make test-integration`), `gosec ./...` and `govulncheck -C hubx-api ./...` / `-C hubx-gw ./...`; write literal evidence in `specs/010-download-evidence/qa-report.md`
+
+  Evidence (qa-seguridad, phase verify, commit `6a647de`): `make test-integration` → `66 scenarios (66 passed)`,
+  `424 steps (424 passed)`, `INTEGRATION_EXIT=0`; `gosec ./...` → `Issues : 0` / exit 0 in hubx-api and hubx-gw;
+  both `govulncheck` runs → `No vulnerabilities found`. Only the pre-existing gateway gap (API4/API8) remains.
+
+- [x] T027 [OPS] Run `make agents-zones` and confirm no CI, Dockerfile, compose or infrastructure file changed (demo mode: no devops deploy validation)
+
+  Evidence (hubx-lead): `node scripts/check-agent-zones.mjs origin/main` → `agent zones ok (origin/main..HEAD)` after
+  commits `2f9c9ae`, `bdf93ec`, `573808c`, `f81a551` and `6a647de`; `git diff` against `origin/main` contains no CI,
+  Dockerfile, compose or infrastructure change. Demo mode: no devops delegation, no `deploy.md`.
 - [ ] T028 Run `speckit.analyze` and record deviations in `specs/010-download-evidence/pr.md`
 - [ ] T029 Update `backlog/backlog.md` (HU-10 status in review), `memory.md` (decisions and lessons) and `README.md` (delivered story) for this story only
 - [ ] T030 Write `specs/010-download-evidence/pr.md` from `.github/pull_request_template.md`, including the demo-mode note, and push the story branch and open the PR to `release/v0.10.0-demo`
