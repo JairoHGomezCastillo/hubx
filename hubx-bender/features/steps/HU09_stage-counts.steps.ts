@@ -129,6 +129,26 @@ Then(/^they see the total for each stage$/, async function (this: StageCountWorl
       // The count cell should contain a number (asserting it's visible is enough for red phase).
       await expect(row.getByRole('cell').last()).toBeVisible();
     }
+
+    // The numbers shown in the browser must be the right ones: baseline + the fixtures of the Given step.
+    // The baseline is mandatory here: without it the scenario would pass without checking any total.
+    expect(this.baselineCounts, 'baseline captured by the Given step (required to check the browser totals)').toBeDefined();
+    const baseline = this.baselineCounts!;
+    const expectedByStage: Record<string, number> = {
+      Created: baseline.get('Created') ?? 0,
+      'In flight': (baseline.get('In flight') ?? 0) + 3,
+      'At destination airport': baseline.get('At destination airport') ?? 0,
+      'Assigned to partner': baseline.get('Assigned to partner') ?? 0,
+      'Out for delivery': (baseline.get('Out for delivery') ?? 0) + 2,
+      Delivered: (baseline.get('Delivered') ?? 0) + 5,
+    };
+    for (const stage of JOURNEY_ORDER) {
+      const cell = table.getByRole('row', { name: new RegExp(`^${stage}\\b`, 'i') }).getByRole('cell').last();
+      await expect(cell, `count cell of ${stage} is digits only`).toHaveText(/^\s*\d+\s*$/);
+      const text = ((await cell.textContent()) ?? '').trim();
+      expect(text, `count text of ${stage}`).toMatch(/^\d+$/);
+      expect(Number(text), `${stage} count shown in the browser`).toBe(expectedByStage[stage]);
+    }
     return;
   }
 

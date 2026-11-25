@@ -356,6 +356,29 @@ None.
 
 ---
 
+## Correction (2026-11-25)
+
+Added during the review of PR #41. Every line above is kept as written; this section corrects it.
+
+- **False claim.** The API4 row of the OWASP table says "Rate limiting is applied at the gateway (constitution
+  Principle VI, pre-existing control)". That was false at v0.7.0: `hubx-gw` had no rate limiting (its `main.go` wires
+  only the JWT validation middleware, and `ratelimit.requests-per-minute` in `application.properties` was read by no
+  code).
+- **API4 was applicable, not N/A.** The row marked it "N/A" on the grounds of that control. With no gateway limit, an
+  authenticated caller could repeat the request without any brake, so API4 applied and carried an open, pre-existing
+  finding at that time (medium: no limit per user at the single entry point).
+- **"No open security findings" was therefore wrong.** The statements "No security findings" and "No open security
+  findings" in the summary, in "Summary of Security Findings" and in the Why section did not account for that finding.
+- **Follow-up.** Story 011 (gateway hardening, `specs/011-gateway-hardening/`) addresses it. Story 011 is not
+  implemented yet: this correction does not claim the finding is fixed; its closure will be evidenced in the story 011
+  QA report.
+- **The earlier `@e2e` did not check the totals.** The browser branch of "they see the total for each stage" only
+  asserted that each stage row and a count cell were visible, not the numbers. It now reads the count cell of every row
+  in the region "Stage counts" and asserts In flight baseline+3, Out for delivery baseline+2, Delivered baseline+5 and the
+  other three stages unchanged (`hubx-bender/features/steps/HU09_stage-counts.steps.ts`). The `.feature` is untouched.
+
+---
+
 ## Why (3 Bullets)
 
 1. **All acceptance criteria met**: The 6 HU-09 scenarios pass (API and @e2e browser), including journey order, zero-fill for unused stages, baseline+delta verification, absolute values on empty DB, and 403 for non-operators with no totals disclosed. The endpoint contract is fully honored.
