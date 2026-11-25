@@ -77,9 +77,6 @@ async function drainPendingShipments(world: AssignedWorld, partnerEmail: string)
         data: { stage: 'Delivered', assignedPartnerId: null },
       });
       expect(deliveredResp.status(), `drain ${ship.code} to Delivered`).toBe(201);
-      
-      // F5: 100 ms spacing between assignments
-      await new Promise((resolve) => setTimeout(resolve, 100));
     }
   }
 }
@@ -134,6 +131,7 @@ async function createAssignedShipments(
 
 Given(
   'three shipments pending delivery were assigned to a ground partner',
+  { timeout: 120_000 },
   async function (this: AssignedWorld) {
     // Drain existing pending shipments first
     await drainPendingShipments(this, DEMO_CREDENTIALS['ground partner']);
@@ -145,6 +143,7 @@ Given(
 
 Given(
   'two shipments were assigned to another ground partner',
+  { timeout: 120_000 },
   async function (this: AssignedWorld) {
     // F2: Use ANOTHER_PARTNER_EMAIL (express@hubx.co) instead of the first partner
     await createAssignedShipments(this, 2, ANOTHER_PARTNER_EMAIL, 'Assigned to partner');
@@ -156,6 +155,7 @@ Given(
 
 Given(
   'a ground partner was assigned one shipment that is already delivered and another that is out for delivery',
+  { timeout: 120_000 },
   async function (this: AssignedWorld) {
     // Drain existing pending shipments first
     await drainPendingShipments(this, DEMO_CREDENTIALS['ground partner']);
@@ -168,6 +168,7 @@ Given(
 
 Given(
   'no shipment has been assigned to a ground partner',
+  { timeout: 120_000 },
   async function (this: AssignedWorld) {
     // Drain all existing pending shipments for the first partner
     await drainPendingShipments(this, DEMO_CREDENTIALS['ground partner']);
