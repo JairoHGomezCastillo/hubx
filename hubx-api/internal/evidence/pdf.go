@@ -145,26 +145,24 @@ func pdfString(line string) string {
 	var out strings.Builder
 	out.WriteByte('(')
 	for _, r := range line {
-		c := byte('?')
-		if r <= 255 {
-			c = byte(r)
-		}
-		switch c {
-		case '\\', '(', ')':
+		switch {
+		case r == '\\' || r == '(' || r == ')':
 			out.WriteByte('\\')
-			out.WriteByte(c)
-		case '\n':
+			out.WriteRune(r)
+		case r == '\n':
 			out.WriteString("\\n")
-		case '\r':
+		case r == '\r':
 			out.WriteString("\\r")
-		case '\t':
+		case r == '\t':
 			out.WriteString("\\t")
-		default:
-			if c < 32 || c > 126 {
-				fmt.Fprintf(&out, "\\%03o", c)
+		case r < 32 || r > 126:
+			if r <= 255 {
+				fmt.Fprintf(&out, "\\%03o", r)
 			} else {
-				out.WriteByte(c)
+				out.WriteRune('?')
 			}
+		default:
+			out.WriteRune(r)
 		}
 	}
 	out.WriteByte(')')
