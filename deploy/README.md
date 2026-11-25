@@ -164,9 +164,11 @@ the repository variable `DEPLOY_PRODUCTION` is `true`, which is also the switch 
 
 One-time setup (your own browser and terminal; never paste a secret in a chat or the repo):
 
-1. **Render.** New → Blueprint → this repo, branch `main`, path `deploy/render.production.yaml`. Values asked:
-   `DB_URL` = the Neon **production** (root branch) direct URL; `API_URL` = `https://hubx-api-prod.onrender.com`;
-   `GATEWAY_URL` = `https://hubx-gw-prod.onrender.com` (fix them if Render assigns other URLs). Note each service ID.
+1. **Render.** Nothing to create: the production Blueprint (`deploy/render.yaml`, linked to `main`) already
+   defines `hubx-api`, `hubx-gw` and `hubx-mfe` as `runtime: image`; its sync on the merge switches the existing services
+   from repo-built to image-backed, keeping their URLs, IDs and environment values. Check each service shows the
+   image source (Settings → Source); if a sync did not apply it, use Settings → Source → Edit → Docker image
+   `ghcr.io/jairohgomezcastillo/hubx-<service>:main`. Note each service ID (`srv-…`).
 2. **GitHub environment `production`:**
    ```bash
    gh api -X PUT repos/JairoHGomezCastillo/hubx/environments/production >/dev/null
@@ -175,14 +177,13 @@ One-time setup (your own browser and terminal; never paste a secret in a chat or
    gh variable set RENDER_SERVICE_API --env production --body srv-...
    gh variable set RENDER_SERVICE_GW  --env production --body srv-...
    gh variable set RENDER_SERVICE_MFE --env production --body srv-...
-   gh variable set GATEWAY_URL --env production --body https://hubx-gw-prod.onrender.com
-   gh variable set UI_URL      --env production --body https://hubx-mfe-prod.onrender.com
+   gh variable set GATEWAY_URL --env production --body https://hubx-gw.onrender.com
+   gh variable set UI_URL      --env production --body https://hubx-mfe.onrender.com
    ```
 3. **First deploy:** Actions → deploy → Run workflow → `production`, ref = the latest tag (for example `v0.6.1`).
    Expected: migrations up to date, three deploys `live`, `@smoke` green.
 4. **Switch on the promotion:** `gh variable set DEPLOY_PRODUCTION --body true`.
-5. **Retire the repo-built services** (`hubx-api`, `hubx-gw`, `hubx-mfe`, Blueprint `deploy/render.yaml`): turn off
-   their auto-deploy first, and delete them once the `-prod` URLs are the ones shared.
+5. Production URLs do not change: `https://hubx-mfe.onrender.com` and `https://hubx-gw.onrender.com`.
 
 Agents never deploy to production: the devops guard denies `gh workflow run deploy.yml*production*`; only the release
 merge (a human decision) or a human from Actions does.

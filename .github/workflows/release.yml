@@ -76,7 +76,7 @@ jobs:
   # Production (constitution 1.5.0, build once): deploys the images of the release tip, the commit staging deployed
   # and smoke-tested, after the tag exists. The merge commit has the same tree (release-source requires the release to
   # contain main). Switched on by the repository variable DEPLOY_PRODUCTION=true once the environment `production`
-  # and its image-backed services exist (deploy/README.md); production runs only the read-only @smoke scenarios.
+  # exists and the services are image-backed (deploy/README.md); production runs only the read-only @smoke scenarios.
   deploy:
     needs: tag
     if: vars.DEPLOY_PRODUCTION == 'true'

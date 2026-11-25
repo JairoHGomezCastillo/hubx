@@ -209,9 +209,9 @@
   (only when the environment sets RESET_DB_FROM_PARENT=true; production never). Scenarios that need an exact set
   ("only their three") stay valid on staging; data created by hand there is lost on the next deploy.
 - Production on images (2026-11-24, hotfix v0.6.1): release.yml job `deploy` promotes the release tip (PR head
-  sha, the commit staging smoke-tested) to the image-backed hubx-*-prod services after tagging, through deploy.yml
-  (migrations, @smoke only, never a DB reset). Gated by the repo variable DEPLOY_PRODUCTION=true. The repo-built
-  hubx-api/gw/mfe services (deploy/render.yaml) retire once the -prod URLs are live.
+  sha, the commit staging smoke-tested) to the image-backed production services after tagging, through deploy.yml
+  (migrations, @smoke only, never a DB reset). Gated by the repo variable DEPLOY_PRODUCTION=true. The same services
+  and URLs: deploy/render.yaml switches hubx-api/gw/mfe from runtime docker to image (Render allows a runtime change).
 ## Pending
 - Move production to image-backed services and call deploy.yml (environment `production`) from release.yml after
   tagging; then delete deploy/render.yaml's repo-built services (owner A, after the 2026-11-24 delivery).
