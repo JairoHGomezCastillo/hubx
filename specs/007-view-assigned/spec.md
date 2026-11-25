@@ -2,7 +2,8 @@
 
 **Feature Branch**: `007-view-assigned`
 
-**Release branch**: `release/v0.6.0-demo-07` (created from `main` at `853944c`, v0.3.4, with the human's confirmation)
+**Release branch**: `release/v0.6.0-demo-07` (created from `main` at `853944c`, v0.3.4, with the human's confirmation;
+re-based by the human on `main` at `8c47690`, v0.4.0)
 
 **Created**: 2026-11-24
 
@@ -147,7 +148,8 @@ Resolved by the lead from the backlog, without new business rules; recorded so t
 
 ## Assumptions
 
-- The human chose to cut `release/v0.6.0-demo-07` from `main` (v0.3.4), which has HU-01 to HU-03 but not HU-04/HU-05
-  (still in the open release PR #36). HU-07 only reads what HU-03 records, so it does not depend on HU-04/HU-05.
+- `release/v0.6.0-demo-07` was first cut from `main` at v0.3.4 and then re-based by the human on `main` at v0.4.0
+  (PR #36), which contains HU-01 to HU-05 and the UI refresh. HU-07 only reads what HU-03 records; it reuses nothing
+  from HU-04/HU-05 beyond the shared Dashboard and step helpers.
 - **Deployment validation is skipped at the human's explicit request** for this story (lead step 6d, demo mode).
   Staging still validates the release when the PR is merged into the integration branch.

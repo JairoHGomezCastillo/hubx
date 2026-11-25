@@ -13,7 +13,13 @@ one new feature file. No migration and no gateway change.
 
 ## Technical Context
 
-- **Base**: `main` at `853944c` (v0.3.4), by the human's choice of release branch. It contains HU-01, HU-02, HU-03.
+- **Base**: `main` at `8c47690` (v0.4.0, PR #36), after the human re-based the release branch (it was first cut at
+  v0.3.4). It contains HU-01 to HU-05 and the UI refresh (`AppShell`, Dashboard `workspace` layout).
+- **Existing code reused**: `LedgerRepository` already has `Last`, `List`, `Append` (HU-03/HU-04);
+  `ShipmentRepository` has `FindByCode`, `FindByID`; `PartyRepository.Parties` exists (HU-04) but HU-07 does not need
+  party names. Adding `PendingAssignments` to `LedgerRepository` regenerates both `ledger/mocks` and
+  `shipment/mocks/ledger_repository_mock.go`; adding `FindByIDs` to `ShipmentRepository` regenerates its mocks and
+  every existing test that builds a fake `ShipmentRepository` must keep compiling.
 - **API**: Go 1.27.4, stdlib `net/http` `ServeMux`, pgx v5 through `database/sql`, gomock (`go tool mockgen`).
 - **MFE**: React + TypeScript strict + Vite, Vitest + Testing Library.
 - **QA**: Cucumber 13.3.0 + Playwright 1.65.0 + tsx in `hubx-bender`.
@@ -92,7 +98,9 @@ session gets the flat `UNAUTHORIZED` body that the API also returns.
   a `region` named "My assigned shipments" (heading level 2) with a table (code, stage, origin, destination, flight,
   weight, assigned date), the empty message "You have no assigned shipments", a "Show next 20" button when
   `nextOffset` is not null, and an accessible error `alert`. On session expiry it calls `onSessionExpired`.
-- `Dashboard.tsx`: render the section only when `user.role === 'ground partner'`.
+- `Dashboard.tsx` (current UI-refresh layout: `AppShell`, `page-head`, `workspace` with `RecordUpdateContainer` and
+  `ViewTraceabilityContainer`): render the section inside `workspace` only when `user.role === 'ground partner'`,
+  reusing the existing CSS classes (no new styling system). Locators stay scoped to the region (HU-04 lesson).
 - Unit tests first (Vitest): list rendering in order, empty message, next page, 401 handling, not rendered for other
   roles.
 
@@ -126,13 +134,14 @@ session gets the flat `UNAUTHORIZED` body that the API also returns.
 ## Deployment
 
 **Deployment validation (lead step 6d) is skipped at the human's explicit request** for HU-07. devops is not asked to
-deploy the story branch and no `deploy.md` is produced; `pr.md` records the skip. Staging still deploys the release
+deploy the story branch; `deploy.md` and `pr.md` record the skip. Staging still deploys the release
 branch when this PR is merged into it (constitution 1.5.0, Environments).
 
 ## Risks
 
-- The release branch is cut from v0.3.4, so it lacks HU-04/HU-05 and the UI refresh of `release/v0.4.0-ledger`
-  (PR #36, open). Merging both releases into `main` will conflict in shared files (`Dashboard.tsx`,
-  `common.steps.ts`, `cmd/api/main.go`, `memory.md`, `backlog.md`); the second release to merge must sync `main` first.
+- Resolved: the release branch was first cut from v0.3.4; the human re-based it on v0.4.0, so the merge conflicts
+  this plan predicted (`Dashboard.tsx`, `common.steps.ts`, `cmd/api/main.go`) no longer apply. The story branch
+  already contains `main` at v0.4.0.
+- HU-04 and HU-05 steps share `common.steps.ts`; the HU-07 edit there must keep the HU-04/HU-05 scenarios green.
 - The fixture drain changes the meaning of "no shipment has been assigned" to "no pending shipment is assigned" in the
   test data; the observable result (empty list and message) is the one the scenario asks for.

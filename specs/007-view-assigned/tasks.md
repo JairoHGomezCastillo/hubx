@@ -47,8 +47,8 @@ skipped at the human's request. Only hubx-lead marks `- [x]`, citing evidence.
 
 ## Phase 5: Deploy validation — SKIPPED
 
-- [ ] T017 [OPS] ~~Deploy `007-view-assigned` to staging and write `deploy.md`~~. **Skipped at the human's explicit
-  request** (2026-11-24); recorded in `pr.md`.
+- [ ] T017 [OPS] ~~Deploy `007-view-assigned` to staging~~. **Skipped at the human's explicit request** (2026-11-24);
+  recorded in `deploy.md` and `pr.md`.
 
 ## Phase 6: Close (hubx-lead)
 
