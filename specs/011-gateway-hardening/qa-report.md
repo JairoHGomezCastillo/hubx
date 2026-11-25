@@ -2,7 +2,7 @@
 
 **Source**: user description (no HU, no backlog Gherkin)  
 **Agent**: qa-seguridad  
-**Phase**: red (T003, T004). Verify (T011) not run yet.  
+**Phase**: red (T003, T004) and verify (T011, see "Verify phase").  
 **Branch**: `011-gateway-hardening`
 
 ## Red phase
@@ -88,6 +88,180 @@ The `@e2e` branch of "they see the total for each stage" now asserts the browser
 `specs/009-view-count-by-stage/qa-report.md`, section "Correction (2026-11-25)"). The HU-09 `@e2e` scenario "Count by
 stage" is among the 78 passing scenarios of pass 1 of the run above (no HU-09 scenario is in the list of failures).
 
-## Verify phase
+## Verify phase (T011)
 
-Not run: T011 (full suite after implementation, go tests, gosec, govulncheck, OWASP table) is pending.
+**Run by**: qa-seguridad, 2026-11-25, on branch `011-gateway-hardening` with the implementation commit `6d34d4d`.
+Every command below was run by me in this session; outputs are literal excerpts.
+
+**Verdict**: all 87 scenarios pass, no regression, security tools clean, no critical/high finding. Open items are
+medium/low/informational (see Findings) and the deploy validation, pending a human.
+
+### Integration (`make test-integration`)
+
+Exit status: success (the target printed both summaries and no failure). Stack included the limited gateway
+(`healthy: http://localhost:8090`).
+
+Pass 1 (`--tags "not @empty-db"`), literal:
+
+```
+1 hook (1 passed)
+87 scenarios (87 passed)
+550 steps (550 passed)
+1m 44.343s (1m 44.162s executing your code)
+```
+
+Pass 2 (`--tags "@empty-db"`), literal:
+
+```
+1 hook (1 passed)
+2 scenarios (2 passed)
+12 steps (12 passed)
+0m 1.181s (0m 1.158s executing your code)
+```
+
+- Red run had 87 scenarios (78 passed, 9 failed); the same 87 now all pass, so the 11 story 011 scenarios (the 9 failing
+  plus the 2 guards at :25 and :43) pass and nothing regressed. The per-scenario list was not printed by the progress
+  formatter; the claim rests on the totals (87 = 87, 0 failed) and on the red table above. Not verified individually in
+  `cucumber.json`.
+- HU-09 `@e2e` "Count by stage" is inside the 87 passed (0 failed). It now asserts the browser totals (Part B).
+- The 011 `@e2e` (:60) passes: it drives the browser only and checks the protection headers of the `/api/` responses the
+  browser received.
+- Test-only limits: main test gateway 10000/min, limited gateway 5 users and 3 sign-in per minute (spec A8).
+
+### Unit tests
+
+```
+go -C hubx-api test -count=1 ./...  -> every package with tests: ok (auth, config, evidence, handlers/auth,
+  handlers/evidence, handlers/health, handlers/shipment, ledger, migrate, shipment); no FAIL line
+go -C hubx-gw test -count=1 ./...
+ok  	hubx-gw/internal/config/test	0.157s
+ok  	hubx-gw/internal/middleware/test	0.197s
+ok  	hubx-gw/internal/proxy/test	0.210s
+ok  	hubx-gw/internal/ratelimit/test	0.175s
+ok  	hubx-gw/internal/server/test	0.271s
+```
+
+### Security tools
+
+`gosec ./hubx-gw/... ./hubx-api/...` and plain `gosec ./...` (AGENTS.md form) gave the same result; no package loading
+errors, the new gateway files were scanned (`Checking file: .../hubx-gw/internal/middleware/ratelimit.go`, `cors.go`,
+`security.go`, `ratelimit/limiter.go`, `config/config.go`, `server/server.go`, `proxy/proxy.go`):
+
+```
+Summary:
+  Gosec  : dev
+  Files  : 83
+  Lines  : 8293
+  Nosec  : 2
+  Issues : 0
+```
+
+`#nosec` count is 2 (HU-09 report had 1). One is the documented G304 in `hubx-gw/internal/config/config.go:208`; I did
+not locate the second one, so I do not vouch for it.
+
+```
+govulncheck -C hubx-api ./...
+No vulnerabilities found.
+Your code is affected by 0 vulnerabilities.
+This scan also found 0 vulnerabilities in packages you import and 1
+vulnerability in modules you require, but your code doesn't appear to call these
+vulnerabilities.
+
+govulncheck -C hubx-gw ./...
+No vulnerabilities found.
+```
+
+The one module-level vulnerability in hubx-api is the same unreachable `golang.org/x/crypto/openpgp` item recorded in
+the HU-09 report; `-show verbose` was not rerun, so its identity is not re-verified here.
+
+### Code review of the perimeter (read, not fixed)
+
+Files read: `hubx-gw/internal/{middleware/{security,cors,auth,ratelimit}.go, ratelimit/limiter.go, server/server.go,
+proxy/proxy.go, config/config.go}`, `cmd/gw/main.go`, and `hubx-api/internal/handlers/auth/handler.go` for the parser.
+
+- **Order**: `server.go:53-57` builds SecurityHeaders -> CORS -> JWT -> RateLimit -> mux, as the contract says.
+- **Path variants**: the JWT exclusions are exact string matches on `r.URL.Path` (`server.go:43-47`, `auth.go:67`).
+  `/api/auth/sign-in/`, `/api//auth/sign-in`, `/api/health/` are not excluded, so they get the 401 (fail closed). No
+  variant skips the JWT. The limiter's sign-in test is the same exact path and `POST` (`ratelimit.go:52`); a variant
+  that reaches the API's sign-in handler would have to pass the same mux match, and the percent-encoded form decodes to
+  the same `Path` in the gateway and in the API's Go mux. Not tested against a real request with `%2D`: not verified.
+- **Parser differential (sign-in)**: gateway and API decode with `json.NewDecoder(...).Decode` into the same two-field
+  struct (`ratelimit.go:30-33`, `handler.go:14-17`), so key case-insensitivity, duplicate keys (last wins) and trailing
+  data are handled identically; both apply `TrimSpace` and lowercase for the email (the API's `NormalizeEmail` was not
+  read, only the handler's `TrimSpace`; not verified). The body is restored byte for byte, with length reset
+  (`ratelimit.go:77-80`). No differential found.
+- **Header trust**: the user key is the `sub` set in the request context by the JWT middleware after validation
+  (`auth.go:111`, `ratelimit.go:43`); no `X-Forwarded-For`, remote address or `Authorization` text is read by any
+  limiter. The proxy overwrites `X-Gateway-Secret` (`proxy.go:53`).
+- **Limiter**: refused requests are not stored (`limiter.go:75-77`), the window slides, mutex-protected, LRU bounded to
+  10000 keys per limiter, two independent limiters. Sign-in keys are SHA-256 of the email, never logged.
+- **CORS**: exact match, one `Origin` value only (multiple values -> not allowed), no credentials header anywhere, a
+  preflight is answered before JWT and limiter (`cors.go:29-39`), `Vary: Origin` always. The config rejects `*`, `null`,
+  paths, userinfo and non-http(s) schemes (`config.go:184-202`).
+- **Headers**: set before any later handler (`security.go:21-25`) and the proxy deletes the API's copies and every
+  `Access-Control-*` (`proxy.go:60-70`), so 401/404/413/429/502 carry them once.
+
+### Findings
+
+| # | Severity | OWASP | Description | Location |
+|---|---|---|---|---|
+| F1 | medium (residual risk, assumption A1 pending human) | API2/API4 | Sign-in limit is 120 attempts/minute per email: about 172,800 guesses per day per email. It is a brake against floods, not against password guessing. Changing it is configuration (`ratelimit.sign-in-requests-per-minute`); a lower value makes locking a victim out cheaper (known limitation). | `hubx-gw/application.properties`, `config.go:46-47` |
+| F2 | low | API4 | Sign-in limiter forgets a count when more than 10000 distinct emails arrive between two attempts (LRU), so a determined attacker can reset one victim's counter. Documented in the spec's known limitations. | `limiter.go:89-93` |
+| F3 | low | API4 | `http.Server` has only `ReadHeaderTimeout`; no `ReadTimeout`, so a client that drips a sign-in body (up to 8 KiB) holds a connection and goroutine indefinitely. Pre-existing server setup, newly relevant because the gateway now reads the sign-in body. Not exercised by a test. | `cmd/gw/main.go:29-34`, `ratelimit.go:67` |
+| F4 | low | API8 | The default allowed origin is `http://localhost:5173` in every environment without an override (assumption A3). It grants read permission without credentials to a local dev page only; no effect on HUBX itself (same-origin through the MFE). | `config.go:45` |
+| F5 | informational | API2 | Pre-existing, out of scope of 011 and I agree it stays out: JWT validation accepts any HMAC algorithm (HS256/HS384/HS512), not only HS256, and does not require `exp`. Both need the shared secret to forge, so no bypass. Candidate for a later hardening story. | `auth.go:128-136` |
+| F6 | informational | API4 | Limits are in memory per gateway instance: they reset on restart and each instance counts separately; two instances double the effective limit. | spec "Known limitations" |
+
+No critical or high finding. Not verified: behaviour with more than one gateway instance, real sign-in through the
+limited gateway (the test mints sessions, see Red phase), slow-body behaviour (F3), `X-Forwarded-For` as received by the
+API (the proxy appends the client address; the API was not checked to ignore it).
+
+### OWASP API Security Top 10 (2023)
+
+| Category | Test or evidence | Result |
+|---|---|---|
+| API1 BOLA | Not changed by 011; the gateway adds no object access. Earlier stories' scenarios (all in the 87) still pass. | Not applicable to 011 |
+| API2 Broken authentication | Scenario :25 (forged session refused 401 and consumes no limit), :32/:38 (sign-in brake, normalised email), `auth.go:104` (empty `sub` -> 401). Residual: F1 (A1 value weak against guessing) and F5. | Pass with residual risk F1 |
+| API3 Property level exposure | Not changed by 011; the 429 body is fixed and identical for registered and unregistered emails (scenario :38). | Pass for the gateway part |
+| API4 Unrestricted resource consumption | Scenarios :6, :13, :19 (429 on request 6 of 5, per user, address header ignored), :32 (sign-in), :43 (health never limited); `limiter.go` bounded memory, `ratelimit.go:67` 8 KiB body bound. Previous open finding (HU-02 to HU-09 reports) is **closed** by this evidence. Limit is in memory, per gateway instance (F6); residual F2, F3. | Closed, with the stated limits |
+| API5 Function level authorization | Not changed by 011. | Not applicable |
+| API6 Sensitive business flows | Sign-in brake covers the credential-guessing flow only (F1). | Partial, see F1 |
+| API7 SSRF | The gateway forwards to one configured upstream; no URL taken from the request. | Not applicable |
+| API8 Security misconfiguration | Scenarios :47 (six headers exactly once, 200/401/health), :51 (approved origin: 204, that origin only, no credentials), :55 (other origin: 403, no permission), :60 (`@e2e`, headers seen by the browser); `config.go` rejects `*`, `null` and invalid values at start; `proxy.go:60-70` removes API duplicates. Previous open finding (no headers, no CORS) is **closed**. Residual F4. Scope: the MFE's own HTML pages are served outside the gateway and are not covered (out of scope per spec). | Closed for the gateway; MFE HTML out of scope |
+| API9 Improper inventory | `contracts/gateway-perimeter.md` documents the perimeter; the second (limited) gateway exists only in the test stack. | Pass |
+| API10 Unsafe consumption | The gateway consumes only its own API; sub-requests and responses are not interpreted. | Not applicable |
+
+### 429 and spec assumptions
+
+The status `429`, `Retry-After` and the flat body in the tests are the contract's assumptions A2 (and A1, A3 to A9),
+**pending human confirmation**; the tests assert the contract as written and would need to change with the answers. Not
+decisions of the human.
+
+### Boundaries
+
+No import between services was found in the files read (`hubx-gw` imports only its own packages and `golang-jwt`); no
+business logic in the gateway beyond reading the sign-in email for the limit; the MFE reaches the API only through
+`/api` (the `@e2e` scenarios pass through port 3000). Full import scan with a tool: not run (shell restricted).
+
+### Deploy validation
+
+**Pending human confirmation.** Not run by QA: staging deploy and smoke belong to `devops` and a human. Nothing in this
+report states that staging was verified.
+
+### Gherkin coverage (feature `S011_gateway-hardening.feature`)
+
+| Scenario | Line | Mode | Result |
+|---|---|---|---|
+| A signed-in user exceeds the request limit | 6 | API | pass (87/87) |
+| One user's excess does not affect another user | 13 | API | pass |
+| Pretending to come from another address does not avoid the limit | 19 | API | pass |
+| An invalid session never consumes a user's limit | 25 | API | pass |
+| Too many sign-in attempts on one email | 32 | API | pass |
+| The limit does not reveal whether an account exists | 38 | API | pass |
+| Checking health is never limited | 43 | API | pass |
+| Every answer carries the browser protections | 47 | API | pass |
+| An approved origin may read the answers | 51 | API | pass |
+| An origin that is not approved may not read the answers | 55 | API | pass |
+| An operator keeps working through the protected entry point | 60 | `@e2e` browser | pass |
+
+Per-scenario status is inferred from 0 failures of 87 (see above), not from a per-scenario listing.

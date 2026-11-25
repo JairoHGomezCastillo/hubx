@@ -372,6 +372,7 @@ Added during the review of PR #41. Every line above is kept as written; this sec
 - **Follow-up.** Story 011 (gateway hardening, `specs/011-gateway-hardening/`) addresses it. Story 011 is not
   implemented yet: this correction does not claim the finding is fixed; its closure will be evidenced in the story 011
   QA report.
+- **Closure evidence.** The verify run of story 011 closes it: see "Verify phase (T011)" in `specs/011-gateway-hardening/qa-report.md`.
 - **The earlier `@e2e` did not check the totals.** The browser branch of "they see the total for each stage" only
   asserted that each stage row and a count cell were visible, not the numbers. It now reads the count cell of every row
   in the region "Stage counts" and asserts In flight baseline+3, Out for delivery baseline+2, Delivered baseline+5 and the
