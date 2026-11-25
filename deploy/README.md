@@ -138,5 +138,21 @@ One-time setup (never paste a secret in a chat or the repo):
 5. **First deploy:** Actions → deploy → Run workflow → `staging`, ref `main`. Expected: migrations applied, three
    deploys `live`, warm-up, Cucumber green (all scenarios except `@needs-secret`).
 
+### Clean database on every staging deployment
+
+`deploy.yml` resets the Neon `staging` branch from its parent (production) before the migrations, so every staging
+smoke starts from the same users and seed data (scenarios such as HU-07's "they see only their three shipments" need
+it). The connection string does not change. One-time setup (your own terminal; the key is read from stdin, hidden):
+
+```bash
+gh secret set NEON_API_KEY --env staging          # Neon: Account settings -> API keys -> Create
+gh variable set NEON_PROJECT_ID --env staging --body <project id>   # Neon: project Settings (also in its URL)
+gh variable set NEON_BRANCH --env staging --body staging
+gh variable set RESET_DB_FROM_PARENT --env staging --body true
+```
+
+Production never has `RESET_DB_FROM_PARENT`, and `scripts/deploy/neon-reset.sh` refuses a branch without a parent.
+Data created by hand in staging is lost on the next deployment: create demo data after the last deploy.
+
 Production keeps Render's repo-built services for now; it moves to the same image model (environment `production`,
 called from `release.yml` after tagging) once staging has been proven.
