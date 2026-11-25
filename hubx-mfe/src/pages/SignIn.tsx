@@ -49,12 +49,21 @@ export function SignIn() {
   };
 
   return (
-    <main style={{ maxWidth: '400px', margin: '100px auto', padding: '20px' }}>
+    <main className="sign-in">
+      <div className="sign-in-apron">
+        <span className="sign">HUBX</span>
+        <p>Air cargo, traced from takeoff to delivery.</p>
+        <svg viewBox="0 0 600 400" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+          <path d="M-20 330H230C340 330 350 250 350 180S400 70 620 70" fill="none" stroke="#111617" strokeWidth="22" />
+          <path d="M-20 330H230C340 330 350 250 350 180S400 70 620 70" fill="none" stroke="#f7bd16" strokeWidth="10" />
+        </svg>
+      </div>
+      <div className="sign-in-form">
       <h1>Sign In</h1>
       
-      <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: '16px' }}>
-          <label htmlFor="email" style={{ display: 'block', marginBottom: '8px' }}>
+      <form className="form" onSubmit={handleSubmit}>
+        <div className="field">
+          <label htmlFor="email">
             Email
           </label>
           <input
@@ -64,13 +73,12 @@ export function SignIn() {
             onChange={(e) => setEmail(e.target.value)}
             required
             disabled={isLoading}
-            style={{ width: '100%', padding: '8px', fontSize: '16px' }}
             autoComplete="email"
           />
         </div>
 
-        <div style={{ marginBottom: '16px' }}>
-          <label htmlFor="password" style={{ display: 'block', marginBottom: '8px' }}>
+        <div className="field">
+          <label htmlFor="password">
             Password
           </label>
           <input
@@ -80,47 +88,22 @@ export function SignIn() {
             onChange={(e) => setPassword(e.target.value)}
             required
             disabled={isLoading}
-            style={{ width: '100%', padding: '8px', fontSize: '16px' }}
             autoComplete="current-password"
           />
         </div>
 
         {error && (
-          <div
-            style={{
-              padding: '12px',
-              marginBottom: '16px',
-              backgroundColor: '#fee',
-              border: '1px solid #fcc',
-              borderRadius: '4px',
-              color: '#c00',
-            }}
-            role="alert"
-          >
+          <div className="message" data-tone="bad" role="alert">
             {error}
           </div>
         )}
 
-        <button
-          type="submit"
-          disabled={isLoading}
-          style={{
-            width: '100%',
-            padding: '12px',
-            fontSize: '16px',
-            backgroundColor: '#007bff',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: isLoading ? 'not-allowed' : 'pointer',
-            opacity: isLoading ? 0.6 : 1,
-          }}
-        >
+        <button type="submit" className="button" disabled={isLoading}>
           {isLoading ? 'Signing in...' : 'Sign In'}
         </button>
       </form>
 
-      <div style={{ marginTop: '24px', fontSize: '14px', color: '#666' }}>
+      <div className="demo-users">
         <p>Demo users:</p>
         <ul>
           <li>operator@hubx.co</li>
@@ -128,6 +111,7 @@ export function SignIn() {
           <li>ana@hubx.co (customer)</li>
         </ul>
         <p>Password: Hubx-Demo-2026</p>
+      </div>
       </div>
     </main>
   );

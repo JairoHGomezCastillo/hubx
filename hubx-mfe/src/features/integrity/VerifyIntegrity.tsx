@@ -51,6 +51,18 @@ function submissionMessage(state: SubmissionState): string {
   }
 }
 
+function submissionTone(state: SubmissionState): 'ok' | 'bad' | undefined {
+  switch (state.kind) {
+    case 'success':
+      return state.result.intact ? 'ok' : 'bad';
+    case 'idle':
+    case 'submitting':
+      return undefined;
+    default:
+      return 'bad';
+  }
+}
+
 function VerifyIntegrity({ onVerify, onSessionExpired }: VerifyIntegrityProps) {
   const [shipmentCode, setShipmentCode] = useState('');
   const [submission, setSubmission] = useState<SubmissionState>({ kind: 'idle' });
@@ -96,10 +108,10 @@ function VerifyIntegrity({ onVerify, onSessionExpired }: VerifyIntegrityProps) {
   };
 
   return (
-    <section aria-labelledby="verify-integrity-heading">
+    <section className="panel" aria-labelledby="verify-integrity-heading">
       <h2 id="verify-integrity-heading">Verify integrity</h2>
-      <form noValidate onSubmit={handleFormSubmit}>
-        <div>
+      <form className="form-inline" noValidate onSubmit={handleFormSubmit}>
+        <div className="field">
           <label htmlFor="shipment-code">Shipment code</label>
           <input
             id="shipment-code"
@@ -111,11 +123,11 @@ function VerifyIntegrity({ onVerify, onSessionExpired }: VerifyIntegrityProps) {
             required
           />
         </div>
-        <button type="submit" disabled={busy}>
+        <button className="button" type="submit" disabled={busy}>
           Verify integrity
         </button>
       </form>
-      <p role="status" aria-live="polite">
+      <p className="message" data-tone={submissionTone(submission)} role="status" aria-live="polite">
         {submissionMessage(submission)}
       </p>
     </section>
