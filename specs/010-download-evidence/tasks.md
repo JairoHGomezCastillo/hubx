@@ -59,16 +59,22 @@ Chromium via the MFE download button.
 
 ### Implementation for US1 — API
 
-- [ ] T007 [P] [API] Add `hubx-api/internal/evidence/evidence.go` with `Evidence`, `ShipmentData`, `UpdateEvidence` and the self-contained `Instructions` string from `contracts/hu03-record-update.md`
-- [ ] T008 [P] [API] Add `hubx-api/internal/evidence/pdf.go`: stdlib-only PDF writer, uncompressed text streams, escaped PDF strings, valid xref; no new dependency in `hubx-api/go.mod`
-- [ ] T009 [API] Add `hubx-api/internal/evidence/reader.go`: `Reader.Read(ctx, code, principal)` using `ShipmentRepository.FindByCode`, exported `shipment.CanSee`, `LedgerRepository.List` and `PartyRepository.Parties`; no ledger write
-- [ ] T010 [P] [API] Extend `hubx-api/internal/shipment/update_postgres.go` `FindByCode` projection with origin, destination, flight, weight, customer name and creation time, keeping `WHERE code = $1` parameterized
-- [ ] T011 [P] [API] Export `CanSee` in `hubx-api/internal/shipment/recorder.go` and update HU-03/HU-04/HU-05 callers to use it
-- [ ] T012 [API] Add `hubx-api/internal/handlers/evidence/handler.go`: `Register(mux, requireAuth, reader, principals)`, `GET /shipments/{code}/evidence`, `application/pdf` and `Content-Disposition: attachment`
-- [ ] T013 [API] Wire the route in `hubx-api/cmd/api/main.go` with the existing flat `RequireAuth`; no gateway change, no migration
-- [ ] T014 [P] [API] Add `//go:generate go tool mockgen` directives and generated mocks in `hubx-api/internal/evidence/mocks/` and `hubx-api/internal/handlers/evidence/mocks/`
-- [ ] T015 [P] [API] Write black-box unit tests in `hubx-api/internal/evidence/test/` and `hubx-api/internal/handlers/evidence/test/` covering the PDF content, empty chain, visibility and error mapping; run `go -C hubx-api generate ./...` then `go -C hubx-api test ./...`
-- [ ] T016 [GW] Confirm `hubx-gw` needs no change for the flat 401 family and run `go -C hubx-gw test ./...`; do not touch gateway route exclusions or `Authorization`
+- [x] T007 [P] [API] Add `hubx-api/internal/evidence/evidence.go` with `Evidence`, `ShipmentData`, `UpdateEvidence` and the self-contained `Instructions` string from `contracts/hu03-record-update.md`
+- [x] T008 [P] [API] Add `hubx-api/internal/evidence/pdf.go`: stdlib-only PDF writer, uncompressed text streams, escaped PDF strings, valid xref; no new dependency in `hubx-api/go.mod`
+- [x] T009 [API] Add `hubx-api/internal/evidence/reader.go`: `Reader.Read(ctx, code, principal)` using `ShipmentRepository.FindByCode`, exported `shipment.CanSee`, `LedgerRepository.List` and `PartyRepository.Parties`; no ledger write
+- [x] T010 [P] [API] Extend `hubx-api/internal/shipment/update_postgres.go` `FindByCode` projection with origin, destination, flight, weight, customer name and creation time, keeping `WHERE code = $1` parameterized
+- [x] T011 [P] [API] Export `CanSee` in `hubx-api/internal/shipment/recorder.go` and update HU-03/HU-04/HU-05 callers to use it
+- [x] T012 [API] Add `hubx-api/internal/handlers/evidence/handler.go`: `Register(mux, requireAuth, reader, principals)`, `GET /shipments/{code}/evidence`, `application/pdf` and `Content-Disposition: attachment`
+- [x] T013 [API] Wire the route in `hubx-api/cmd/api/main.go` with the existing flat `RequireAuth`; no gateway change, no migration
+- [x] T014 [P] [API] Add `//go:generate go tool mockgen` directives and generated mocks in `hubx-api/internal/evidence/mocks/` and `hubx-api/internal/handlers/evidence/mocks/`
+- [x] T015 [P] [API] Write black-box unit tests in `hubx-api/internal/evidence/test/` and `hubx-api/internal/handlers/evidence/test/` covering the PDF content, empty chain, visibility and error mapping; run `go -C hubx-api generate ./...` then `go -C hubx-api test ./...`
+- [x] T016 [GW] Confirm `hubx-gw` needs no change for the flat 401 family and run `go -C hubx-gw test ./...`; do not touch gateway route exclusions or `Authorization`
+
+  Evidence (backend-go, phase implement, 2026-11-25): commit `2f9c9ae` (18 files, `hubx-api/**` only).
+  `go -C hubx-api generate ./...` exit 0; `go -C hubx-api test ./...` → all packages `ok`, EXIT=0;
+  `go -C hubx-api build ./...` EXIT=0; `go -C hubx-gw test ./...` → `ok`, EXIT=0 (gateway untouched);
+  `go -C hubx-api vet ./...` and `go -C hubx-gw vet ./...` EXIT=0. `gofmt -l` lists only pre-existing files,
+  none from HU-10. No new dependency, no migration, no gateway change.
 
 ### Implementation for US1 — MFE
 
@@ -93,7 +99,10 @@ Chromium via the MFE download button.
 **Independent Test**: request evidence for a shipment in Created and check the PDF contains the shipment data and
 `The shipment has no updates yet.`
 
-- [ ] T021 [API] Cover the empty-chain sentence in `hubx-api/internal/evidence/pdf.go` and its unit test in `hubx-api/internal/evidence/test/`
+- [x] T021 [API] Cover the empty-chain sentence in `hubx-api/internal/evidence/pdf.go` and its unit test in `hubx-api/internal/evidence/test/`
+
+  Evidence: commit `2f9c9ae`; `pdf_test.go` asserts `The shipment has no updates yet.` and `go -C hubx-api test ./...` is green.
+
 - [ ] T022 [QA] Verify the "Evidence for a shipment without updates" scenario in `hubx-bender/features/HU10_download-evidence.feature` is green through the gateway
 
 **Checkpoint**: US2 independently testable.
@@ -107,7 +116,10 @@ Chromium via the MFE download button.
 **Independent Test**: request evidence with an unknown code (404), with a ground partner/customer (403) and with no
 session (401); assert no PDF body in each case.
 
-- [ ] T023 [API] Implement and unit-test the flat error mapping in `hubx-api/internal/handlers/evidence/handler.go` and `hubx-api/internal/evidence/errors.go`: 401 `UNAUTHORIZED`, 403 `FORBIDDEN`, 404 `SHIPMENT_NOT_FOUND` for unknown **and** invisible shipments, 500 `INTERNAL_SERVER_ERROR`
+- [x] T023 [API] Implement and unit-test the flat error mapping in `hubx-api/internal/handlers/evidence/handler.go` and `hubx-api/internal/evidence/errors.go`: 401 `UNAUTHORIZED`, 403 `FORBIDDEN`, 404 `SHIPMENT_NOT_FOUND` for unknown **and** invisible shipments, 500 `INTERNAL_SERVER_ERROR`
+
+  Evidence: commit `2f9c9ae`; `handler_test.go` covers 401/403/404/500 and `go -C hubx-api test ./...` is green.
+  The 401 message is the gateway's (`contracts/auth-sign-in.md`); this route fixes no message of its own.
 - [x] T024 [MFE] Map 401/403/404 to visible outcomes in `hubx-mfe/src/features/evidence/DownloadEvidenceContainer.tsx` so no file is saved on error
 
   Evidence: included in the `frontend-react` delivery above (commit `bdf93ec`); 401 is detected via `fetchWithAuth`'s
