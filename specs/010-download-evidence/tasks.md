@@ -206,6 +206,24 @@ session (401); assert no PDF body in each case.
   `govulncheck` → `No vulnerabilities found` and exit 0 in both. Only the pre-existing gateway gap remains. Lead
   checked that QA touched only `qa-report.md` (64 insertions, 30 deletions).
 
+- [x] T033 [LEAD] Revert the out-of-scope permission change `a10ff6e` flagged by `/review-story` on PR #40
+
+  Evidence: `git revert --no-edit a10ff6e` → `275f22a Revert "chore: enable shell permission layer for subagents (human decision HU-10)"`,
+  5 files changed, 25 deletions, only `.opencode/agents/*.md`. `node scripts/check-agent-zones.mjs origin/main` →
+  `agent zones ok (origin/main..HEAD)`. The same 25 lines are kept only as uncommitted local changes in the worktree by
+  the human's decision, so this session keeps shell authority while the repository and PR keep the original deny rules.
+
+- [x] T034 [QA] Remove the seed-data coupling from the HU-10 denial steps and re-verify the full suite
+
+  Evidence (qa-seguridad, phase `fix`, JSON `status: ok`, commit `aee5d66`): `make test-integration` →
+  `1 hook (1 passed)`, `66 scenarios (66 passed)`, `424 steps (424 passed)`, `1m 6.184s (1m 5.915s executing your code)`,
+  `INTEGRATION_EXIT=0`; the two-role denial Scenario Outline and `Person who has not signed in` passed with fresh
+  gateway-created shipments. `grep -nE 'HBX-SEED|SEED-[0-9]' hubx-bender/features/steps/HU10_download-evidence.steps.ts`
+  → `NO SEED CODES`; `prepareShipment(this, 'Created')` at lines 201 and 211. `gosec ./...` → `Issues : 0` and exit 0 in
+  both modules; `govulncheck` → `No vulnerabilities found` and exit 0 in both. Lead verified QA changed only
+  `hubx-bender/features/steps/HU10_download-evidence.steps.ts` (18 +/−) and `specs/010-download-evidence/qa-report.md`
+  (168 +/−); the `.feature` file stayed verbatim.
+
 ---
 
 ## Dependencies & Execution Order

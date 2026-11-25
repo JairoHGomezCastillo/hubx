@@ -213,7 +213,15 @@
   page chrome and word wrapping while keeping the seven canonical fingerprint lines unwrapped and contiguous. A styling
   fix must preserve the parser contract: QA joins every PDF literal string with `\n`, so no decoration string may enter
   a canonical block and no asserted phrase may be split across strings.
+- HU-10 (2026-11-25): `/review-story` rejected the story while `a10ff6e` was in its PR. A `shell "*" allow` appended
+  after the `shell "*" deny` in the five opencode agents cancels the barrier (last matching rule wins) and would let
+  subagents push or merge; permissions are a base/tooling change, never part of a story. Reverted in `275f22a`. The
+  human asked to keep the authority only for this local session, so the same five files stay modified in the worktree
+  and are intentionally left uncommitted; CI and the PR see the original deny rules. Do not `git add -A` here.
 ## Pending
+- If a subagent is blocked on a concrete shell command, add that exact command to its rules in a separate tooling PR
+  (devops in #32 is the precedent); never restore a `shell "*" allow` in the repository. The HU-10 local override is
+  session-only and must stay uncommitted.
 - Move production to image-backed services and call deploy.yml (environment `production`) from release.yml after
   tagging; then delete deploy/render.yaml's repo-built services (owner A, after the 2026-11-24 delivery).
 - HU-03 (PR #23) was merged straight into `main` on 2026-11-24, not through a release branch: it has no version tag of
