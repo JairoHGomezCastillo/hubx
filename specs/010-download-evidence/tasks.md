@@ -29,10 +29,16 @@
 
 **⚠️ CRITICAL**: the feature Gherkin MUST be copied verbatim from `backlog/backlog.md` HU-10, with at least one `@e2e` happy path.
 
-- [ ] T002 [P] [QA] Write `hubx-bender/features/HU10_download-evidence.feature` with the HU-10 Gherkin verbatim (six scenarios plus the two-role Scenario Outline) and `@e2e` on the "Evidence for a shipment with updates" happy path
-- [ ] T003 [QA] Write `hubx-bender/features/steps/HU10_download-evidence.steps.ts`: API steps through the gateway, PDF byte/text assertions, download event handling for `@e2e`, and actor mappings in `features/steps/common.steps.ts` for any new Gherkin phrasing
-- [ ] T004 [QA] Extend `hubx-bender/features/support/hooks.ts` only if needed for download capture; keep all API traffic in `world.api` and the `@e2e` in `world.ui`, with role-and-label locators scoped to the evidence region
-- [ ] T005 [QA] Run `npm --prefix hubx-bender test` and record the literal red output (undefined steps or 404), proving the scenarios fail for the right reason
+- [x] T002 [P] [QA] Write `hubx-bender/features/HU10_download-evidence.feature` with the HU-10 Gherkin verbatim (six scenarios plus the two-role Scenario Outline) and `@e2e` on the "Evidence for a shipment with updates" happy path
+- [x] T003 [QA] Write `hubx-bender/features/steps/HU10_download-evidence.steps.ts`: API steps through the gateway, PDF byte/text assertions, download event handling for `@e2e`, and actor mappings in `features/steps/common.steps.ts` for any new Gherkin phrasing
+- [x] T004 [QA] Extend `hubx-bender/features/support/hooks.ts` only if needed for download capture; keep all API traffic in `world.api` and the `@e2e` in `world.ui`, with role-and-label locators scoped to the evidence region
+- [x] T005 [QA] Run `npm --prefix hubx-bender test` and record the literal red output (undefined steps or 404), proving the scenarios fail for the right reason
+
+  Evidence (qa-seguridad, phase red, 2026-11-25): `make test-integration` → `66 scenarios (59 passed, 7 failed)`,
+  `424 steps (410 passed, 7 skipped, 7 failed)`, no undefined/ambiguous steps in the final run. Each of the 7 HU-10
+  failures is the intended red reason: missing Dashboard download link (`@e2e`), 404 on the missing `/evidence`
+  route (third-party, no-updates, 404-code), 404 instead of 403 (roles), and gateway no-JWT message (unauthenticated).
+  First run exposed two step defects (undefined `tries…`, ambiguous `nobody has signed in`), both fixed in this delivery.
 
 **Checkpoint**: red evidence accepted by hubx-lead; implementation may now start.
 
