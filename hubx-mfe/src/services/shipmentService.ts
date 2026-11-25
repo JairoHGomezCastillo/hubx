@@ -1,9 +1,9 @@
 /**
- * Shipment service for creating shipments.
- * Calls POST /api/shipments through the gateway.
+ * Shipment service for creating shipments and listing assigned shipments.
+ * All calls go through the gateway at /api.
  */
 
-import { fetchWithAuth } from './httpClient';
+import { fetchWithAuth, getJson } from './httpClient';
 
 export interface CreateShipmentInput {
   origin: string;
@@ -25,6 +25,22 @@ export interface Shipment {
   };
   stage: string;
   createdAt: string;
+}
+
+export interface AssignedShipment {
+  code: string;
+  stage: string;
+  origin: string;
+  destination: string;
+  flight: string;
+  weightKg: number;
+  assignedAt: string;
+}
+
+export interface AssignedShipmentsResponse {
+  shipments: AssignedShipment[];
+  nextOffset: number | null;
+  message: string | null;
 }
 
 /**
@@ -49,4 +65,15 @@ export async function createShipment(input: CreateShipmentInput): Promise<Shipme
   }
 
   return response.json();
+}
+
+/**
+ * List assigned shipments for the current ground partner.
+ * 
+ * @param offset - Pagination offset (default 0)
+ * @returns List of assigned shipments with pagination info
+ * @throws Error with server message on failure
+ */
+export async function listAssignedShipments(offset = 0): Promise<AssignedShipmentsResponse> {
+  return getJson<AssignedShipmentsResponse>(`/api/assigned-shipments?offset=${offset}`);
 }
