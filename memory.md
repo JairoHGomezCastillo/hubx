@@ -218,6 +218,10 @@
   subagents push or merge; permissions are a base/tooling change, never part of a story. Reverted in `275f22a`. The
   human asked to keep the authority only for this local session, so the same five files stay modified in the worktree
   and are intentionally left uncommitted; CI and the PR see the original deny rules. Do not `git add -A` here.
+- HU-10 (2026-11-25): a human closed PR #40 believing the last commits were not synced. `git ls-remote` and the PR's
+  `headRefOid` both matched local HEAD (`230d606`), so the branch was current; the lead recreated it as PR #43 from the
+  same SHA rather than reopening. Before recreating a PR, verify the remote head and then update every current-PR
+  reference (backlog, `pr.md`, `tasks.md`), leaving historical review references to the old number intact.
 ## Pending
 - If a subagent is blocked on a concrete shell command, add that exact command to its rules in a separate tooling PR
   (devops in #32 is the precedent); never restore a `shell "*" allow` in the repository. The HU-10 local override is

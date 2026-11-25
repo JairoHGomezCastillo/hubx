@@ -13,18 +13,19 @@ HU-10 Download the traceability evidence. Spec: `specs/010-download-evidence/`
 - speckit.analyze: 13/13 FR and 4/4 buildable SC have tasks; 30 tasks at analysis time (34 after the review-fix tasks); 0 duplications, 0 ambiguities, 0 critical issues introduced by HU-10. Two LOW deviations were corrected in `6d4fc17` (`spec.md` status, contract path in the `plan.md` tree). Neither the presentation fix nor the review fixes changed a contract, stage, role or permission, so the analysis has no new deviation. Remaining recorded deviations: the pre-existing gateway gap (constitution VI: security headers, restrictive CORS and rate limiting, `hubx-gw/cmd/gw/main.go:44-70`, already in `memory.md → Pending`) and the human-ordered demo-mode skip of deploy validation.
 - qa-report.md: `specs/010-download-evidence/qa-report.md` (final phase `fix` on `aee5d66`: green suite, denial scenarios with fresh shipments, `NO SEED CODES`, zero security findings, one pre-existing medium finding).
 - Agent zones: `node scripts/check-agent-zones.mjs origin/main` → `agent zones ok (origin/main..HEAD)`; no CI, Dockerfile, compose, Makefile or infrastructure file changed in the committed diff.
-- `review-story` resolution: finding 1 (permission change) reverted in `275f22a`; finding 2 (seed independence) fixed in `aee5d66`; finding 3 (out-of-scope commits) explained below. CI on PR #40 is green for `api`, `gw`, `mfe`, `build`, `agents-check` and `integration`.
+- `review-story` resolution: finding 1 (permission change) reverted in `275f22a`; finding 2 (seed independence) fixed in `aee5d66`; finding 3 (out-of-scope commits) explained below. CI was green on PR #40 and is rerun on this recreated PR #43 (same head `230d606`).
 
 ## Checklist
 - [x] Every backlog scenario has a test (6 scenarios + the two-role Scenario Outline, Gherkin verbatim, plus one `@e2e` happy path).
 - [x] No secrets, no cross-service imports, MFE only via `/api` through the gateway.
 - [x] Only my own paths changed (git diff --stat attached); each `[agent:<role>]` commit is confined to that role's zone.
-- [x] Backlog status updated for this story only (`In review (PR #40)`).
+- [x] Backlog status updated for this story only (`In review (PR #43)`).
 - [x] `review-story` findings addressed and pushed; the PR description was updated explicitly because a push alone does not replace its body.
 
 ## Risks and human decisions
 - Human review of PR #40 found the first PDF plain and with clipped long prose. `backend-go` restyled it in `bfdc9de` with the MFE palette and word wrapping; `qa-seguridad` re-verified it in `f764a7b`. This PR is updated with both commits; no merge was performed.
 - Demo mode: the human explicitly asked to skip the deploy validation of lead step 6d. No `deploy.md` and no devops delegation; staging is deployed and smoke-tested automatically when this PR is merged.
+- PR #40 was closed by a human after a suspected sync problem. Verification showed `git ls-remote origin refs/heads/010-download-evidence` = local HEAD = `230d606b6ae9e55eabaa78dd29ee5012500b5424`, and PR #40's `headRefOid` was that same SHA, so no commit was missing. Following the human's instruction, the lead created PR #43 from that unchanged head instead of reopening the old one; the five agent-config lines remain local-only.
 - `origin/release/v0.10.0-demo` stayed at `853944c` while the story branch was cut from the local release at `8c47690` (v0.4.0 base, 44 commits ahead). GitHub rejected the release update with `GH013: Changes must be made through a pull request`, and no agent pushes to `release/*`; this PR therefore also shows those pre-existing commits. The HU-10 changes themselves are the 44 files in the committed diff below.
 - `review-story` on PR #40 rejected `a10ff6e`: its `shell "*" allow` cancelled the `shell "*" deny` of the five opencode agents (last matching rule wins). That permission change did not belong in a story PR and is reverted in `275f22a`. By the human's decision the same 25 lines remain as **uncommitted local changes** in the five `.opencode/agents/*.md` files so this session keeps its shell authority; the committed repo and this PR keep the original deny barrier. `git add -A` must not be used on this branch.
 - The other untagged commits visible in the PR (`1416070` UI refresh, `aaf8cfc` backlog reconciliation) were already merged into the local release base through PRs #38 and #37 before HU-10 was cut. HU-10 did not author them and cannot remove them from the PR because GitHub rejects updating `release/v0.10.0-demo` with `GH013`; the human releases that base separately.
@@ -68,16 +69,16 @@ $ git diff --stat 8c47690..HEAD
  hubx-mfe/src/pages/DownloadEvidence.tsx            |  24 ++
  hubx-mfe/src/services/evidenceService.test.ts      | 170 +++++++
  hubx-mfe/src/services/evidenceService.ts           | 102 +++++++
- memory.md                                          |  36 ++
+ memory.md                                          |  40 ++
  specs/010-download-evidence/data-model.md          |  56 +++
  specs/010-download-evidence/plan.md                | 125 +++++++
- specs/010-download-evidence/pr.md                  |  83 +++++
+ specs/010-download-evidence/pr.md                  |  84 +++++
  specs/010-download-evidence/qa-report.md           | 472 +++++++++++++++++++++
  specs/010-download-evidence/quickstart.md          |  37 ++
  specs/010-download-evidence/research.md            |  71 +++
  specs/010-download-evidence/spec.md                | 152 +++++++++++
  specs/010-download-evidence/tasks.md               | 272 +++++++++++++++
- 44 files changed, 4611 insertions(+), 26 deletions(-)
+ 44 files changed, 4616 insertions(+), 26 deletions(-)
 ```
 
 </details>

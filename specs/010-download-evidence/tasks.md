@@ -177,7 +177,7 @@ session (401); assert no PDF body in each case.
 
   Evidence: commit `ee667db` wrote `pr.md`; `git push -u origin 010-download-evidence` created the remote branch;
   `gh pr create --base release/v0.10.0-demo --title "feat(HU-10): ✨ download traceability evidence [agent:hubx-lead]" --body-file specs/010-download-evidence/pr.md`
-  → `https://github.com/JairoHGomezCastillo/hubx/pull/40`. The PR is open; a human reviews and merges.
+  → `https://github.com/JairoHGomezCastillo/hubx/pull/40`. A human closed #40 on 2026-11-25 suspecting a sync problem; the remote head was already `230d606` (local HEAD), so the lead recreated the review at `https://github.com/JairoHGomezCastillo/hubx/pull/43` from the unchanged head. A human reviews and merges.
 
 ---
 
