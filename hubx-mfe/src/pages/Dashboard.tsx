@@ -32,9 +32,21 @@ export function Dashboard() {
             Verify integrity
           </a>
           {user?.role === 'operator' && (
-            <button type="button" className="button" onClick={() => navigateTo('/shipments/new')}>
-              Create shipment
-            </button>
+            <>
+              <a
+                href="/download-evidence"
+                className="button button-secondary"
+                onClick={(e) => {
+                  e.preventDefault();
+                  navigateTo('/download-evidence');
+                }}
+              >
+                Download evidence
+              </a>
+              <button type="button" className="button" onClick={() => navigateTo('/shipments/new')}>
+                Create shipment
+              </button>
+            </>
           )}
         </div>
       </div>
