@@ -235,8 +235,8 @@
   were assigned to rapido@hubx.co. deploy.yml now resets the Neon `staging` branch from its parent before migrating
   (only when the environment sets RESET_DB_FROM_PARENT=true; production never). Scenarios that need an exact set
   ("only their three") stay valid on staging; data created by hand there is lost on the next deploy.
-- Production on images (2026-11-24, hotfix v0.6.1): release.yml job `deploy` promotes the release tip (PR head
-  sha, the commit staging smoke-tested) to the image-backed production services after tagging, through deploy.yml
+- Production on images (2026-11-24, hotfix v0.6.1): release.yml job `deploy` promotes the PR head (staged
+  for a release; for a hotfix only if run by hand; `promotable` checks head and merge trees are equal) to the image-backed production services after tagging, through deploy.yml
   (migrations, @smoke only, never a DB reset). Gated by the repo variable DEPLOY_PRODUCTION=true. The same services
   and URLs: deploy/render.yaml switches hubx-api/gw/mfe from runtime docker to image (Render allows a runtime change).
 - HU-10 (2026-11-25): a 401 message is not an API-owned detail when the gateway validates first. The red QA assertion
@@ -270,8 +270,6 @@
 - If a subagent is blocked on a concrete shell command, add that exact command to its rules in a separate tooling PR
   (devops in #32 is the precedent); never restore a `shell "*" allow` in the repository. The HU-10 local override is
   session-only and must stay uncommitted.
-- Move production to image-backed services and call deploy.yml (environment `production`) from release.yml after
-  tagging; then delete deploy/render.yaml's repo-built services (owner A, after the 2026-11-24 delivery).
 - HU-03 (PR #23) was merged straight into `main` on 2026-11-24, not through a release branch: it has no version tag of
   its own and did not pass through staging; Render's autodeploy of `main` already serves it. The next tag on `main`
   (v0.3.3) includes it.
@@ -280,6 +278,7 @@
 - hubx-api `main.go` loads `internal/config` but still reads the port from `PORT` directly (works on Render).
 - hubx-gw has no config reader yet (reads `PORT`/`API_URL`).
 - 0002_seed_ledger: shipments in later stages with chained updates (owner C).
-- HU-09 and HU-10 ship together in `release/v0.7.0-count-and-evidence` (their own release names, v0.5.0 and
-  v0.10.0, clashed with v0.6.x on main); both are validated on staging before the release PR.
+- HU-09 (review of #41): qa-seguridad corrects `qa-report.md` (API4: the gateway has no rate limiting) and makes the
+  @e2e check the totals. HU-10 (review of #43): a human decides whether the PDF says names are outside the fingerprint.
+- `origin/feature/sdd-hubx` holds one commit that is not in main (de033a1, docs/diagramas): its author decides.
 - Pre-existing MFE warnings: `act(...)` warnings in `Dashboard.test.tsx` (RecordUpdateContainer) and `StageCounts.test.tsx`.
