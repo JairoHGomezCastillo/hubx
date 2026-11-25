@@ -8,14 +8,17 @@ skipped at the human's request. Only hubx-lead marks `- [x]`, citing evidence.
 
 ## Phase 1: Acceptance tests in red (qa-seguridad, `red`)
 
-- [ ] T001 [QA] `hubx-bender/features/HU07_view-assigned.feature`: the four backlog HU-07 scenarios verbatim (feature
+- [x] T001 [QA] `hubx-bender/features/HU07_view-assigned.feature`: the four backlog HU-07 scenarios verbatim (feature
   header as in the backlog) plus one `@e2e` happy path for a ground partner in the web application.
-- [ ] T002 [QA] `hubx-bender/features/steps/HU07_view-assigned.steps.ts` (+ shared helpers in `common.steps.ts` only if
+- [x] T002 [QA] `hubx-bender/features/steps/HU07_view-assigned.steps.ts` (+ shared helpers in `common.steps.ts` only if
   reused): fixtures through the gateway (create, advance, assign, drain the partner's pending list), actor mapping
   for "the first partner", "the partner", "an operator", "a customer", assertions against the contract (order by
   `assignedAt`, only own codes, 403 `FORBIDDEN` body, empty list + `message`).
-- [ ] T003 [QA] Run against the stack and show every HU-07 scenario red for the right reason (route missing: 404/405),
-  with HU-01..HU-03 still green.
+- [x] T003 [QA] Run against the stack and show every HU-07 scenario red for the right reason (route missing: 404/405),
+  with HU-01..HU-03 still green. Evidence (lead ran `make test-integration`, QA shell denied; HU-04 precedent):
+  `65 scenarios (59 passed, 6 failed)`; five API scenarios `Expected: 200|403 Received: 404`, `@e2e`
+  `getByRole('region', { name: /my assigned shipments/i }) ... element(s) not found`. A first run had 3 scenarios red
+  for the wrong reason (step arity); qa-seguridad fixed them in `fix`.
 
 ## Phase 2: API (backend-go, `implement`) — TDD
 
