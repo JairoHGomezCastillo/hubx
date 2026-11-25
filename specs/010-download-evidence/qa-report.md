@@ -2,10 +2,10 @@
 
 **Story**: HU-10  
 **Agent**: qa-seguridad  
-**Phase**: verify (re-verify after presentation fix)  
+**Phase**: fix (review judgment 2: remove seed-data coupling in HU-10 denial steps) — see §10  
 **Date**: 2026-11-25  
 **Branch**: `010-download-evidence`  
-**Verified commit**: `bfdc9de` (`[agent:backend-go] HU-10 restyle evidence PDF with HUBX visual language`; worktree clean before this report, `git rev-parse HEAD` = `bfdc9de3311f5fadf0920db2e151839513e18a53`)  
+**Verified commit**: `275f22a` (`git rev-parse --short HEAD` = `275f22a`; the review-driven revert of `a10ff6e`, which touched only `.opencode/agents/*.md` and left all service code identical to `bfdc9de`). The earlier `verify` phases were recorded at `bfdc9de` and `f81a551`; §10 records this fix's re-verification at `275f22a`.  
 **Re-verify of**: `f81a551` (the earlier final verification). A human requested a presentation improvement during review of PR #40; backend-go restyled the PDF in `hubx-api/internal/evidence/pdf.go`. This report re-verifies that the restyled PDF still passes every backlog scenario and the security gates. Earlier evidence from `f81a551` is retained below and labelled where superseded.  
 **Contract**: `contracts/hu10-download-evidence.md`
 
@@ -309,8 +309,164 @@ listed in §7.
 
 ---
 
-## 9. Files changed in this phase
+## 9. Files changed in the earlier verify phase
 
-- `specs/010-download-evidence/qa-report.md` (this file, overwritten with the final verification). No production code,
-  feature, step definition, contract, `tasks.md`, `spec.md`, `plan.md` or `pr.md` was edited; no commit, push or merge
-  was performed.
+- `specs/010-download-evidence/qa-report.md` (this file). No production code, feature, step definition, contract,
+  `tasks.md`, `spec.md`, `plan.md` or `pr.md` was edited; no commit, push or merge was performed.
+
+---
+
+## 10. Fix phase — remove the last seed-data coupling (review judgment 2)
+
+**Trigger**: `/review-story` on PR #40, judgment 2 — `hubx-bender/features/steps/HU10_download-evidence.steps.ts:17`
+defined `KNOWN_CODE = 'HBX-SEED-0001'` and the three denial scenarios reused that seed shipment.
+
+**Change (QA-owned path only)**: removed `KNOWN_CODE`; the `ground partner`/`customer` denial `When` and the
+unauthenticated `When` now each create their own fresh shipment through the gateway with `prepareShipment(this,
+'Created')` (HU-03 precedent). Because `prepareShipment` signs in as the operator internally, the scenario actor is
+restored with `signInAs(this, role)` before the denial request, and `this.token` is cleared again for the
+unauthenticated request. `assertNoPdf` and the exact 403/401 error assertions are byte-for-byte unchanged. The
+`.feature` file was **not** edited. Literal diff (`git diff -- hubx-bender/features/steps/HU10_download-evidence.steps.ts`):
+
+```
+-const KNOWN_CODE = 'HBX-SEED-0001';
+...
+ When(/^the (ground partner|customer) tries to download the evidence of a shipment$/, async function (
+   this: EvidenceWorld,
+-  _role: string,
++  role: string,
+ ) {
+-  await requestEvidence(this, KNOWN_CODE);
++  await prepareShipment(this, 'Created');
++  await signInAs(this, role as 'ground partner' | 'customer');
++  await requestEvidence(this, this.shipmentCode!);
+ });
+ 
+ When(/^a person tries to download the evidence of a shipment$/, async function (this: EvidenceWorld) {
++  await prepareShipment(this, 'Created');
++  this.token = undefined;
+   expect(this.token, 'no signed-in session').toBeUndefined();
+-  this.response = await this.api.get(`/api/shipments/${KNOWN_CODE}/evidence`, {
++  this.response = await this.api.get(`/api/shipments/${encodeURIComponent(this.shipmentCode!)}/evidence`, {
+```
+
+### 10.1 Absence of seed codes (literal)
+
+Command: `grep -nE 'HBX-SEED|SEED-[0-9]' hubx-bender/features/steps/HU10_download-evidence.steps.ts` and
+`grep -n 'prepareShipment' hubx-bender/features/steps/HU10_download-evidence.steps.ts`:
+
+```
+=== seed codes in HU-10 steps (expect none) ===
+NO SEED CODES
+=== fresh shipment calls in HU-10 steps ===
+8:import { authHeader, OPERATOR_NAME, prepareShipment, signInAs, type UpdateWorld } from './common.steps.ts';
+18:// Demo data from migration 0001; fixtures use the same owner as prepareShipment.
+139:    await prepareShipment(this, 'Assigned to partner');
+201:  await prepareShipment(this, 'Created');
+202:  // prepareShipment signs in as the operator internally; restore the scenario
+211:  await prepareShipment(this, 'Created');
+```
+
+`prepareShipment` calls `POST /api/shipments` through `world.api` (baseURL = gateway) — no direct DB access and no
+MFE-to-API bypass. `common.steps.ts` was **not** modified.
+
+### 10.2 Full integration suite after the fix (literal)
+
+**Command**: `make test-integration` on `275f22a`, clean isolated `hubx-it` stack. **Exit code**: 0. Literal tail:
+
+```
+.................................................................................................................................................................................................................................................................................................................................................................................................Tampered update 2 of HBX-10086329 to stage "Out for delivery"
+.......................................................................................................................................................................................................................................................................................................................
+
+1 hook (1 passed)
+66 scenarios (66 passed)
+424 steps (424 passed)
+1m 6.184s (1m 5.915s executing your code)
+INTEGRATION_EXIT=0
+```
+
+The HU-05 ledger tamper regression ran in this same suite (literal line above). `strict: true` at
+`hubx-bender/cucumber.mjs:8` makes an undefined step fail the suite; all 424 steps passed.
+
+### 10.3 The three HU-10 denial scenarios (literal, from `reports/cucumber.json`)
+
+Read-only Node extraction of the scenarios whose name matched `/permission|not signed in/i`; the HU-10 rows are the
+last three (the first two belong to HU-02's "create shipments" outline and are quoted only because the filter matched):
+
+```
+SCENARIO "Role without permission to download evidence" | line=39 | steps=5 | passed
+   Before undefined -> passed
+   Given a ground partner has signed in -> passed
+   When the ground partner tries to download the evidence of a shipment -> passed
+   Then they are told they do not have permission to download it -> passed
+   After undefined -> passed
+SCENARIO "Role without permission to download evidence" | line=40 | steps=5 | passed
+   Before undefined -> passed
+   Given a customer has signed in -> passed
+   When the customer tries to download the evidence of a shipment -> passed
+   Then they are told they do not have permission to download it -> passed
+   After undefined -> passed
+SCENARIO "Person who has not signed in" | line=42 | steps=6 | passed
+   Before undefined -> passed
+   Given nobody has signed in -> passed
+   When a person tries to download the evidence of a shipment -> passed
+   Then they are asked to sign in -> passed
+   And they receive no document -> passed
+   After undefined -> passed
+```
+
+All three denial scenarios now use a fresh gateway-created shipment and still pass with the unchanged 403/401 and
+"no PDF" assertions.
+
+### 10.4 Security scans re-run at `275f22a` (literal)
+
+No production code changed in this fix; the scans were re-run anyway to confirm the verified state.
+
+`NO_COLOR=1 gosec ./...` in `hubx-api`:
+```
+Summary:
+  Gosec  : dev
+  Files  : 64
+  Lines  : 6437
+  Nosec  : 1
+  Issues : 0
+
+GOSEC_API_EXIT=0
+```
+
+`NO_COLOR=1 gosec ./...` in `hubx-gw`:
+```
+Summary:
+  Gosec  : dev
+  Files  : 3
+  Lines  : 294
+  Nosec  : 0
+  Issues : 0
+
+GOSEC_GW_EXIT=0
+```
+
+`govulncheck -C hubx-api ./...`:
+```
+=== Symbol Results ===
+
+No vulnerabilities found.
+
+Your code is affected by 0 vulnerabilities.
+This scan also found 0 vulnerabilities in packages you import and 1
+vulnerability in modules you require, but your code doesn't appear to call these
+vulnerabilities.
+Use '-show verbose' for more details.
+GOVULN_API_EXIT=0
+```
+
+`govulncheck -C hubx-gw ./...`:
+```
+No vulnerabilities found.
+GOVULN_GW_EXIT=0
+```
+
+The OWASP, boundary, findings and blocker conclusions of §§5–8 are unchanged by this QA-only fix: no critical or high
+finding is open; the only open item remains the pre-existing gateway headers/CORS/rate-limit gap (not introduced by
+HU-10). No secret was added, no commit/push/merge was performed, and the five `.opencode/agents/*.md` files left
+modified in the worktree were neither touched nor staged by QA.

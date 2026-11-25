@@ -14,7 +14,6 @@ import { authHeader, OPERATOR_NAME, prepareShipment, signInAs, type UpdateWorld 
 const FINGERPRINT = /^[0-9a-f]{64}$/;
 const HEX64_GLOBAL = /\b[0-9a-f]{64}\b/g;
 const UNKNOWN_CODE = 'HBX-99999999';
-const KNOWN_CODE = 'HBX-SEED-0001';
 
 // Demo data from migration 0001; fixtures use the same owner as prepareShipment.
 const CUSTOMER_NAMES: Record<string, string> = {
@@ -194,14 +193,25 @@ When(
 
 When(/^the (ground partner|customer) tries to download the evidence of a shipment$/, async function (
   this: EvidenceWorld,
-  _role: string,
+  role: string,
 ) {
-  await requestEvidence(this, KNOWN_CODE);
+  // Each denial scenario creates its own fresh shipment through the gateway
+  // (HU-03 precedent), never a seed code. The denial assertion does not depend
+  // on the shipment state, so an empty Created shipment is enough.
+  await prepareShipment(this, 'Created');
+  // prepareShipment signs in as the operator internally; restore the scenario
+  // actor (the "<role> has signed in" Given) before the request.
+  await signInAs(this, role as 'ground partner' | 'customer');
+  await requestEvidence(this, this.shipmentCode!);
 });
 
 When(/^a person tries to download the evidence of a shipment$/, async function (this: EvidenceWorld) {
+  // Fresh shipment through the gateway, then drop the fixture JWT so the person
+  // really has no session when the request is made.
+  await prepareShipment(this, 'Created');
+  this.token = undefined;
   expect(this.token, 'no signed-in session').toBeUndefined();
-  this.response = await this.api.get(`/api/shipments/${KNOWN_CODE}/evidence`, {
+  this.response = await this.api.get(`/api/shipments/${encodeURIComponent(this.shipmentCode!)}/evidence`, {
     headers: { Accept: 'application/pdf' },
   });
 });
