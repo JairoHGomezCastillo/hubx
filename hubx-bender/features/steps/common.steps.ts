@@ -359,3 +359,15 @@ Then(/^they are told that no shipment exists with that code$/, async function (t
     throw new Error(`Step "they are told that no shipment exists with that code" called on unexpected URL: ${url}`);
   }
 });
+
+// Shared by HU-07 (assigned shipments) and HU-09 (stage counts): the backlog uses the same sentence for a role
+// without permission. One definition, or Cucumber reports every use as ambiguous. The refusal carries no data.
+Then('they are told they do not have permission to see that information', async function (this: HubxWorld) {
+  expect(this.response?.status(), 'role without permission: 403').toBe(403);
+  const body = (await this.response!.json()) as Record<string, unknown>;
+  expect(body.error, 'error code').toBe('FORBIDDEN');
+  expect(body.message, 'error message').toBe('You do not have permission to see that information');
+  for (const field of ['stages', 'total', 'shipments']) {
+    expect(body, `no ${field} in a refusal`).not.toHaveProperty(field);
+  }
+});

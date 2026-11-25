@@ -216,15 +216,3 @@ Then(
   },
 );
 
-Then(
-  /^they are told they do not have permission to see that information$/,
-  async function (this: StageCountWorld) {
-    expect(this.response?.status(), 'non-operator forbidden').toBe(403);
-    const body = (await this.response!.json()) as { error?: string; message?: string };
-    expect(body.error, 'error code').toBe('FORBIDDEN');
-    expect(body.message, 'error message').toBe('You do not have permission to see that information');
-    // Verify no totals are exposed in the body.
-    expect(body).not.toHaveProperty('stages');
-    expect(body).not.toHaveProperty('total');
-  },
-);
