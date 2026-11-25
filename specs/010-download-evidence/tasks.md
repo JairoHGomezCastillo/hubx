@@ -72,10 +72,15 @@ Chromium via the MFE download button.
 
 ### Implementation for US1 — MFE
 
-- [ ] T017 [P] [MFE] Add `hubx-mfe/src/services/evidenceService.ts`: `downloadEvidence(code)` via `fetchWithAuth`, blob URL and `<a download="evidence-<code>.pdf">`, URL revoked after click
-- [ ] T018 [P] [MFE] Add `hubx-mfe/src/features/evidence/DownloadEvidence.tsx` and `DownloadEvidenceContainer.tsx` with an accessible region, a "Shipment code" label and a "Download evidence" button, mapping service errors to explicit outcomes
-- [ ] T019 [MFE] Add `hubx-mfe/src/pages/DownloadEvidence.tsx`, register `/download-evidence` in `hubx-mfe/src/App.tsx` behind `ProtectedRoute` and add an operator-only link from `hubx-mfe/src/pages/Dashboard.tsx`
-- [ ] T020 [P] [MFE] Add unit tests in `hubx-mfe/src/features/evidence/DownloadEvidence.test.tsx` and `hubx-mfe/src/services/evidenceService.test.ts`; run `npm --prefix hubx-mfe run test` and `npm --prefix hubx-mfe run build`
+- [x] T017 [P] [MFE] Add `hubx-mfe/src/services/evidenceService.ts`: `downloadEvidence(code)` via `fetchWithAuth`, blob URL and `<a download="evidence-<code>.pdf">`, URL revoked after click
+- [x] T018 [P] [MFE] Add `hubx-mfe/src/features/evidence/DownloadEvidence.tsx` and `DownloadEvidenceContainer.tsx` with an accessible region, a "Shipment code" label and a "Download evidence" button, mapping service errors to explicit outcomes
+- [x] T019 [MFE] Add `hubx-mfe/src/pages/DownloadEvidence.tsx`, register `/download-evidence` in `hubx-mfe/src/App.tsx` behind `ProtectedRoute` and add an operator-only link from `hubx-mfe/src/pages/Dashboard.tsx`
+- [x] T020 [P] [MFE] Add unit tests in `hubx-mfe/src/features/evidence/DownloadEvidence.test.tsx` and `hubx-mfe/src/services/evidenceService.test.ts`; run `npm --prefix hubx-mfe run test` and `npm --prefix hubx-mfe run build`
+
+  Evidence (frontend-react, phase implement, 2026-11-25): `npm --prefix hubx-mfe run typecheck` exit 0,
+  `npm --prefix hubx-mfe run test` → `15 files, 106 tests passed`, `npm --prefix hubx-mfe run lint` exit 0
+  (4 warnings, all in pre-existing files), `npm --prefix hubx-mfe run build` exit 0. Commit `bdf93ec` touches only
+  `hubx-mfe/**`; no new dependency, no `window.location`, no direct API call.
 
 **Checkpoint**: US1 independently testable (API + browser download).
 
@@ -103,7 +108,10 @@ Chromium via the MFE download button.
 session (401); assert no PDF body in each case.
 
 - [ ] T023 [API] Implement and unit-test the flat error mapping in `hubx-api/internal/handlers/evidence/handler.go` and `hubx-api/internal/evidence/errors.go`: 401 `UNAUTHORIZED`, 403 `FORBIDDEN`, 404 `SHIPMENT_NOT_FOUND` for unknown **and** invisible shipments, 500 `INTERNAL_SERVER_ERROR`
-- [ ] T024 [MFE] Map 401/403/404 to visible outcomes in `hubx-mfe/src/features/evidence/DownloadEvidenceContainer.tsx` so no file is saved on error
+- [x] T024 [MFE] Map 401/403/404 to visible outcomes in `hubx-mfe/src/features/evidence/DownloadEvidenceContainer.tsx` so no file is saved on error
+
+  Evidence: included in the `frontend-react` delivery above (commit `bdf93ec`); 401 is detected via `fetchWithAuth`'s
+  token clearing, 403/404 messages are the exact contract strings, and unit tests verify no download is created on error.
 - [ ] T025 [QA] Verify the three refusal scenarios in `hubx-bender/features/HU10_download-evidence.feature` are green through the gateway
 
 **Checkpoint**: all three stories independently functional.
