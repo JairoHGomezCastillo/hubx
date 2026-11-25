@@ -209,41 +209,68 @@ When(
 When(
   'the partner views their assigned shipments',
   async function (this: AssignedWorld) {
-    // F3: Reuse the token from the Given step
-    this.response = await this.api.get('/api/assigned-shipments', {
-      headers: authHeader(this),
-    });
-    
-    if (this.response.status() === 200) {
-      const body = (await this.response.json()) as {
-        shipments: Array<{
-          code: string;
-          stage: string;
-          origin: string;
-          destination: string;
-          flight: string;
-          weightKg: number;
-          assignedAt: string;
-        }>;
-        nextOffset: number | null;
-        message: string | null;
-      };
-      this.assignedShipments = body.shipments;
-      this.nextOffset = body.nextOffset;
-      this.message = body.message;
+    if (this.page) {
+      // @e2e: browser through the MFE
+      // The dashboard should already show the assigned shipments section after sign-in
+      const region = this.ui.getByRole('region', { name: /my assigned shipments/i });
+      await expect(region).toBeVisible();
+    } else {
+      // API: request through the gateway
+      this.response = await this.api.get('/api/assigned-shipments', {
+        headers: authHeader(this),
+      });
+      
+      if (this.response.status() === 200) {
+        const body = (await this.response.json()) as {
+          shipments: Array<{
+            code: string;
+            stage: string;
+            origin: string;
+            destination: string;
+            flight: string;
+            weightKg: number;
+            assignedAt: string;
+          }>;
+          nextOffset: number | null;
+          message: string | null;
+        };
+        this.assignedShipments = body.shipments;
+        this.nextOffset = body.nextOffset;
+        this.message = body.message;
+      }
     }
   },
 );
 
 Then(
   'they see only their three shipments',
-  function (this: AssignedWorld) {
-    expect(this.response?.status(), 'GET /api/assigned-shipments status').toBe(200);
-    expect(this.assignedShipments?.length, 'number of shipments').toBe(3);
-    
-    // Verify these are the shipments we created
-    const returnedCodes = this.assignedShipments?.map((s) => s.code) ?? [];
-    expect([...returnedCodes].sort()).toEqual([...(this.createdCodes ?? [])].sort());
+  async function (this: AssignedWorld) {
+    if (this.page) {
+      // @e2e: verify the browser shows three shipments in the table
+      const region = this.ui.getByRole('region', { name: /my assigned shipments/i });
+      const table = region.getByRole('table');
+      await expect(table).toBeVisible();
+      
+      // Count the number of data rows (excluding header)
+      const rows = table.getByRole('row');
+      const rowCount = await rows.count();
+      
+      // Header + 3 data rows = 4 total
+      expect(rowCount, 'table rows including header').toBe(4);
+      
+      // Verify the codes are present
+      for (const code of this.createdCodes ?? []) {
+        await expect(table.getByText(code)).toBeVisible();
+      }
+    } else {
+      // API: verify the response
+      expect(this.response?.status(), 'GET /api/assigned-shipments status').toBe(200);
+      expect(this.assignedShipments?.length, 'number of shipments').toBe(3);
+      
+      // Verify these are the shipments we created
+      const returnedCodes = this.assignedShipments?.map((s) => s.code) ?? [];
+      expect([...returnedCodes].sort()).toEqual([...(this.createdCodes ?? [])].sort());
+    }
   },
 );
 
@@ -311,56 +338,5 @@ Then(
   },
 );
 
-// @e2e browser steps
-
-Given(
-  /^(the partner|the first partner) has signed in through the web application$/,
-  async function (this: AssignedWorld, actor: string) {
-    // F6: Keep API fixture in separate Given step - this step only does browser sign-in
-    // The "three shipments pending delivery were assigned to a ground partner" Given
-    // already drained and created the fixtures.
-    
-    // Reuse emailForActor from common.steps.ts (it now handles "the first partner" and "the partner")
-    const email = emailForActor(this, actor);
-    
-    await this.ui.goto('/sign-in');
-    await this.ui.getByLabel(/email/i).fill(email);
-    await this.ui.getByLabel(/password/i).fill(DEMO_PASSWORD);
-    await this.ui.getByRole('button', { name: /sign in/i }).click();
-    await expect(this.ui).toHaveURL(/\/dashboard$/);
-    this.actorRole = roleForActor(actor);
-  },
-);
-
-When(
-  /^(the partner|the first partner) views (?:their|the) assigned shipments through the web application$/,
-  async function (this: AssignedWorld, _actor: string) {
-    // The UI should already be on the dashboard and showing the assigned shipments section
-    // Wait for the region to be visible
-    const region = this.ui.getByRole('region', { name: /my assigned shipments/i });
-    await expect(region).toBeVisible();
-  },
-);
-
-Then(
-  'they see their three shipments through the web application',
-  async function (this: AssignedWorld) {
-    const region = this.ui.getByRole('region', { name: /my assigned shipments/i });
-    
-    // The region should contain a table with rows showing shipment codes
-    const table = region.getByRole('table');
-    await expect(table).toBeVisible();
-    
-    // Count the number of data rows (excluding header)
-    const rows = table.getByRole('row');
-    const rowCount = await rows.count();
-    
-    // Header + 3 data rows = 4 total
-    expect(rowCount, 'table rows including header').toBe(4);
-    
-    // Verify the codes are present (order will be checked in next step)
-    for (const code of this.createdCodes ?? []) {
-      await expect(table.getByText(code)).toBeVisible();
-    }
-  },
-);
+// @e2e: The generic "has signed in" step from common.steps.ts handles both API and browser modes.
+// The "the partner views their assigned shipments" When step above detects @e2e via this.page.

@@ -35,9 +35,10 @@ Feature: View my assigned shipments
       | a customer  |
 
   @e2e
-  Scenario: Ground partner views assigned shipments through the web application
+  Scenario: Shipments pending delivery
     Given three shipments pending delivery were assigned to a ground partner
-    And the partner has signed in through the web application
-    When the partner views their assigned shipments through the web application
-    Then they see their three shipments through the web application
+    And two shipments were assigned to another ground partner
+    And the first partner has signed in
+    When the partner views their assigned shipments
+    Then they see only their three shipments
     And they see first the one that has been assigned the longest
