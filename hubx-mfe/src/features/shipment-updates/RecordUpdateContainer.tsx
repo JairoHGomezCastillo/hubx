@@ -68,14 +68,14 @@ export function RecordUpdateContainer({ onSessionExpired }: RecordUpdateContaine
   const loadError = loadFailureMessage(partners);
 
   return (
-    <>
-      {partners.kind === 'loading' && <p>Loading ground partners…</p>}
-      {loadError !== null && <p role="alert">{loadError}</p>}
+    <div className="stack">
+      {partners.kind === 'loading' && <p className="note">Loading ground partners…</p>}
+      {loadError !== null && <p className="message" data-tone="bad" role="alert">{loadError}</p>}
       <RecordUpdate
         groundPartners={availablePartners}
         onRecordUpdate={recordUpdate}
         onSessionExpired={onSessionExpired}
       />
-    </>
+    </div>
   );
 }

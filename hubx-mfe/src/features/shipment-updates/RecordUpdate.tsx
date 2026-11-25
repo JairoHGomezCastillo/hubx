@@ -88,6 +88,18 @@ function submissionMessage(state: SubmissionState): string {
   }
 }
 
+function submissionTone(state: SubmissionState): 'ok' | 'bad' | undefined {
+  switch (state.kind) {
+    case 'success':
+      return 'ok'
+    case 'idle':
+    case 'submitting':
+      return undefined
+    default:
+      return 'bad'
+  }
+}
+
 function RecordUpdate({ groundPartners, onRecordUpdate, onSessionExpired }: RecordUpdateProps) {
   const [shipmentCode, setShipmentCode] = useState('')
   const [stage, setStage] = useState<UpdateStage | null>(null)
@@ -163,10 +175,10 @@ function RecordUpdate({ groundPartners, onRecordUpdate, onSessionExpired }: Reco
   }
 
   return (
-    <section aria-labelledby="record-update-heading">
+    <section className="panel" aria-labelledby="record-update-heading">
       <h2 id="record-update-heading">Record an update</h2>
-      <form noValidate onSubmit={handleFormSubmit}>
-        <div>
+      <form className="form" noValidate onSubmit={handleFormSubmit}>
+        <div className="field">
           <label htmlFor="shipment-code">Shipment code</label>
           <input
             id="shipment-code"
@@ -178,7 +190,7 @@ function RecordUpdate({ groundPartners, onRecordUpdate, onSessionExpired }: Reco
             required
           />
         </div>
-        <div>
+        <div className="field">
           <label htmlFor="update-stage">Stage</label>
           <select
             id="update-stage"
@@ -197,7 +209,7 @@ function RecordUpdate({ groundPartners, onRecordUpdate, onSessionExpired }: Reco
           </select>
         </div>
         {needsPartner && (
-          <div>
+          <div className="field">
             <label htmlFor="ground-partner">Ground partner</label>
             <select
               id="ground-partner"
@@ -214,14 +226,14 @@ function RecordUpdate({ groundPartners, onRecordUpdate, onSessionExpired }: Reco
                 </option>
               ))}
             </select>
-            {groundPartners.length === 0 && <p>No ground partners available.</p>}
+            {groundPartners.length === 0 && <p className="note">No ground partners available.</p>}
           </div>
         )}
-        <button type="submit" disabled={busy}>
+        <button className="button" type="submit" disabled={busy}>
           Record update
         </button>
       </form>
-      <p role="status" aria-live="polite">
+      <p className="message" data-tone={submissionTone(submission)} role="status" aria-live="polite">
         {submissionMessage(submission)}
       </p>
     </section>

@@ -4,6 +4,7 @@ import {
   assertError,
   assertStageUnchanged,
   DEMO_CREDENTIALS,
+  DEMO_PASSWORD,
   groundPartnerId,
   OPERATOR_NAME,
   postUpdate,
@@ -16,9 +17,48 @@ const NON_PARTNER_NAME = 'Distribuciones Andina';
 const NON_PARTNER_ID = '00000000-0000-4000-8000-000000000005';
 const FINGERPRINT = /^[0-9a-f]{64}$/;
 
-// --- Fixtures and identities (API scenarios) --------------------------------
+// --- Fixtures and identities (API and @e2e scenarios) ----------------------
 
 Given(/^a shipment is in the stage "([^"]+)"$/, async function (this: UpdateWorld, stage: string) {
+  if (this.page) {
+    // @e2e: provision a fresh shipment through the MFE (HU-02's Create Shipment page).
+    // In the @e2e scenario this Given runs BEFORE "the operator has signed in", so we
+    // must sign in here ourselves (same browser flow as common.steps.ts, role/label locators).
+    const operatorEmail = DEMO_CREDENTIALS.operator;
+    await this.ui.goto('/sign-in');
+    await this.ui.getByLabel(/email/i).fill(operatorEmail);
+    await this.ui.getByLabel(/password/i).fill(DEMO_PASSWORD);
+    await this.ui.getByRole('button', { name: /sign in/i }).click();
+    await expect(this.ui).toHaveURL(/\/dashboard$/);
+    this.actorRole = 'operator';
+    
+    // Now create the shipment through the MFE.
+    await this.ui.getByRole('button', { name: /create shipment/i }).click();
+    await expect(this.ui).toHaveURL(/\/shipments\/new$/);
+    
+    await this.ui.getByLabel(/origin/i).fill('Bogotá');
+    await this.ui.getByLabel(/destination/i).fill('Miami');
+    await this.ui.getByLabel(/flight/i).fill('AV-999');
+    await this.ui.getByLabel(/weight \(kg\)/i).fill('100');
+    await this.ui.getByLabel(/customer email/i).fill('andina@hubx.co');
+    
+    await this.ui.getByRole('button', { name: /create shipment/i }).click();
+    
+    // The HU-02 MFE shows "Code: HBX-..." on the success page (Dashboard.tsx line ~43: "Code: {createdShipment.code}").
+    await expect(this.ui.getByRole('heading', { name: /shipment created/i })).toBeVisible();
+    const codeText = await this.ui.getByText(/code:/i).textContent();
+    const match = codeText?.match(/HBX-[0-9A-F]{8}/);
+    expect(match, 'fresh shipment code from the MFE').toBeTruthy();
+    this.shipmentCode = match![0];
+    this.currentStage = stage;
+    
+    // Navigate back to the dashboard where the Record update form is rendered (RecordUpdateContainer).
+    // Use history navigation, not this.ui.goto('/dashboard'): the MFE keeps the JWT in memory
+    // (AuthContext), so a full page load would drop the session and sign the operator out.
+    await this.ui.goBack();
+    await expect(this.ui).toHaveURL(/\/dashboard$/);
+    return;
+  }
   await prepareShipment(this, stage);
 });
 
@@ -48,6 +88,17 @@ Given(/^the ground partner "([^"]+)" is registered$/, async function (this: Upda
 
 When(/^(.+) records the update "([^"]+)"$/, async function (this: UpdateWorld, _actor: string, stage: string) {
   this.lastUpdate = undefined;
+  if (this.page) {
+    // @e2e: drive the MFE's Record update form (RecordUpdate.tsx). Scope to the
+    // "Record an update" region to avoid strict-mode violation with HU-04's
+    // "View traceability" section (both have a "Shipment code" label).
+    const section = this.ui.getByRole('region', { name: 'Record an update' });
+    await section.getByLabel(/shipment code/i).fill(this.shipmentCode!);
+    await section.getByLabel(/stage/i).selectOption({ label: stage });
+    // Ground partner is optional (only for Assigned to partner); leave it empty.
+    await section.getByRole('button', { name: /record update/i }).click();
+    return;
+  }
   const response = await postUpdate(this, this.shipmentCode!, stage);
   expect(response.status(), `record "${stage}" through the gateway`).toBe(201);
 });
@@ -81,51 +132,6 @@ When(
     await postUpdate(this, this.shipmentCode!, 'Assigned to partner', null);
   },
 );
-
-// --- Spec-derived edge cases (FR-011, FR-012) -------------------------------
-
-When(/^the operator's session expires$/, function (this: UpdateWorld) {
-  // Test data only: an expired token must be rejected by the API's own JWT check.
-  this.token = 'expired-session-token';
-  this.hu03ExpiredSession = true;
-});
-
-When(/^the operator tries to record the update "([^"]+)" for a shipment code that does not exist$/, async function (
-  this: UpdateWorld,
-  stage: string,
-) {
-  this.lastUpdate = undefined;
-  await postUpdate(this, 'HBX-NO-SUCH-SHIPMENT', stage);
-});
-
-// --- @e2e: the same Gherkin, driven only through the MFE --------------------
-
-Given(/^the shipment "([^"]+)" is in the stage "([^"]+)"$/, async function (
-  this: UpdateWorld,
-  code: string,
-  stage: string,
-) {
-  this.uiShipmentCode = code;
-  this.currentStage = stage;
-  // No API here: migration 0001 provides the seed shipment in Created.
-});
-
-Given(/^an operator has signed in through the web application$/, async function (this: UpdateWorld) {
-  await this.ui.goto('/');
-  await this.ui.getByLabel(/email/i).fill(DEMO_CREDENTIALS.operator);
-  await this.ui.getByLabel(/password/i).fill(process.env.BENDER_DEMO_PASSWORD ?? 'Hubx-Demo-2026');
-  await this.ui.getByRole('button', { name: /sign in/i }).click();
-  await expect(this.ui.getByLabel(/shipment code/i)).toBeVisible();
-});
-
-When(/^the operator records the update "([^"]+)" through the web application$/, async function (
-  this: UpdateWorld,
-  stage: string,
-) {
-  await this.ui.getByLabel(/shipment code/i).fill(this.uiShipmentCode ?? 'HBX-SEED-0001');
-  await this.ui.getByLabel(/stage/i).selectOption({ label: stage });
-  await this.ui.getByRole('button', { name: /record update/i }).click();
-});
 
 // --- Assertions -------------------------------------------------------------
 

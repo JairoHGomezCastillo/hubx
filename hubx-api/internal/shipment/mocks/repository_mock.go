@@ -177,3 +177,42 @@ func (mr *MockGroundPartnerRepositoryMockRecorder) List(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockGroundPartnerRepository)(nil).List), ctx)
 }
+
+// MockPartyRepository is a mock of PartyRepository interface.
+type MockPartyRepository struct {
+	ctrl     *gomock.Controller
+	recorder *MockPartyRepositoryMockRecorder
+	isgomock struct{}
+}
+
+// MockPartyRepositoryMockRecorder is the mock recorder for MockPartyRepository.
+type MockPartyRepositoryMockRecorder struct {
+	mock *MockPartyRepository
+}
+
+// NewMockPartyRepository creates a new mock instance.
+func NewMockPartyRepository(ctrl *gomock.Controller) *MockPartyRepository {
+	mock := &MockPartyRepository{ctrl: ctrl}
+	mock.recorder = &MockPartyRepositoryMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockPartyRepository) EXPECT() *MockPartyRepositoryMockRecorder {
+	return m.recorder
+}
+
+// Parties mocks base method.
+func (m *MockPartyRepository) Parties(ctx context.Context, ids []string) (map[string]shipment.Party, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Parties", ctx, ids)
+	ret0, _ := ret[0].(map[string]shipment.Party)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Parties indicates an expected call of Parties.
+func (mr *MockPartyRepositoryMockRecorder) Parties(ctx, ids any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Parties", reflect.TypeOf((*MockPartyRepository)(nil).Parties), ctx, ids)
+}

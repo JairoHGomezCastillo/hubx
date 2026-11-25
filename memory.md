@@ -80,6 +80,23 @@
   transitions, keeping `HBX-SEED-0001` in Created for the `@e2e`. Delivered from branch `003-record-update-sync`
   (renamed from `003-record-update` after the original remote branch was deleted) with PR target `main`, by human
   decision after v0.1.0 was merged; HU-03 does not ship in a release branch.
+- HU-04 (2026-11-24): `GET /api/shipments/{code}/traceability` (`contracts/hu04-view-traceability.md`), read-only, no
+  migration, no gateway change. Reuses HU-03's `canSee`; unknown and invisible shipments get the same nested 404
+  `SHIPMENT_NOT_FOUND`; 401 is the HU-01 flat body (`RequireAuth`). `LedgerRepository.List` (sequence ascending) and
+  `PartyRepository.Parties` (`WHERE id = ANY($1)`): three queries per request. Ships in `release/v0.4.0-ledger`.
+  Human decisions: the human generated the gomock files (exception like HU-01); the `@e2e` Given builds the
+  3-update shipment through the API (HU-03 precedent); hubx-lead ran the verify commands for qa-seguridad.
+- HU-05 (2026-11-24): `GET /api/shipments/{code}/integrity` (`contracts/hu05-verify-integrity.md`), read-only, no
+  migration, no gateway change. `ledger.Verify` recomputes each update's HU-03 fingerprint and checks the previous
+  link; `shipment.Verifier` reuses HU-03 `canSee`, returning `ErrShipmentNotFound` for unknown and invisible
+  shipments alike (flat 404 `{error, message}`, no final period, unlike HU-04's nested body). Intact reports
+  `updatesChecked` (0 for an empty chain); not intact reports `firstAlteredUpdate` (chain position, only the first).
+  Microsecond fix: PostgreSQL `timestamptz` keeps only microseconds, so the ledger truncates the update instant
+  (`Truncate(time.Microsecond)`) before the fingerprint, or a round-tripped intact chain reads as altered; the HU-03
+  contract was clarified to match (`contracts/hu03-record-update.md`, by the lead). HU-04 and HU-05 share two verbatim
+  backlog Gherkin phrases that became ambiguous under strict mode after the base merge; qa-seguridad moved them to
+  `common.steps.ts` and dispatched the 404 assertion on `response.url()` to honor both contracts. Ships in
+  `release/v0.4.0-ledger`. Staging deploy validated before the PR (deploy.md, run 45493671765, 57/57 smoke).
 ## Conventions
 - PR title (2026-11-21): `<type>(<scope>): <gitmoji> <short description> [agent:role]`, scope `HU-xx` or an area;
   mapping in hubx-lead step 10. Commits keep their own format below.
@@ -152,6 +169,22 @@
 - Only `release/vX.Y.Z[-name]` and `hotfix/vX.Y.Z[-name]` may be merged into `main`: required check `release-source`
   (`.github/workflows/main-source.yml`) in `protect-main`, added after HU-03 (PR #23) reached `main` from a story
   branch (2026-11-24). The admin's pull-request bypass can still skip it: use it only for releases and hotfixes.
+- HU-04 (2026-11-24): a new form on the shared Dashboard broke an older story's `@e2e` (two "Shipment code" labels,
+  Playwright strict mode). Scope `@e2e` locators to their `region` from the start. Fixture actor phrases are matched
+  by substring in `emailForActor`: each new Gherkin phrasing ("who owns", "was not assigned") needs a mapping, or it
+  silently falls back to the default demo user and the scenario tests the wrong caller.
+- Generated mocks expose test bugs the sub-agent never compiled: in HU-04 the first `go test` after `go generate`
+  found an unused import and a missing `shipment_id` column. A sub-agent's `ok` without a test run is not evidence.
+- Deploy validation by devops (2026-11-24): after QA's verify the lead pushes the story branch and devops deploys it
+  to staging through the CD (`gh workflow run deploy.yml -f environment=staging -f ref=<branch>`, only staging; production
+  is denied), follows the run and writes `specs/NNN-*/deploy.md`. review-story warns when it is missing.
+- devops refused its own step 7 on HU-05 citing "deployment with platform credentials: human confirmation" (an old limit);
+  the limit now separates credentials (human only) from triggering the staging CD (devops, no confirmation), 2026-11-24.
+- Demo mode: the deploy validation (lead step 6d, ~10-12 min on the free tier) is skipped only when the human asks for it
+  in the request ("sin validación de despliegue"); recorded in pr.md; staging still validates on merge.
+- Backlog Story Status went stale (HU-01 still "In review" after v0.2.0): the lead wrote it before the PR and merges
+  happen outside its flow. Fixed 2026-11-24: the lead reconciles every row with merged PRs and release tags at the start
+  of each story (step 1) and commits it with that story's spec.
 ## Pending
 - Move production to image-backed services and call deploy.yml (environment `production`) from release.yml after
   tagging; then delete deploy/render.yaml's repo-built services (owner A, after the 2026-11-24 delivery).
