@@ -16,6 +16,9 @@ const (
 	findShipmentByIDSQL = `SELECT id, code, stage, customer_id, assigned_partner_id, created_by
 		FROM shipments WHERE id = $1`
 
+	findShipmentsByIDsSQL = `SELECT id, code, origin, destination, flight, weight_kg, stage, assigned_partner_id
+		FROM shipments WHERE id = ANY($1)`
+
 	isRegisteredPartnerSQL = `SELECT EXISTS (SELECT 1 FROM users WHERE id = $1 AND role = $2)`
 
 	listGroundPartnersSQL = `SELECT id, name FROM users WHERE role = $1 ORDER BY name`
@@ -92,6 +95,51 @@ func (r *PostgresRepository) FindByCode(ctx context.Context, code string) (*Ship
 // FindByID returns (nil, nil) when no shipment has this identifier.
 func (r *PostgresRepository) FindByID(ctx context.Context, id string) (*Shipment, error) {
 	return scanShipment(r.db.QueryRowContext(ctx, findShipmentByIDSQL, id))
+}
+
+// FindByIDs returns shipments for the given ids with their display fields
+// (code, origin, destination, flight, weight, stage). Returns an empty non-nil
+// slice when ids is empty or no shipments match. Missing ids are silently omitted.
+func (r *PostgresRepository) FindByIDs(ctx context.Context, ids []string) ([]Shipment, error) {
+	if len(ids) == 0 {
+		return []Shipment{}, nil
+	}
+
+	rows, err := r.db.QueryContext(ctx, findShipmentsByIDsSQL, ids)
+	if err != nil {
+		return nil, fmt.Errorf("query shipments: %w", err)
+	}
+	defer rows.Close()
+
+	shipments := make([]Shipment, 0)
+	for rows.Next() {
+		var id, code, origin, destination, flight, weightKg, stage string
+		var assignedPartnerID sql.NullString
+
+		err := rows.Scan(&id, &code, &origin, &destination, &flight, &weightKg, &stage, &assignedPartnerID)
+		if err != nil {
+			return nil, fmt.Errorf("scan shipment: %w", err)
+		}
+
+		shipment := Shipment{
+			ID:          id,
+			Code:        code,
+			Origin:      origin,
+			Destination: destination,
+			Flight:      flight,
+			WeightKg:    weightKg,
+			Stage:       Stage(stage),
+		}
+		if assignedPartnerID.Valid {
+			value := assignedPartnerID.String
+			shipment.AssignedPartnerID = &value
+		}
+		shipments = append(shipments, shipment)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate shipments: %w", err)
+	}
+	return shipments, nil
 }
 
 func scanShipment(row Row) (*Shipment, error) {

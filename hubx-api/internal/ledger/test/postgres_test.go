@@ -438,6 +438,226 @@ func assertAppendSQL(t *testing.T, queries []string, insertArgs []any, in ledger
 	}
 }
 
+func TestHU07_PendingAssignments(t *testing.T) {
+	assignedAt1 := time.Date(2026, 11, 20, 8, 0, 0, 0, time.UTC)
+	assignedAt2 := time.Date(2026, 11, 22, 10, 0, 0, 0, time.UTC)
+
+	assignment1 := ledger.Assignment{
+		ShipmentID: "shipment-1",
+		UpdateID:   10,
+		AssignedAt: assignedAt1,
+	}
+	assignment2 := ledger.Assignment{
+		ShipmentID: "shipment-2",
+		UpdateID:   20,
+		AssignedAt: assignedAt2,
+	}
+	assignment3 := ledger.Assignment{
+		ShipmentID: "shipment-3",
+		UpdateID:   21,
+		AssignedAt: assignedAt2, // Same time, different ID for stable sort
+	}
+
+	tests := []struct {
+		name       string
+		partnerID  string
+		limit      int
+		offset     int
+		setupRows  func(ctrl *gomock.Controller) *mocks.MockRows
+		setupError error
+		want       []ledger.Assignment
+		wantErr    bool
+	}{
+		{
+			name:      "returns three assignments ordered by recordedAt then id",
+			partnerID: assignedPartnerID,
+			limit:     21,
+			offset:    0,
+			setupRows: func(ctrl *gomock.Controller) *mocks.MockRows {
+				rows := mocks.NewMockRows(ctrl)
+				callNum := 0
+				rows.EXPECT().Next().DoAndReturn(func() bool {
+					callNum++
+					return callNum <= 3
+				}).Times(4)
+				scanNum := 0
+				rows.EXPECT().Scan(gomock.Any()).DoAndReturn(func(dest ...any) error {
+					scanNum++
+					var a *ledger.Assignment
+					switch scanNum {
+					case 1:
+						a = &assignment1
+					case 2:
+						a = &assignment2
+					case 3:
+						a = &assignment3
+					}
+					if len(dest) != 3 {
+						return errors.New("PendingAssignments scan has unexpected destinations")
+					}
+					*dest[0].(*string) = a.ShipmentID
+					*dest[1].(*int64) = a.UpdateID
+					*dest[2].(*time.Time) = a.AssignedAt
+					return nil
+				}).Times(3)
+				rows.EXPECT().Err().Return(nil)
+				rows.EXPECT().Close().Return(nil)
+				return rows
+			},
+			want: []ledger.Assignment{assignment1, assignment2, assignment3},
+		},
+		{
+			name:      "returns empty non-nil slice when no pending assignments exist",
+			partnerID: assignedPartnerID,
+			limit:     21,
+			offset:    0,
+			setupRows: func(ctrl *gomock.Controller) *mocks.MockRows {
+				rows := mocks.NewMockRows(ctrl)
+				rows.EXPECT().Next().Return(false)
+				rows.EXPECT().Err().Return(nil)
+				rows.EXPECT().Close().Return(nil)
+				return rows
+			},
+			want: []ledger.Assignment{},
+		},
+		{
+			name:      "applies limit and offset parameters",
+			partnerID: assignedPartnerID,
+			limit:     1,
+			offset:    1,
+			setupRows: func(ctrl *gomock.Controller) *mocks.MockRows {
+				rows := mocks.NewMockRows(ctrl)
+				rows.EXPECT().Next().Return(true).Times(1)
+				rows.EXPECT().Next().Return(false).Times(1)
+				rows.EXPECT().Scan(gomock.Any()).DoAndReturn(func(dest ...any) error {
+					*dest[0].(*string) = assignment2.ShipmentID
+					*dest[1].(*int64) = assignment2.UpdateID
+					*dest[2].(*time.Time) = assignment2.AssignedAt
+					return nil
+				})
+				rows.EXPECT().Err().Return(nil)
+				rows.EXPECT().Close().Return(nil)
+				return rows
+			},
+			want: []ledger.Assignment{assignment2},
+		},
+		{
+			name:       "query error propagates",
+			partnerID:  assignedPartnerID,
+			limit:      21,
+			offset:     0,
+			setupError: errors.New("database unavailable"),
+			wantErr:    true,
+		},
+		{
+			name:      "scan error propagates",
+			partnerID: assignedPartnerID,
+			limit:     21,
+			offset:    0,
+			setupRows: func(ctrl *gomock.Controller) *mocks.MockRows {
+				rows := mocks.NewMockRows(ctrl)
+				rows.EXPECT().Next().Return(true)
+				rows.EXPECT().Scan(gomock.Any()).Return(errors.New("scan failed"))
+				rows.EXPECT().Close().Return(nil)
+				return rows
+			},
+			wantErr: true,
+		},
+		{
+			name:      "rows Err() propagates",
+			partnerID: assignedPartnerID,
+			limit:     21,
+			offset:    0,
+			setupRows: func(ctrl *gomock.Controller) *mocks.MockRows {
+				rows := mocks.NewMockRows(ctrl)
+				rows.EXPECT().Next().Return(false)
+				rows.EXPECT().Err().Return(errors.New("iteration failed"))
+				rows.EXPECT().Close().Return(nil)
+				return rows
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			db := mocks.NewMockDB(ctrl)
+			var queries []string
+			var args []any
+
+			if tt.setupError != nil {
+				db.EXPECT().QueryContext(
+					gomock.Any(),
+					sqlMatcher{"FROM UPDATES", &queries},
+					captureArgMatcher{&args}, captureArgMatcher{&args}, captureArgMatcher{&args},
+				).Return(nil, tt.setupError)
+			} else {
+				rows := tt.setupRows(ctrl)
+				db.EXPECT().QueryContext(
+					gomock.Any(),
+					sqlMatcher{"FROM UPDATES", &queries},
+					captureArgMatcher{&args}, captureArgMatcher{&args}, captureArgMatcher{&args},
+				).Return(rows, nil)
+			}
+
+			repo := ledger.NewPostgresRepository(db)
+			got, err := repo.PendingAssignments(context.Background(), tt.partnerID, tt.limit, tt.offset)
+
+			if tt.wantErr {
+				if err == nil {
+					t.Fatal("PendingAssignments() expected error, got nil")
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("PendingAssignments() unexpected error: %v", err)
+			}
+
+			if got == nil {
+				t.Fatal("PendingAssignments() returned nil, want non-nil slice")
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("PendingAssignments() = %+v, want %+v", got, tt.want)
+			}
+
+			// Verify SQL structure
+			if len(queries) > 0 {
+				query := strings.ToUpper(queries[0])
+				if strings.Contains(queries[0], tt.partnerID) {
+					t.Errorf("query is not parameterized: %q", queries[0])
+				}
+				if !strings.Contains(query, "STAGE = 'ASSIGNED TO PARTNER'") &&
+					!strings.Contains(query, "STAGE = $") {
+					t.Errorf("query must filter by 'Assigned to partner' stage: %q", queries[0])
+				}
+				if !strings.Contains(query, "NOT EXISTS") {
+					t.Errorf("query must exclude delivered shipments with NOT EXISTS: %q", queries[0])
+				}
+				if !strings.Contains(query, "ORDER BY") {
+					t.Errorf("query must order results: %q", queries[0])
+				}
+				if !strings.Contains(query, "LIMIT") || !strings.Contains(query, "OFFSET") {
+					t.Errorf("query must include LIMIT and OFFSET: %q", queries[0])
+				}
+			}
+
+			// Verify parameters
+			if !tt.wantErr && len(args) == 3 {
+				if args[0] != tt.partnerID {
+					t.Errorf("first parameter = %v, want partnerID %q", args[0], tt.partnerID)
+				}
+				if args[1] != tt.limit {
+					t.Errorf("second parameter = %v, want limit %d", args[1], tt.limit)
+				}
+				if args[2] != tt.offset {
+					t.Errorf("third parameter = %v, want offset %d", args[2], tt.offset)
+				}
+			}
+		})
+	}
+}
+
 func TestHU04_List(t *testing.T) {
 	recordedAt1 := time.Date(2026, 11, 25, 10, 0, 0, 0, time.UTC)
 	recordedAt2 := time.Date(2026, 11, 25, 11, 0, 0, 0, time.UTC)

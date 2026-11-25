@@ -32,6 +32,13 @@ const (
 	// and COALESCE keeps the one stored by the assignment.
 	updateProjectionSQL = `UPDATE shipments SET stage = $1,
 		assigned_partner_id = COALESCE($2, assigned_partner_id) WHERE id = $3`
+
+	pendingAssignmentsSQL = `SELECT u.shipment_id, u.id, u.recorded_at
+		FROM updates u
+		WHERE u.stage = 'Assigned to partner' AND u.assigned_partner_id = $1
+		  AND NOT EXISTS (SELECT 1 FROM updates d WHERE d.shipment_id = u.shipment_id AND d.stage = 'Delivered')
+		ORDER BY u.recorded_at ASC, u.id ASC
+		LIMIT $2 OFFSET $3`
 )
 
 // DB is the injectable database handle used by the PostgreSQL repository.
@@ -256,6 +263,39 @@ func (r *postgresRepository) List(ctx context.Context, shipmentID string) ([]Upd
 		return nil, fmt.Errorf("iterate updates: %w", mapPgError(err))
 	}
 	return updates, nil
+}
+
+// PendingAssignments returns shipments assigned to the given partner that have no
+// Delivered update, ordered by assignment time (recordedAt) then update id ascending,
+// with parameterized LIMIT and OFFSET for pagination.
+func (r *postgresRepository) PendingAssignments(ctx context.Context, partnerID string, limit, offset int) ([]Assignment, error) {
+	rows, err := r.db.QueryContext(ctx, pendingAssignmentsSQL, partnerID, limit, offset)
+	if err != nil {
+		return nil, fmt.Errorf("query pending assignments: %w", mapPgError(err))
+	}
+	defer rows.Close()
+
+	assignments := make([]Assignment, 0)
+	for rows.Next() {
+		var shipmentID string
+		var updateID int64
+		var assignedAt time.Time
+
+		err := rows.Scan(&shipmentID, &updateID, &assignedAt)
+		if err != nil {
+			return nil, fmt.Errorf("scan assignment: %w", mapPgError(err))
+		}
+
+		assignments = append(assignments, Assignment{
+			ShipmentID: shipmentID,
+			UpdateID:   updateID,
+			AssignedAt: assignedAt.UTC(),
+		})
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate assignments: %w", mapPgError(err))
+	}
+	return assignments, nil
 }
 
 func scanLastUpdate(row Row) (*Update, error) {
