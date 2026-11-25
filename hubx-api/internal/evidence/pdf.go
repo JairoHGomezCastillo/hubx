@@ -136,6 +136,10 @@ func documentLines(doc *Evidence) []pdfLine {
 	for _, scope := range []string{
 		"Scope: This evidence proves that the shipment history is consistent with itself.",
 		"It does not by itself prove that HUBX did not rebuild the whole history.",
+		// Human decision 2026-11-25: the fingerprints cover identifiers only.
+		"Fingerprints cover the party identifiers, not the printed names.",
+		"The covered fields are responsible_party_id and assigned_partner_id.",
+		"The names cannot be verified from this document alone.",
 	} {
 		for _, fragment := range wrapLine(scope, proseWidth, 9) {
 			lines = append(lines, pdfLine{text: fragment, style: styleProse})

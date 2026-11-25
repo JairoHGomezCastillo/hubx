@@ -1,80 +1,44 @@
-// hubx-gw es el gateway de HUBX.
-// Único punto de entrada del MFE: no contiene lógica de dominio,
-// solo reenvía a la API y expone su propia salud.
+// Package main is the HUBX gateway.
+// Single entry point of the MFE: it holds no domain logic, it only forwards to
+// the API and exposes its own health.
 package main
 
 import (
-	"encoding/json"
 	"log/slog"
 	"net/http"
 	"os"
 	"time"
 
-	"hubx-gw/internal/middleware"
-	"hubx-gw/internal/proxy"
+	"hubx-gw/internal/config"
+	"hubx-gw/internal/server"
 )
-
-// env lee una variable de entorno con un valor por defecto seguro.
-func env(key, fallback string) string {
-	if v := os.Getenv(key); v != "" {
-		return v
-	}
-	return fallback
-}
 
 func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	slog.SetDefault(logger)
 
-	// Verify JWT secret is set (required for JWT validation)
-	jwtSecret := os.Getenv("JWT_SECRET")
-	if jwtSecret == "" {
-		logger.Error("JWT_SECRET environment variable is required")
+	// Invalid configuration (limits, origins, missing secrets) stops the start.
+	// The error names keys only: it never prints values or secrets.
+	cfg, err := config.Load(".", os.Getenv)
+	if err != nil {
+		logger.Error("invalid configuration", "error", err.Error())
 		os.Exit(1)
 	}
 
-	// Verify the gateway shared secret is set (injected toward the API so the
-	// API can reject any request that did not come through the gateway).
-	gatewaySecret := os.Getenv("GATEWAY_SECRET")
-	if gatewaySecret == "" {
-		logger.Error("GATEWAY_SECRET environment variable is required")
-		os.Exit(1)
-	}
-
-	mux := http.NewServeMux()
-
-	mux.HandleFunc("GET /health", func(w http.ResponseWriter, _ *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(map[string]string{
-			"status":  "ok",
-			"service": "hubx-gw",
-		})
-	})
-
-	apiURL := env("API_URL", "http://localhost:8081")
-	proxy.Register(mux, apiURL, gatewaySecret)
-
-	// Apply JWT validation middleware to all routes except excluded paths
-	excludedPaths := map[string]bool{
-		"/health":           true, // Gateway health check
-		"/api/health":       true, // API health check (proxied)
-		"/api/auth/sign-in": true, // Sign-in endpoint
-	}
-
-	jwtMiddleware := middleware.JWTValidation(jwtSecret, excludedPaths)
-
-	addr := ":" + env("PORT", "8080")
+	addr := ":" + cfg.Port
 	srv := &http.Server{
 		Addr:    addr,
-		Handler: jwtMiddleware(mux),
-		// Mitigación Slowloris; requisito de gosec.
+		Handler: server.New(cfg, time.Now),
+		// Slowloris mitigation; gosec requirement.
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 
-	logger.Info("hubx-gw escuchando", "addr", addr, "api_url", apiURL)
+	logger.Info("hubx-gw listening", "addr", addr, "api_url", cfg.APIURL,
+		"requests_per_minute", cfg.RequestsPerMinute,
+		"sign_in_requests_per_minute", cfg.SignInRequestsPerMinute,
+		"allowed_origins", len(cfg.AllowedOrigins))
 	if err := srv.ListenAndServe(); err != nil {
-		logger.Error("servidor finalizado con error", "err", err)
+		logger.Error("server stopped with error", "error", err.Error())
 		os.Exit(1)
 	}
 }

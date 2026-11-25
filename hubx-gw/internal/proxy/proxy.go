@@ -7,7 +7,19 @@ import (
 	"net/http"
 	httputil "net/http/httputil"
 	"net/url"
+	"strings"
 )
+
+// gatewayOwnedHeaders son las cabeceras de seguridad que el gateway fija en
+// cada respuesta; las que llegan de la API se descartan.
+var gatewayOwnedHeaders = []string{
+	"X-Content-Type-Options",
+	"X-Frame-Options",
+	"Content-Security-Policy",
+	"Referrer-Policy",
+	"Strict-Transport-Security",
+	"Cache-Control",
+}
 
 // GatewaySecretHeader identifica al gateway ante la API. La API rechaza
 // cualquier petición que no la traiga con el valor compartido, de modo que
@@ -39,6 +51,22 @@ func New(apiURL, gatewaySecret string) http.Handler {
 		// El cliente no puede suplantar al gateway: descartamos cualquier
 		// cabecera entrante y fijamos la nuestra con el secreto compartido.
 		req.Header.Set(GatewaySecretHeader, gatewaySecret)
+	}
+
+	// El gateway es la autoridad de las cabeceras de seguridad y de CORS
+	// (contracts/gateway-perimeter.md): las copias que envíe la API se eliminan
+	// para que cada una aparezca una sola vez, con el valor del gateway.
+	// Vary no se toca: conserva el Origin que añadió el gateway.
+	rp.ModifyResponse = func(res *http.Response) error {
+		for _, name := range gatewayOwnedHeaders {
+			res.Header.Del(name)
+		}
+		for name := range res.Header {
+			if strings.HasPrefix(strings.ToLower(name), "access-control-") {
+				res.Header.Del(name)
+			}
+		}
+		return nil
 	}
 
 	// ReverseProxy descarta en silencio los errores de transporte y escribe

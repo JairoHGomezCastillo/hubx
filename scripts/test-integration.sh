@@ -7,15 +7,20 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 project=hubx-it
-compose=(docker compose -p "$project")
+# --profile test starts gw-limited (fixed low limits, port 8090) and removes it on cleanup.
+compose=(docker compose -p "$project" --profile test)
 
 ui_port="${MFE_PORT:-3000}"
-if curl -s -o /dev/null http://localhost:8080/health || curl -s -o /dev/null "http://localhost:$ui_port/"; then
-  echo "port 8080 or $ui_port is busy (is 'make up' running?). Run 'make down' first." >&2
+if curl -s -o /dev/null http://localhost:8080/health || curl -s -o /dev/null http://localhost:8090/health || curl -s -o /dev/null "http://localhost:$ui_port/"; then
+  echo "port 8080, 8090 or $ui_port is busy (is 'make up' running?). Run 'make down' first." >&2
   exit 2
 fi
 
 bash scripts/env.sh
+
+# The main gateway gets limits high enough that the whole suite never hits 429; the limits are proven on gw-limited.
+export RATELIMIT_REQUESTS_PER_MINUTE=10000
+export RATELIMIT_SIGN_IN_REQUESTS_PER_MINUTE=10000
 
 exit_code=0
 cleanup() {
@@ -23,7 +28,7 @@ cleanup() {
   # Exit non-zero if startup failed (status != 0) OR any Cucumber pass failed (exit_code != 0)
   if [ "$status" -ne 0 ] || [ "$exit_code" -ne 0 ]; then
     # Print compose logs whenever the run failed
-    "${compose[@]}" logs --no-color --tail=80 migrate api gw mfe >&2 || true
+    "${compose[@]}" logs --no-color --tail=80 migrate api gw gw-limited mfe >&2 || true
     exit_code=$((status != 0 ? status : exit_code))
   fi
   "${compose[@]}" down -v --remove-orphans >/dev/null 2>&1 || true
@@ -33,6 +38,7 @@ trap cleanup EXIT
 
 "${compose[@]}" up -d --build --quiet-pull || exit $?
 bash scripts/wait-health.sh http://localhost:8080 90 || exit $?
+bash scripts/wait-health.sh http://localhost:8090 90 || exit $?
 
 bash scripts/wait-ui.sh "http://localhost:$ui_port" 90 || exit $?
 
@@ -46,7 +52,7 @@ set +a
 
 # Pass 1: Run Cucumber excluding @empty-db scenarios.
 echo "Running Cucumber pass 1 (excluding @empty-db)..."
-if ! BENDER_BASE_URL=http://localhost:8080 BENDER_UI_URL="http://localhost:$ui_port" JWT_SECRET="$JWT_SECRET" \
+if ! BENDER_BASE_URL=http://localhost:8080 BENDER_LIMITED_BASE_URL=http://localhost:8090 BENDER_UI_URL="http://localhost:$ui_port" JWT_SECRET="$JWT_SECRET" \
   npm --prefix hubx-bender run test -- --tags "not @empty-db"; then
   exit_code=1
 fi
@@ -60,7 +66,7 @@ echo "Truncating shipments and updates tables..."
 }
 
 echo "Running Cucumber pass 2 (@empty-db)..."
-if ! BENDER_BASE_URL=http://localhost:8080 BENDER_UI_URL="http://localhost:$ui_port" JWT_SECRET="$JWT_SECRET" \
+if ! BENDER_BASE_URL=http://localhost:8080 BENDER_LIMITED_BASE_URL=http://localhost:8090 BENDER_UI_URL="http://localhost:$ui_port" JWT_SECRET="$JWT_SECRET" \
   npm --prefix hubx-bender run test -- --tags "@empty-db"; then
   exit_code=1
 fi
