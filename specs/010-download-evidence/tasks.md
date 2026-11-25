@@ -181,6 +181,33 @@ session (401); assert no PDF body in each case.
 
 ---
 
+## Phase 7: Human review fix (PDF presentation)
+
+- [x] T031 [API] Restyle the generated PDF with the HUBX visual language and wrap long prose without breaking the HU-03 canonical block or the phrases parsed by QA
+
+  Evidence (backend-go, phase `fix`, commit `bfdc9de`): `gofmt -l` on both owned files produced no output, exit 0;
+  `go -C hubx-api generate ./...` → `GENERATE_EXIT=0`; `go -C hubx-api vet ./...` → `VET_EXIT=0`;
+  `go -C hubx-api test ./...` → all packages `ok`/`no test files`, `TEST_EXIT=0`; `go -C hubx-api build ./...` →
+  `BUILD_EXIT=0`; `gosec ./...` in `hubx-api` → `Issues : 0`, `GOSEC_EXIT=0`. Four targeted black-box tests passed:
+  `TestHU10_RenderUsesHubxVisualStyle`, `TestHU10_RenderWrapsProseButNotCanonicalLines`,
+  `TestHU10_RenderKeepsCanonicalBlocksAsConsecutiveStrings` and
+  `TestHU10_RenderRepeatsChromeAndNeverSplitsBlocksAcrossPages` (`TARGETED_EXIT=0`). Lead repeated test/build/gosec
+  with the same results; only `hubx-api/internal/evidence/pdf.go` and
+  `hubx-api/internal/evidence/test/pdf_test.go` changed (425 insertions, 57 deletions).
+
+- [x] T032 [QA] Re-verify the restyled PDF with the full integration suite and security scans, then update `specs/010-download-evidence/qa-report.md`
+
+  Evidence (qa-seguridad, phase `verify`, JSON `status: ok`, commit `f764a7b`): `make test-integration` →
+  `1 hook (1 passed)`, `66 scenarios (66 passed)`, `424 steps (424 passed)`,
+  `1m 7.402s (1m 7.177s executing your code)`, `INTEGRATION_EXIT=0`; all 7 HU-10 scenarios passed, including the
+  `@e2e` download and the third-party recomputation. A read-only parser of the freshly downloaded restyled PDF
+  (`/tmp/hubx-evidence-HBX-80EDEFE3.pdf`, 10631 bytes) found all asserted phrases, 3 contiguous canonical seven-line
+  blocks and `PRINTED_CHAIN_MATCHES_RECOMPUTED=true`. `gosec ./...` → `Issues : 0` and exit 0 in both modules;
+  `govulncheck` → `No vulnerabilities found` and exit 0 in both. Only the pre-existing gateway gap remains. Lead
+  checked that QA touched only `qa-report.md` (64 insertions, 30 deletions).
+
+---
+
 ## Dependencies & Execution Order
 
 - **Setup (Phase 1)**: no dependencies.

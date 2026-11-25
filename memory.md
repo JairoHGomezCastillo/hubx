@@ -208,6 +208,11 @@
   A `shell "*" allow` rule was inserted immediately after the initial `shell "*" deny` in the five
   `.opencode/agents/*.md`; later specific rules still win, `make agents-sync` regenerated the derived files and
   `make agents-check` passed. Agent-tool permissions are a human decision, not a lead workaround.
+- HU-10 (2026-11-25): human review found the first stdlib PDF plain and with clipped long prose. backend-go reused the
+  MFE's palette (`hubx-mfe/src/index.css`: apron, asphalt, taxiway yellow, edge-light blue), added bold headings, rules,
+  page chrome and word wrapping while keeping the seven canonical fingerprint lines unwrapped and contiguous. A styling
+  fix must preserve the parser contract: QA joins every PDF literal string with `\n`, so no decoration string may enter
+  a canonical block and no asserted phrase may be split across strings.
 ## Pending
 - Move production to image-backed services and call deploy.yml (environment `production`) from release.yml after
   tagging; then delete deploy/render.yaml's repo-built services (owner A, after the 2026-11-24 delivery).
