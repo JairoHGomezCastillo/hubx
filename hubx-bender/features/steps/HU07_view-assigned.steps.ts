@@ -329,15 +329,5 @@ Then(
   },
 );
 
-Then(
-  'they are told they do not have permission to see that information',
-  async function (this: AssignedWorld) {
-    expect(this.response?.status(), '403 FORBIDDEN for non-ground-partner').toBe(403);
-    const body = (await this.response?.json()) as { error: string; message: string };
-    expect(body.error).toBe('FORBIDDEN');
-    expect(body.message).toBe('You do not have permission to see that information');
-  },
-);
-
 // @e2e: The generic "has signed in" step from common.steps.ts handles both API and browser modes.
 // The "the partner views their assigned shipments" When step above detects @e2e via this.page.

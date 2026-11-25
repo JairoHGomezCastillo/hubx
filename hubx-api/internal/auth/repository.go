@@ -34,10 +34,10 @@ func NewPostgresRepository(db *sql.DB) *PostgresRepository {
 // Returns ErrUserNotFound if the user does not exist.
 func (r *PostgresRepository) FindUserByEmail(ctx context.Context, email string) (*User, error) {
 	normalized := NormalizeEmail(email)
-	
+
 	query := `SELECT id, email, name, role, password_hash, created_at 
 	          FROM users WHERE email = $1`
-	
+
 	var user User
 	err := r.db.QueryRowContext(ctx, query, normalized).Scan(
 		&user.ID,
@@ -47,14 +47,14 @@ func (r *PostgresRepository) FindUserByEmail(ctx context.Context, email string) 
 		&user.PasswordHash,
 		&user.CreatedAt,
 	)
-	
+
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrUserNotFound
 	}
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return &user, nil
 }
 

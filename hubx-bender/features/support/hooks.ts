@@ -16,7 +16,8 @@ Before(async function (this: HubxWorld) {
 
 Before({ tags: '@e2e' }, async function (this: HubxWorld) {
   browser ??= await chromium.launch({ headless: process.env.HEADED !== '1' });
-  this.context = await browser.newContext({ baseURL: UI_URL });
+  // HU-10's @e2e scenario captures the evidence PDF as a browser download.
+  this.context = await browser.newContext({ baseURL: UI_URL, acceptDownloads: true });
   this.page = await this.context.newPage();
 });
 

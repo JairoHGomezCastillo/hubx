@@ -5,8 +5,8 @@ import (
 	"errors"
 	"testing"
 
-	"golang.org/x/crypto/bcrypt"
 	"go.uber.org/mock/gomock"
+	"golang.org/x/crypto/bcrypt"
 
 	"hubx-api/internal/auth"
 	"hubx-api/internal/auth/mocks"
@@ -207,7 +207,7 @@ func TestHU01_SignIn_GenericErrorMessage(t *testing.T) {
 		Return(user, nil)
 	service1 := auth.NewAuthService(repo1, "test-secret", 1)
 	_, _, err1 := service1.SignIn(context.Background(), "operator@hubx.co", "wrong-password")
-	
+
 	// Test unknown email
 	repo2 := mocks.NewMockRepository(ctrl)
 	repo2.EXPECT().

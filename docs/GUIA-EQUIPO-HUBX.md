@@ -25,6 +25,8 @@ Sí, con tres condiciones:
 
 Lo que más puede salir mal: dos personas editando a la vez `cmd/api/main.go`, `go.mod` o `memory.md`. La sección 7 dice cómo evitarlo.
 
+**Nota (2026-11-25):** el equipo hizo una excepción a la regla anterior con HU-10: se implementó en modo demostración en la rama `010-download-evidence`, con destino `release/v0.10.0-demo` y sin validación de despliegue (decisión humana). Las otras historias de la demostración siguen sin implementarse y el sorteo se mantiene; las versiones publicadas siguen llegando solo hasta v0.4.0 (HU-04 y HU-05).
+
 ---
 
 ## 2. Puerta de entrada (reparto de la base)
