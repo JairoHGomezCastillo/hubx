@@ -265,3 +265,58 @@ report states that staging was verified.
 | An operator keeps working through the protected entry point | 60 | `@e2e` browser | pass |
 
 Per-scenario status is inferred from 0 failures of 87 (see above), not from a per-scenario listing.
+
+---
+
+## Red for the decisions of 2026-11-25 (task T016, phase `red`)
+
+Added 2026-11-25. Nothing above was rewritten; the earlier text describes the earlier state (the 120/min sign-in
+default, F1 and F4 and the "pending" notes of the assumptions predate the human's decisions A1 and A3).
+
+### What changed in the tests
+
+- `features/S011_gateway-hardening.feature`: synced verbatim with the spec. "An approved origin may read the answers"
+  now carries `@needs-limited-gateway`; new scenario "No origin is approved unless it is configured" (line 60).
+- `features/steps/S011_gateway-hardening.steps.ts`: the approved-origin preflight goes to the limited gateway
+  (`gw-limited`, `CORS_ALLOWED_ORIGINS=http://localhost:5173` in `compose.yaml:70`). The new scenario sends the same
+  `http://localhost:5173` preflight and a plain `GET /health` with that `Origin` to the main gateway and reuses the
+  existing step "no permission is granted" (403, no `Access-Control-*` on both answers). No new ambiguous step: the
+  new `When` text is unique.
+- `features/steps/HU10_download-evidence.steps.ts`: the step "they receive a document with the shipment's data" (used by
+  the updates and the empty-chain scenarios) now asserts that the text contains each of the three names sentences of
+  `contracts/hu10-download-evidence.md` item 6, contiguous. The extractor joins PDF literal strings with a newline, so a
+  sentence found whole lies in one literal string. The HU-10 feature file is untouched.
+- `hubx-bender/AGENTS.md`: documents the production defaults against `make up` and the exclusion of
+  `@needs-limited-gateway` there.
+
+### Run (literal, `make test-integration`, exit 2 as expected for red)
+
+```
+Failed scenarios:
+  1) Evidence for a shipment with updates # features/HU10_download-evidence.feature:7
+       Then they receive a document with the shipment's data # features/steps/HU10_download-evidence.steps.ts:228
+           Error: names statement: "Fingerprints cover the party identifiers, not the printed names."
+  2) Evidence for a shipment without updates # features/HU10_download-evidence.feature:20
+       Then they receive a document with the shipment's data # features/steps/HU10_download-evidence.steps.ts:228
+           Error: names statement: "Fingerprints cover the party identifiers, not the printed names."
+  3) No origin is approved unless it is configured # features/S011_gateway-hardening.feature:60
+       Then no permission is granted # features/steps/S011_gateway-hardening.steps.ts:400
+           Error: preflight from an origin that is not approved
+           Expected: 403
+           Received: 204
+
+88 scenarios (85 passed, 3 failed)
+555 steps (549 passed, 3 skipped, 3 failed)
+2 scenarios (2 passed)        <- pass 2, @empty-db
+```
+
+Reasons, all the right ones: the PDF has the `Scope:` text of two sentences and none of the three names sentences
+(the extracted text is quoted in the run, ending "...did not rebuild the whole history."); the gateway code default
+still allows `http://localhost:5173` (the main gateway logged `"allowed_origins":1` at start), so the preflight is `204`.
+The relocated approved-origin scenario passes on `gw-limited` (`"allowed_origins":1` there, set by environment). No
+undefined or ambiguous step, no step error. Everything else passed.
+
+### Not run / open
+
+Verify phase (T019) is not part of this entry: go tests, gosec and govulncheck were not rerun. F1 and F4 above are
+still described as of the earlier run; the implementation of defaults 10 and empty (T017) is pending.

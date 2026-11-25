@@ -48,12 +48,17 @@ Feature: Gateway perimeter hardening
     When answers are requested with success, without a session and for health
     Then every answer carries the browser protections
 
+  @needs-limited-gateway
   Scenario: An approved origin may read the answers
     When a browser on an approved origin asks for permission to call HUBX without a session
     Then the permission is granted for that origin only, without credentials
 
   Scenario: An origin that is not approved may not read the answers
     When a browser on an origin that is not approved asks for permission to call HUBX
+    Then no permission is granted
+
+  Scenario: No origin is approved unless it is configured
+    When a browser on the local development origin asks for permission to call HUBX without that origin being configured
     Then no permission is granted
 
   @e2e

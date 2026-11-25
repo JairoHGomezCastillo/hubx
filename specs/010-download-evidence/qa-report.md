@@ -470,3 +470,25 @@ The OWASP, boundary, findings and blocker conclusions of §§5–8 are unchanged
 finding is open; the only open item remains the pre-existing gateway headers/CORS/rate-limit gap (not introduced by
 HU-10). No secret was added, no commit/push/merge was performed, and the five `.opencode/agents/*.md` files left
 modified in the worktree were neither touched nor staged by QA.
+
+---
+
+## 11. Note of 2026-11-25: names statement (human decision, review of PR #43), red phase
+
+Addition only; §§1-10 describe the state they were run on and are not rewritten. The contract
+(`contracts/hu10-download-evidence.md`, item 6) now requires, after the `Scope:` statement and also when the chain is
+empty, three sentences each in one literal string:
+
+- `Fingerprints cover the party identifiers, not the printed names.`
+- `The covered fields are responsible_party_id and assigned_partner_id.`
+- `The names cannot be verified from this document alone.`
+
+Test change (`HU10_download-evidence.steps.ts`, feature file untouched): the step "they receive a document with the
+shipment's data", shared by "Evidence for a shipment with updates" (line 7, `@e2e`) and "Evidence for a shipment
+without updates" (line 20), asserts each sentence is contained, contiguous, in the extracted PDF text.
+
+Red run (`make test-integration`, 2026-11-25, with story 011's red): both scenarios fail for the right reason, quoted
+literally: `Error: names statement: "Fingerprints cover the party identifiers, not the printed names."` with the
+extracted text ending at `It does not by itself prove that HUBX did not rebuild the whole history.` Run summary
+`88 scenarios (85 passed, 3 failed)`; the third failure belongs to story 011. The implementation (T018) is pending, so
+the `66 passed` of §10.2 no longer holds until it is done; it is re-verified in T019.

@@ -343,6 +343,23 @@ Then(/^every answer carries the browser protections$/, function (this: Perimeter
 When(
   /^a browser on an approved origin asks for permission to call HUBX without a session$/,
   async function (this: PerimeterWorld) {
+    // The limited gateway is the only one with an approved origin configured (CORS_ALLOWED_ORIGINS).
+    const ctx = await limitedContext(this);
+    this.preflight = await ctx.fetch('/api/shipments/stage-counts', {
+      method: 'OPTIONS',
+      headers: {
+        Origin: APPROVED_ORIGIN,
+        'Access-Control-Request-Method': 'GET',
+        'Access-Control-Request-Headers': 'authorization',
+      },
+    });
+  },
+);
+
+// The main gateway has no origin configured: the same development origin gets nothing there.
+When(
+  /^a browser on the local development origin asks for permission to call HUBX without that origin being configured$/,
+  async function (this: PerimeterWorld) {
     this.preflight = await this.api.fetch('/api/shipments/stage-counts', {
       method: 'OPTIONS',
       headers: {
@@ -351,6 +368,7 @@ When(
         'Access-Control-Request-Headers': 'authorization',
       },
     });
+    this.plain = await this.api.get('/health', { headers: { Origin: APPROVED_ORIGIN } });
   },
 );
 
