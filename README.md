@@ -72,10 +72,12 @@ the token in memory only (never in `localStorage`). See [`docs/setup.md`](docs/s
 Continuous integration ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) builds and unit-tests all services,
 runs `gosec` and `govulncheck`, and then runs `make test-integration` on a clean stack.
 
-HU-10 (Download the traceability evidence) is in review on branch `010-download-evidence` against
-`release/v0.10.0-demo`: operators download a self-contained English PDF with the shipment data, every chained update
-and manual fingerprint-verification instructions. It was delivered in demo mode: no staging deploy validation by an
-agent; staging is deployed and smoke-tested automatically when the PR is merged.
+HU-10 (Download the traceability evidence, released in v0.7.0): operators download a self-contained English PDF with the
+shipment data, every chained update and manual fingerprint-verification instructions.
+
+Story 011 (gateway hardening) is on branch `011-gateway-hardening`, not released: security headers, allow-list CORS and
+rate limiting per signed-in user and per sign-in email at the gateway
+([contract](contracts/gateway-perimeter.md)). Limits are in memory per gateway instance.
 
 ## How we work
 

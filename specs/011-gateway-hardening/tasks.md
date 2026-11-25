@@ -3,25 +3,25 @@
 Only `hubx-lead` marks a task, citing the evidence of the agent that ran it.
 
 ## Phase 1: test environment
-- [ ] T001 [OPS] `compose.yaml`: `gw` limits from env, `gw-limited` (profile `test`); `scripts/test-integration.sh` (and `scripts/review-story.sh` if it runs the suite) starts it, sets 10000 on `gw` and exports `BENDER_LIMITED_BASE_URL`
-- [ ] T002 [OPS] `deploy/render.staging.yaml` limits; `.github/workflows/deploy.yml` excludes `@needs-limited-gateway`; note in `deploy/README.md`
+- [x] T001 [OPS] `compose.yaml`: `gw` limits from env, `gw-limited` (profile `test`); `scripts/test-integration.sh` and `scripts/review-story.sh` start it, set 10000 on `gw` and export `BENDER_LIMITED_BASE_URL`. Evidence: 7a6d97b, `docker compose --profile test config --quiet` no error; stack exercised by the QA runs. `review-story.sh` itself was not run
+- [x] T002 [OPS] `deploy/render.staging.yaml` limits; `.github/workflows/deploy.yml` excludes `@needs-limited-gateway`; note in `deploy/README.md`. Evidence: 7a6d97b, diff reviewed; workflow and Blueprint not executed
 
 ## Phase 2: red
-- [ ] T003 [QA] `hubx-bender/features/S011_gateway-hardening.feature` with the spec's scenarios verbatim, steps in `features/steps/S011_gateway-hardening.steps.ts`
-- [ ] T004 [QA] `make test-integration` red for the right reason; literal output in `qa-report.md`
+- [x] T003 [QA] `hubx-bender/features/S011_gateway-hardening.feature` with the spec's scenarios verbatim, steps in `features/steps/S011_gateway-hardening.steps.ts`. Evidence: 94c4723
+- [x] T004 [QA] `make test-integration` red: `87 scenarios (78 passed, 9 failed)`, no undefined or ambiguous steps; 2 scenarios are guards that pass in red
 
 ## Phase 3: implementation
-- [ ] T005 [GW] `internal/config` with tests (precedence, missing file, malformed line, invalid limits and origins)
-- [ ] T006 [GW] `internal/ratelimit` with tests (window, recovery, isolation, bound, eviction, concurrency)
-- [ ] T007 [GW] security headers, CORS and limit middlewares with tests; validated `sub` in context
-- [ ] T008 [GW] proxy header cleanup, wiring in `cmd/gw`, `application.properties`, `hubx-gw/AGENTS.md`
+- [x] T005 [GW] `internal/config` with tests. Evidence: 6d34d4d
+- [x] T006 [GW] `internal/ratelimit` with tests (window, recovery, isolation, bound, eviction, concurrency). Evidence: 6d34d4d, `go -C hubx-gw test -race -count=1 ./...` all ok
+- [x] T007 [GW] security headers, CORS and limit middlewares with tests; validated `sub` in context. Evidence: 6d34d4d
+- [x] T008 [GW] proxy header cleanup, wiring in `internal/server` and `cmd/gw`, `application.properties`, `hubx-gw/AGENTS.md`. Evidence: 6d34d4d
 
 ## Phase 4: HU-09 correction (review of PR #41)
-- [ ] T009 [QA] dated correction in `specs/009-view-count-by-stage/qa-report.md` (API4, rate limiting claim), history kept
-- [ ] T010 [QA] HU-09 `@e2e` asserts the browser totals (+3/+2/+5, others unchanged); Gherkin untouched
+- [x] T009 [QA] dated correction in `specs/009-view-count-by-stage/qa-report.md`, additions only. Evidence: 0354ea9
+- [x] T010 [QA] HU-09 `@e2e` asserts the browser totals; Gherkin untouched. Evidence: 0354ea9, green in the red and verify runs
 
 ## Phase 5: verify and close
-- [ ] T011 [QA] full suite, go tests, gosec, govulncheck, OWASP review in `specs/011-gateway-hardening/qa-report.md`
-- [ ] T012 [OPS] `make agents-zones`
-- [ ] T013 [LEAD] analyze, `memory.md`, `README.md`, `pr.md`
+- [x] T011 [QA] `87 scenarios (87 passed)`, `2 scenarios (2 passed)`, go tests ok, gosec `Issues : 0`, govulncheck clean. Evidence: 78bb8c1
+- [x] T012 [OPS] `make agents-zones` up to 78bb8c1: `agent zones ok (origin/main..HEAD)`
+- [x] T013 [LEAD] analyze, `memory.md`, `README.md`, `pr.md`
 - [ ] T014 [OPS] deploy validation: PENDING until the human confirms the release

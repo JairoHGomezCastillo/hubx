@@ -122,6 +122,14 @@
   deploy validation; staging is deployed and smoke-tested automatically when the PR is merged. The local release was
   advanced to the v0.4.0 base but `origin/release/v0.10.0-demo` remained at `853944c` (GitHub rejected the update with
   GH013), so the PR shows those pre-existing commits as well.
+- Story 011 gateway hardening (2026-11-25, foundation, no HU): `contracts/gateway-perimeter.md`. Human decisions: limit per
+  validated JWT `sub`, 120/min; sign-in by submitted email; never by IP or `X-Forwarded-For` (all browser traffic comes
+  through the MFE's nginx); tests use a higher limit through the environment. Everything else is an assumption pending
+  confirmation (spec A1-A9). `hubx-gw` has its own `internal/config` and `internal/server` chain. Limits are proven on
+  `gw-limited` (compose profile `test`, port 8090, 5 users / 3 sign-in), scenarios `@needs-limited-gateway`, never on
+  deployed environments. The gateway must decode the sign-in body exactly as the API does (same decoder and struct), or
+  the counted email could differ from the checked one. The CORS middleware does not refuse other origins' plain
+  requests: the MFE's same-origin POSTs carry an `Origin`.
 ## Conventions
 - PR title (2026-11-21): `<type>(<scope>): <gitmoji> <short description> [agent:role]`, scope `HU-xx` or an area;
   mapping in hubx-lead step 10. Commits keep their own format below.
@@ -273,12 +281,12 @@
 - HU-03 (PR #23) was merged straight into `main` on 2026-11-24, not through a release branch: it has no version tag of
   its own and did not pass through staging; Render's autodeploy of `main` already serves it. The next tag on `main`
   (v0.3.3) includes it.
-- Gateway security headers, CORS and rate limiting (constitution VI) are not implemented in `hubx-gw` yet; HU-02's
-  qa-report records it as an open pre-existing finding (API8, corrected 2026-11-24). Needs its own story.
+- Story 011 (gateway hardening): the human confirms the release (`release/v0.8.0-gateway-hardening`, not created) and the
+  assumptions A1-A9 of its spec (above all A1, sign-in 120/min per email, and A3, production origins). Before the first
+  staging smoke a human syncs the staging Blueprint (limits 10000). Then push, deploy validation, `deploy.md` and PR.
+- Story 011 low findings (its qa-report): no `ReadTimeout` in the gateway (F3); JWT accepts any HMAC algorithm (F5).
 - hubx-api `main.go` loads `internal/config` but still reads the port from `PORT` directly (works on Render).
-- hubx-gw has no config reader yet (reads `PORT`/`API_URL`).
 - 0002_seed_ledger: shipments in later stages with chained updates (owner C).
-- HU-09 (review of #41): qa-seguridad corrects `qa-report.md` (API4: the gateway has no rate limiting) and makes the
-  @e2e check the totals. HU-10 (review of #43): a human decides whether the PDF says names are outside the fingerprint.
+- HU-10 (review of #43): a human decides whether the PDF says names are outside the fingerprint.
 - `origin/feature/sdd-hubx` holds one commit that is not in main (de033a1, docs/diagramas): its author decides.
 - Pre-existing MFE warnings: `act(...)` warnings in `Dashboard.test.tsx` (RecordUpdateContainer) and `StageCounts.test.tsx`.
