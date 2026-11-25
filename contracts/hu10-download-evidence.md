@@ -38,7 +38,11 @@ The body is a self-contained PDF document in English. It contains, in readable t
    `key=value` lines in order, joined by `\n` with no trailing newline, `-` for null values and `recorded_at`
    truncated to microseconds before computing SHA-256.
 6. `Scope:` a statement that the document proves the history is consistent with itself and does not by itself prove
-   that HUBX did not rebuild the whole history.
+   that HUBX did not rebuild the whole history. Followed (human decision 2026-11-25, review of PR #43) by exactly these
+   three sentences, each in one literal string of its own, also when the chain is empty:
+   - `Fingerprints cover the party identifiers, not the printed names.`
+   - `The covered fields are responsible_party_id and assigned_partner_id.`
+   - `The names cannot be verified from this document alone.`
 
 The PDF is generated from current records; no file is stored. `updates` are never reordered, edited or deleted.
 

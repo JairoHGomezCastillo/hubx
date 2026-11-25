@@ -35,7 +35,7 @@ wt=$(mktemp -d)/review
 git worktree add -q --detach "$wt" "$head_sha"
 project="hubx-review-$pr"
 cleanup() {
-  (cd "$wt" 2>/dev/null && docker compose -p "$project" down -v --remove-orphans >/dev/null 2>&1)
+  (cd "$wt" 2>/dev/null && docker compose -p "$project" --profile test down -v --remove-orphans >/dev/null 2>&1)
   git -C "$repo_root" worktree remove --force "$wt" >/dev/null 2>&1
 }
 trap cleanup EXIT
@@ -150,18 +150,22 @@ if ! $fast; then
       || add FAIL "$s govulncheck" "$(grep -E 'Vulnerability #' <<<"$out" | head -2 | tr '\n' ' ')"
   done
   # Integration on an isolated stack, twice on the same database: staging keeps its data between deployments.
-  busy=$(for p in 8080 3000 5432; do lsof -nP -iTCP:$p -sTCP:LISTEN >/dev/null 2>&1 && echo $p; done | tr '\n' ' ')
+  busy=$(for p in 8080 8090 3000 5432; do lsof -nP -iTCP:$p -sTCP:LISTEN >/dev/null 2>&1 && echo $p; done | tr '\n' ' ')
   if [ -n "$busy" ]; then
     add WARN "Acceptance suite" "not run: ports busy ($busy), another stack is up (make up or a lead's test-integration); re-run when free"
   else
-    docker compose -p "$project" up -d --build --quiet-pull >/dev/null 2>&1 \
-      && bash scripts/wait-health.sh http://localhost:8080 120 >/dev/null 2>&1 && bash scripts/wait-ui.sh http://localhost:3000 120 >/dev/null 2>&1
+    # Same limits as test-integration: the main gateway is high, the limit scenarios run on gw-limited (--profile test, 8090).
+    export RATELIMIT_REQUESTS_PER_MINUTE=10000 RATELIMIT_SIGN_IN_REQUESTS_PER_MINUTE=10000
+    docker compose -p "$project" --profile test up -d --build --quiet-pull >/dev/null 2>&1 \
+      && bash scripts/wait-health.sh http://localhost:8080 120 >/dev/null 2>&1 && bash scripts/wait-health.sh http://localhost:8090 120 >/dev/null 2>&1 \
+      && bash scripts/wait-ui.sh http://localhost:3000 120 >/dev/null 2>&1
     if [ $? -ne 0 ]; then add FAIL "Acceptance suite" "stack did not start"
     else
       npm --prefix hubx-bender run browsers >/dev/null 2>&1
       set -a; [ -f .env ] && . ./.env; set +a
       # Steps that act on the database directly (e.g. HU-05's tamper scenario) reach the stack by its project name.
       export BENDER_COMPOSE_PROJECT="$project"
+      export BENDER_LIMITED_BASE_URL=http://localhost:8090
       for run in 1 2; do
         res=$(cd hubx-bender && npx cucumber-js 2>&1 | grep -E 'scenarios \(' | tail -1)
         if [ -z "$res" ]; then

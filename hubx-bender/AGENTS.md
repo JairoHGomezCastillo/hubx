@@ -17,5 +17,11 @@ Owner agent: `qa-seguridad`. QA workspace, not a running component. Constitution
    `npm --prefix hubx-bender test`, `run test:api`, `run test:e2e` (`HEADED=1` to watch the browser). Setup once:
    `npm --prefix hubx-bender ci && npm --prefix hubx-bender run browsers`. URLs: `BENDER_BASE_URL` (gateway, default
    `http://localhost:8080`), `BENDER_UI_URL` (MFE, default `http://localhost:3000`). Reports in `reports/` (ignored).
+   Rate limits: `make up` runs the gateway with the production defaults (120 requests/min per user, 10 sign-ins/min
+   per email), which the suite can trip. Against `make up`, export both variables before starting it
+   (`RATELIMIT_REQUESTS_PER_MINUTE=10000 RATELIMIT_SIGN_IN_REQUESTS_PER_MINUTE=10000 make up`). Scenarios tagged
+   `@needs-limited-gateway` (story 011: tiny limits and an approved CORS origin) need the test profile
+   (`gw-limited`, `BENDER_LIMITED_BASE_URL`), which `make test-integration` starts; against `make up` exclude them
+   (`--tags 'not @needs-limited-gateway'`).
 6. **Never.** Fix production code, bypass the gateway, hard-code secrets, add report files other than
    `specs/NNN-*/qa-report.md`, new npm dependencies without human approval.

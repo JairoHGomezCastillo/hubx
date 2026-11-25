@@ -318,6 +318,43 @@ func TestHU10_RenderWrapsProseButNotCanonicalLines(t *testing.T) {
 	}
 }
 
+// The names statement (contract success item 6) follows the two Scope sentences;
+// each sentence must be one whole literal string, never wrapped, also with an
+// empty chain.
+func TestHU10_RenderStatesNamesAreNotCoveredByFingerprints(t *testing.T) {
+	statement := []string{
+		"Fingerprints cover the party identifiers, not the printed names.",
+		"The covered fields are responsible_party_id and assigned_partner_id.",
+		"The names cannot be verified from this document alone.",
+	}
+	empty := fullEvidence()
+	empty.Updates = nil
+	for name, doc := range map[string]*evidence.Evidence{"with updates": fullEvidence(), "empty chain": empty} {
+		t.Run(name, func(t *testing.T) {
+			lines := pdfLines(t, evidence.Render(doc))
+			last := -1
+			for i, line := range lines {
+				if line == "It does not by itself prove that HUBX did not rebuild the whole history." {
+					last = i
+				}
+			}
+			if last < 0 {
+				t.Fatal("second Scope sentence is missing as one whole literal string")
+			}
+			for offset, sentence := range statement {
+				index := last + 1 + offset
+				if index >= len(lines) || lines[index] != sentence {
+					got := "<end of document>"
+					if index < len(lines) {
+						got = lines[index]
+					}
+					t.Errorf("literal after Scope #%d = %q, want whole sentence %q", offset+1, got, sentence)
+				}
+			}
+		})
+	}
+}
+
 func assertCanonicalBlocks(t *testing.T, lines []string, updates []evidence.UpdateEvidence) {
 	t.Helper()
 	for _, update := range updates {

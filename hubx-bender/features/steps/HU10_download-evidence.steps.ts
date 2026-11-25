@@ -14,6 +14,11 @@ import { authHeader, OPERATOR_NAME, prepareShipment, signInAs, type UpdateWorld 
 const FINGERPRINT = /^[0-9a-f]{64}$/;
 const HEX64_GLOBAL = /\b[0-9a-f]{64}\b/g;
 const UNKNOWN_CODE = 'HBX-99999999';
+const NAMES_STATEMENT = [
+  'Fingerprints cover the party identifiers, not the printed names.',
+  'The covered fields are responsible_party_id and assigned_partner_id.',
+  'The names cannot be verified from this document alone.',
+];
 
 // Demo data from migration 0001; fixtures use the same owner as prepareShipment.
 const CUSTOMER_NAMES: Record<string, string> = {
@@ -247,6 +252,11 @@ Then(/^they receive a document with the shipment's data$/, async function (this:
   expect(text, 'current stage').toContain(this.currentStage!);
   expect(text, 'internal-consistency scope statement').toMatch(/consistent with itself/i);
   expect(text, 'no-guarantee scope statement').toMatch(/did not rebuild the whole history/i);
+  // Human decision 2026-11-25 (PR #43): three sentences, each contiguous (one literal string of its own;
+  // pdfText joins literals with a newline, so a sentence found whole cannot span two strings).
+  for (const sentence of NAMES_STATEMENT) {
+    expect(text, `names statement: "${sentence}"`).toContain(sentence);
+  }
 });
 
 Then(

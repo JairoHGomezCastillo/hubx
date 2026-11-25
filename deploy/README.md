@@ -136,7 +136,14 @@ One-time setup (never paste a secret in a chat or the repo):
    gh variable set UI_URL      --env staging --body https://hubx-mfe-stg.onrender.com
    ```
 5. **First deploy:** Actions → deploy → Run workflow → `staging`, ref `main`. Expected: migrations applied, three
-   deploys `live`, warm-up, Cucumber green (all scenarios except `@needs-secret`).
+   deploys `live`, warm-up, Cucumber green (all scenarios except `@needs-secret`, `@empty-db` and `@needs-limited-gateway`).
+
+**Gateway limits (story 011).** `deploy/render.staging.yaml` sets `RATELIMIT_REQUESTS_PER_MINUTE` and
+`RATELIMIT_SIGN_IN_REQUESTS_PER_MINUTE` to `10000` on `hubx-gw-stg`, but Render reads the Blueprint from `main`, so that
+change reaches staging only when the release merges into `main`. Until then, before the first staging smoke of this
+story, a human sets both variables to `10000` by hand on `hubx-gw-stg` (Render dashboard → `hubx-gw-stg` → Environment).
+Otherwise the gateway uses its defaults: 120 requests per minute per signed-in user and 10 sign-in attempts per minute per
+email, and the staging smoke can be refused with `429`. Production (`deploy/render.yaml`) is unchanged.
 
 ### Clean database on every staging deployment
 
