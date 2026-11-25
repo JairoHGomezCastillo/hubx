@@ -13,8 +13,8 @@ import (
 //go:generate go tool mockgen -source=../../shipment/traceability.go -destination=mocks/traceability_reader_mock.go -package=mocks
 
 type traceabilityResponse struct {
-	ShipmentCode string              `json:"shipmentCode"`
-	Stage        string              `json:"stage"`
+	ShipmentCode string               `json:"shipmentCode"`
+	Stage        string               `json:"stage"`
 	Updates      []traceabilityUpdate `json:"updates"`
 }
 

@@ -51,16 +51,16 @@ func (h *Handler) SignIn(w http.ResponseWriter, r *http.Request) {
 		h.writeError(w, http.StatusBadRequest, "MISSING_REQUIRED_FIELDS", "Email and password are required")
 		return
 	}
-	
+
 	// Validate required fields (after trimming)
 	email := strings.TrimSpace(req.Email)
 	password := strings.TrimSpace(req.Password)
-	
+
 	if email == "" || password == "" {
 		h.writeError(w, http.StatusBadRequest, "MISSING_REQUIRED_FIELDS", "Email and password are required")
 		return
 	}
-	
+
 	// Call service
 	token, user, err := h.service.SignIn(r.Context(), email, password)
 	if err != nil {
@@ -73,7 +73,7 @@ func (h *Handler) SignIn(w http.ResponseWriter, r *http.Request) {
 		h.writeError(w, http.StatusInternalServerError, "INTERNAL_SERVER_ERROR", "An unexpected error occurred")
 		return
 	}
-	
+
 	// Success
 	resp := signInResponse{
 		Token: token,
@@ -82,7 +82,7 @@ func (h *Handler) SignIn(w http.ResponseWriter, r *http.Request) {
 			Role:  user.Role,
 		},
 	}
-	
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode(resp)
