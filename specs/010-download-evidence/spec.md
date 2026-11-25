@@ -109,6 +109,8 @@ matches no shipment, and check in each case that no document is delivered and th
 - **FR-012**: The shipment data MUST include the code, origin, destination, flight, weight, customer and current
   stage.
 - **FR-013**: The document, including the verification instructions, MUST be written in English.
+- **FR-014** (2026-11-25): The document MUST state that the fingerprints cover the identifiers of the parties and not
+  the printed names, and that the names cannot be verified from the document alone.
 
 ### Key Entities *(include if feature involves data)*
 

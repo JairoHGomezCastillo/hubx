@@ -27,10 +27,10 @@ Only `hubx-lead` marks a task, citing the evidence of the agent that ran it.
 - [ ] T014 [OPS] deploy validation: PENDING (needs the push, and the two staging variables set by a human)
 
 ## Phase 6: human decisions of 2026-11-25 and extra scope
-- [ ] T015 [OPS] compose sign-in default 10, `CORS_ALLOWED_ORIGINS` on `gw-limited`, `deploy/README.md` corrected
-- [ ] T016 [QA] red: approved origin on `gw-limited`, none configured on the main gateway; HU-10 names statement
-- [ ] T017 [GW] defaults 10 and empty, tests, `hubx-gw/AGENTS.md`
-- [ ] T018 [API] HU-10 names statement in `internal/evidence` with unit test
-- [ ] T019 [QA] verify: full suite, go tests, gosec, govulncheck, both qa-reports
-- [ ] T020 [LEAD] `docs/diagramas` updated to the current state
-- [ ] T021 [LEAD] closing: `memory.md`, `pr.md`; [OPS] `make agents-zones`, `make agents-check`
+- [x] T015 [OPS] compose sign-in default 10, `CORS_ALLOWED_ORIGINS` on `gw-limited`, `deploy/README.md` corrected. Evidence: 8a71328
+- [x] T016 [QA] red: approved origin on `gw-limited`, none configured on the main gateway; HU-10 names statement. Evidence: `88 scenarios (85 passed, 3 failed)`, the three expected
+- [x] T017 [GW] defaults 10 and empty, tests, `hubx-gw/AGENTS.md`. Evidence: red then `go -C hubx-gw test -race -count=1 ./...` ok
+- [x] T018 [API] HU-10 names statement in `internal/evidence` with unit test. Evidence: red then `go -C hubx-api test -count=1 ./...` ok
+- [x] T019 [QA] verify. Evidence: `88 scenarios (88 passed)`, `2 scenarios (2 passed)`, gosec `Issues : 0`, govulncheck clean
+- [x] T020 [LEAD] `docs/diagramas` updated to the current state. Evidence: 22f7484
+- [x] T021 [LEAD] closing: `memory.md`, `README.md`, `pr.md`. `make agents-zones` and `make agents-check` run by devops after the closing commit

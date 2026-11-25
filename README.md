@@ -76,8 +76,9 @@ HU-10 (Download the traceability evidence, released in v0.7.0): operators downlo
 shipment data, every chained update and manual fingerprint-verification instructions.
 
 Story 011 (gateway hardening) is on branch `011-gateway-hardening`, not released: security headers, allow-list CORS and
-rate limiting per signed-in user and per sign-in email at the gateway
-([contract](contracts/gateway-perimeter.md)). Limits are in memory per gateway instance.
+rate limiting per signed-in user (120/min) and per sign-in email (10/min) at the gateway
+([contract](contracts/gateway-perimeter.md)). Limits are in memory per gateway instance. Diagrams of the current state:
+[`docs/diagramas/`](docs/diagramas/README.md).
 
 ## How we work
 
