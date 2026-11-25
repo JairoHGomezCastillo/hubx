@@ -1,0 +1,126 @@
+// Package evidence exposes the operator-only HU-10 evidence download route.
+package evidence
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"net/http"
+	"strings"
+
+	domain "hubx-api/internal/evidence"
+	handlerauth "hubx-api/internal/handlers/auth"
+	domainshipment "hubx-api/internal/shipment"
+)
+
+//go:generate go tool mockgen -source=handler.go -destination=mocks/handler_mock.go -package=mocks
+
+// Reader is the domain operation used by this transport. It is deliberately
+// local so the handler depends on an interface and not on a concrete reader.
+type Reader interface {
+	Read(ctx context.Context, code string, principal domainshipment.Principal) (*domain.Evidence, error)
+}
+
+// PrincipalSource resolves the signed-in party from the request context.
+type PrincipalSource interface {
+	Principal(r *http.Request) (domainshipment.Principal, error)
+}
+
+type claimsPrincipalSource struct{}
+
+// NewClaimsPrincipalSource returns the JWT-backed PrincipalSource used by the
+// flat RequireAuth middleware (the same family as HU-02/HU-05).
+func NewClaimsPrincipalSource() PrincipalSource {
+	return claimsPrincipalSource{}
+}
+
+func (claimsPrincipalSource) Principal(r *http.Request) (domainshipment.Principal, error) {
+	claims := handlerauth.GetClaims(r.Context())
+	if claims == nil {
+		return domainshipment.Principal{}, errors.New("missing claims")
+	}
+	return domainshipment.Principal{UserID: claims.Sub, Role: domainshipment.Role(claims.Role)}, nil
+}
+
+type evidenceHandler struct {
+	reader     Reader
+	principals PrincipalSource
+}
+
+// Register mounts GET /shipments/{code}/evidence on mux behind RequireAuth.
+// No gateway change is needed: the route uses the flat 401 family.
+func Register(
+	mux *http.ServeMux,
+	requireAuth func(http.Handler) http.Handler,
+	reader Reader,
+	principals PrincipalSource,
+) {
+	h := &evidenceHandler{reader: reader, principals: principals}
+	mux.Handle("GET /shipments/{code}/evidence", requireAuth(http.HandlerFunc(h.handleEvidence)))
+}
+
+func (h *evidenceHandler) handleEvidence(w http.ResponseWriter, r *http.Request) {
+	principal, err := h.principals.Principal(r)
+	if err != nil || principal.UserID == "" || principal.Role == "" {
+		writeEvidenceError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Authorization header required")
+		return
+	}
+
+	doc, err := h.reader.Read(r.Context(), r.PathValue("code"), principal)
+	if err != nil {
+		status, code, message := evidenceHTTPError(err)
+		writeEvidenceError(w, status, code, message)
+		return
+	}
+
+	pdfBytes := domain.Render(doc)
+	w.Header().Set("Content-Type", "application/pdf")
+	w.Header().Set("Content-Disposition", `attachment; filename="`+evidenceFilename(doc.Shipment.Code)+`.pdf"`)
+	w.Header().Set("Cache-Control", "no-store")
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write(pdfBytes)
+}
+
+func evidenceHTTPError(err error) (int, string, string) {
+	switch {
+	case errors.Is(err, domain.ErrShipmentNotFound):
+		return http.StatusNotFound, "SHIPMENT_NOT_FOUND", "No shipment exists with that code"
+	case errors.Is(err, domain.ErrForbidden):
+		return http.StatusForbidden, "FORBIDDEN", "You do not have permission to download evidence"
+	default:
+		return http.StatusInternalServerError, "INTERNAL_SERVER_ERROR", "An unexpected error occurred"
+	}
+}
+
+// evidenceFilename keeps the download name safe for an HTTP header while
+// preserving the usual HBX-XXXXXXXX codes verbatim.
+func evidenceFilename(code string) string {
+	var name strings.Builder
+	name.WriteString("evidence-")
+	for _, r := range code {
+		switch {
+		case r >= 'a' && r <= 'z', r >= 'A' && r <= 'Z', r >= '0' && r <= '9', r == '-', r == '_':
+			name.WriteRune(r)
+		default:
+			name.WriteByte('_')
+		}
+	}
+	return name.String()
+}
+
+type evidenceErrorResponse struct {
+	Error   string `json:"error"`
+	Message string `json:"message"`
+}
+
+// writeEvidenceError writes the flat JSON error body shared by HU-01/HU-02/HU-05.
+func writeEvidenceError(w http.ResponseWriter, status int, code, message string) {
+	body, err := json.Marshal(evidenceErrorResponse{Error: code, Message: message})
+	if err != nil {
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	_, _ = w.Write(body)
+}

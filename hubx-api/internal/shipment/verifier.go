@@ -42,7 +42,7 @@ func (v *verifier) Verify(ctx context.Context, code string, principal Principal)
 	if err != nil {
 		return nil, fmt.Errorf("find shipment by code: %w", err)
 	}
-	if ship == nil || !canSee(ship, principal) {
+	if ship == nil || !CanSee(ship, principal) {
 		return nil, ErrShipmentNotFound
 	}
 
