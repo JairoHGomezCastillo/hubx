@@ -2,20 +2,23 @@
 
 **Story**: HU-10  
 **Agent**: qa-seguridad  
-**Phase**: verify (final, after gosec fix)  
+**Phase**: verify (re-verify after presentation fix)  
 **Date**: 2026-11-25  
 **Branch**: `010-download-evidence`  
-**Verified commit**: `f81a551` (`[agent:backend-go] HU-10 close gosec findings without changing PDF output`; tree clean before this report)  
+**Verified commit**: `bfdc9de` (`[agent:backend-go] HU-10 restyle evidence PDF with HUBX visual language`; worktree clean before this report, `git rev-parse HEAD` = `bfdc9de3311f5fadf0920db2e151839513e18a53`)  
+**Re-verify of**: `f81a551` (the earlier final verification). A human requested a presentation improvement during review of PR #40; backend-go restyled the PDF in `hubx-api/internal/evidence/pdf.go`. This report re-verifies that the restyled PDF still passes every backlog scenario and the security gates. Earlier evidence from `f81a551` is retained below and labelled where superseded.  
 **Contract**: `contracts/hu10-download-evidence.md`
 
 ---
 
 ## Verdict
 
-**PASSED.** On commit `f81a551` the full integration suite is green (`66 scenarios (66 passed)`, `424 steps (424 passed)`),
-including all 7 HU-10 scenarios and the `@e2e` browser PDF download. `gosec ./...` now reports `Issues : 0` in both
-`hubx-api` and `hubx-gw` (exit 0), and both `govulncheck` scans report no vulnerabilities. The two previously open HU-10
-gosec findings are resolved. No critical or high finding is open; only the pre-existing gateway gap (security headers,
+**PASSED (re-verified).** On commit `bfdc9de` the full integration suite is green (`66 scenarios (66 passed)`,
+`424 steps (424 passed)`, `1m 7.402s`, `INTEGRATION_EXIT=0`), including all 7 HU-10 scenarios and the `@e2e` browser
+PDF download. A read-only parser of the freshly downloaded restyled PDF confirms the phrases and three contiguous
+seven-line canonical blocks still parse, and that recomputed SHA-256 digests match the printed chain (§2, §10).
+`gosec ./...` reports `Issues : 0` in both `hubx-api` and `hubx-gw` (exit 0), and both `govulncheck` scans report no
+vulnerabilities (exit 0). No critical or high finding is open; only the pre-existing gateway gap (security headers,
 restrictive CORS and rate limiting), not introduced by HU-10, remains recorded. QA changed no production code, tests,
 contract or task file and made no commit or push.
 
@@ -32,16 +35,20 @@ then Cucumber with `strict: true` at `hubx-bender/cucumber.mjs:8`).
 1 hook (1 passed)
 66 scenarios (66 passed)
 424 steps (424 passed)
-1m 5.472s (1m 5.232s executing your code)
+1m 7.402s (1m 7.177s executing your code)
 INTEGRATION_EXIT=0
 ```
 
+This is the re-verify run on `bfdc9de` (the earlier `f81a551` run recorded `1m 5.472s`). `INTEGRATION_EXIT=0` is the
+literal exit code echoed by the runner after `make test-integration` on commit `bfdc9de`; the timing line is copied from
+the tail of that run's output.
+
 `strict: true` (`hubx-bender/cucumber.mjs:8`) makes an undefined/pending step fail the suite; all 424 steps passed.
 
-The HU-05 ledger tamper regression ran in this same suite. Literal line from the run output:
+The HU-05 ledger tamper regression ran in this same suite. Literal line from the re-verify run output:
 
 ```
-Tampered update 2 of HBX-317323CB to stage "Out for delivery"
+Tampered update 2 of HBX-C78D1401 to stage "Out for delivery"
 ```
 
 ### Gherkin coverage (scenario → test → result)
@@ -99,27 +106,52 @@ The browser download's suggested filename is asserted against `^evidence-HBX-[0-
 statements (`:225-239`), three updates in chain order with responsible party, dates and fingerprints (`:242-262`), and
 a parseable `Generated at:` plus the verification instructions (`:265-272`). All passed (scenario line 7 above).
 
-Literal evidence from the PDF saved by the browser download in this final run:
+Literal evidence from the restyled PDF saved by the browser download in this re-verify run, read back with the steps'
+own `pdfText` logic (`HU10_download-evidence.steps.ts:41-84`) applied read-only to the downloaded file
+`/tmp/hubx-evidence-HBX-80EDEFE3.pdf`:
 
 ```
-/tmp/hubx-evidence-HBX-6118F6AD.pdf 3814 bytes
-magic=%PDF-
-(HUBX traceability evidence) Tj
-(Code: HBX-6118F6AD) Tj
-(Updates:) Tj
-(1. In flight) Tj
-(Fingerprint: f63658b3e19dd4da989ea9900f0c12adcbfe7367bb35ed0d6ad0b154b7af667e) Tj
-(2. At destination airport) Tj
-(Fingerprint: 94accefb4fe2c8592d3174a54efb6ab65519e1dc649c42da8879c71fa4a24105) Tj
-(3. Assigned to partner) Tj
-(Fingerprint: 4b1bc8c62caf688a02cb56637d65ad6e690f39bdc2f8df7ac08570d73a8dbd9c) Tj
-(Generated at: 2026-11-25T01:14:21Z) Tj
-(How to verify the fingerprints:) Tj
-(Scope: This evidence proves that the shipment history is consistent with itself. It does not by itself prove that HUBX did not rebuild the whole history.) Tj
+FILE=/tmp/hubx-evidence-HBX-80EDEFE3.pdf
+BYTES=10631 MAGIC=%PDF-
+PHRASE "HUBX traceability evidence" -> FOUND
+PHRASE "Generated at:" -> FOUND
+PHRASE "How to verify the fingerprints:" -> FOUND
+PHRASE "Scope:" -> FOUND
+PHRASE "consistent with itself" -> FOUND
+PHRASE "did not rebuild the whole history" -> FOUND
+CANONICAL_BLOCKS=3
+BLOCK 1 lines=7 sha256=a1284f8704fbd655e3390f2b26ccb328cd517094db85db440e610575a9b359af printed_in_pdf=true
+BLOCK 2 lines=7 sha256=2776fe8eb24561f13ed667e78e66d30bdbddce7b983903e0a7e76d34c989ec57 printed_in_pdf=true
+BLOCK 3 lines=7 sha256=ea8595c441d3d3da0b619d392f9dc800747ccd818feb5eec7258862a08aa2244 printed_in_pdf=true
+PRINTED_CHAIN_MATCHES_RECOMPUTED=true
 ```
 
+Extracted text lines 14-20 and 41-47 show each seven-line canonical block is contiguous (the third block stays intact
+after the repeated page chrome at line 40, i.e. the page break did not split it):
+
+```
+14: shipment_id=009ef73c-7d9f-4391-ba38-868491ab13b7
+15: sequence=1
+16: stage=In flight
+17: responsible_party_id=00000000-0000-4000-8000-000000000001
+18: assigned_partner_id=-
+19: recorded_at=2026-11-25T01:55:06.164818Z
+20: previous_fingerprint=-
+40: HUBX traceability evidence
+41: shipment_id=009ef73c-7d9f-4391-ba38-868491ab13b7
+42: sequence=3
+43: stage=Assigned to partner
+44: responsible_party_id=00000000-0000-4000-8000-000000000001
+45: assigned_partner_id=00000000-0000-4000-8000-000000000002
+46: recorded_at=2026-11-25T01:55:06.793534Z
+47: previous_fingerprint=2776fe8eb24561f13ed667e78e66d30bdbddce7b983903e0a7e76d34c989ec57
+```
+
+The empty-chain phrase `The shipment has no updates yet.` is asserted by the passing scenario at feature line 20
+(§ "Gherkin coverage"); the PDF parsed above is the three-update `@e2e` download and correctly does not contain it.
 `/tmp/hubx-evidence-…pdf` is the QA workspace's `saveAs` target; the suggested filename is asserted separately by the
-steps quoted above.
+steps quoted above. The earlier `f81a551` PDF excerpt (a single 3814-byte page with one long `Scope:` literal) is
+superseded by the restyled output above.
 
 ---
 
@@ -137,9 +169,10 @@ PDF lines in §2 show the three digests for the three updates, and the scenario 
 
 ### 4.1 `gosec ./...` in `hubx-api` — passed (exit 0)
 
-**Command**: `NO_COLOR=1 gosec ./...` with cwd `hubx-api` (colour disabled for a literal excerpt; same findings as the
-mandated `gosec ./...`, which also exited 0; `gosec -quiet ./...` exited 0 with no findings).  
-**Literal output summary**:
+**Command**: `NO_COLOR=1 gosec ./...` with cwd `hubx-api`, re-run on `bfdc9de` (colour disabled for a literal excerpt;
+same findings as the mandated `gosec ./...`, which also exited 0).  
+**Literal output summary of the re-verify run** (`Lines` rises from 6213 to 6437 because the restyled `pdf.go` adds
+code; findings remain zero):
 
 ```
 Results:
@@ -148,7 +181,7 @@ Results:
 Summary:
   Gosec  : dev
   Files  : 64
-  Lines  : 6213
+  Lines  : 6437
   Nosec  : 1
   Issues : 0
 
@@ -157,7 +190,8 @@ GOSEC_API_EXIT=0
 
 ### 4.2 `gosec ./...` in `hubx-gw` — passed (exit 0)
 
-**Command**: `gosec ./...` with cwd `hubx-gw`. Literal summary:
+**Command**: `NO_COLOR=1 gosec ./...` with cwd `hubx-gw`, re-run on `bfdc9de` (findings identical to the mandated
+`gosec ./...`, which also exited 0). Literal summary of the re-verify run:
 
 ```
 Results:
