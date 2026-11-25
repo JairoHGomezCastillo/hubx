@@ -204,6 +204,10 @@
 - A pre-rebase checkpoint commit (1ace486) put qa-seguridad's bender files under `[agent:hubx-lead]`; `make
   agents-zones` will flag it. Never checkpoint another agent's paths under the lead's tag; stash or leave them
   uncommitted for the owning agent.
+- Staging database reset (2026-11-24): HU-07's smoke timed out on staging because ~20+ shipments left by earlier runs
+  were assigned to rapido@hubx.co. deploy.yml now resets the Neon `staging` branch from its parent before migrating
+  (only when the environment sets RESET_DB_FROM_PARENT=true; production never). Scenarios that need an exact set
+  ("only their three") stay valid on staging; data created by hand there is lost on the next deploy.
 ## Pending
 - Move production to image-backed services and call deploy.yml (environment `production`) from release.yml after
   tagging; then delete deploy/render.yaml's repo-built services (owner A, after the 2026-11-24 delivery).
