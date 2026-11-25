@@ -106,8 +106,10 @@ jobs:
         env:
           BENDER_BASE_URL: ${{ vars.GATEWAY_URL }}
           BENDER_UI_URL: ${{ vars.UI_URL }}
-          # Production runs only the read-only @smoke scenarios; staging runs the whole suite. @needs-secret never runs.
-          TAGS: ${{ inputs.environment == 'production' && '@smoke and not @needs-secret' || 'not @needs-secret' }}
+          # Production runs only the read-only @smoke scenarios; staging runs the whole suite. Never in a deployed
+          # environment: @needs-secret (forges tokens with JWT_SECRET) and @empty-db (needs empty tables, which
+          # make test-integration provides in its second pass; a deployed database always holds shipments).
+          TAGS: ${{ inputs.environment == 'production' && '@smoke and not @needs-secret and not @empty-db' || 'not @needs-secret and not @empty-db' }}
         run: |
           npm --prefix hubx-bender ci --no-audit --no-fund
           npm --prefix hubx-bender run browsers -- --with-deps
