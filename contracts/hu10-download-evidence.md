@@ -48,7 +48,7 @@ All error bodies are flat JSON (`Content-Type: application/json`) and no PDF is 
 
 | Status | Code | Message | When |
 |---|---|---|---|
-| 401 | `UNAUTHORIZED` | `Authentication required` | No JWT, expired JWT or invalid JWT |
+| 401 | `UNAUTHORIZED` | see `contracts/auth-sign-in.md` (missing header: `Authorization header required`; invalid or expired token as defined there) | No JWT, expired JWT or invalid JWT |
 | 403 | `FORBIDDEN` | `You do not have permission to download evidence` | Signed-in ground partner or customer |
 | 404 | `SHIPMENT_NOT_FOUND` | `No shipment exists with that code` | Unknown code or shipment invisible to the caller |
 | 500 | `INTERNAL_SERVER_ERROR` | `An unexpected error occurred` | Unexpected failure while assembling the document |
@@ -72,3 +72,6 @@ Privacy: an unknown code and an invisible shipment are indistinguishable — sam
 - `shipment.CanSee` is the single visibility rule shared with HU-03/HU-04/HU-05.
 - The canonical fingerprint formula in `contracts/hu03-record-update.md` remains the source of truth; this contract
   references it instead of duplicating it.
+- The gateway validates the JWT before proxying, so for a missing or invalid token the client receives the gateway's
+  flat 401 (`contracts/auth-sign-in.md`) and the request never reaches this route. The API's `RequireAuth` is the
+  second validation (Constitution II), not the first; hence this contract does not fix a 401 message of its own.
