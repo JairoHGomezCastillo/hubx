@@ -26,6 +26,11 @@ services:
       # Public HTTPS URL of hubx-api-stg (a Blueprint cannot resolve it): https://hubx-api-stg.onrender.com
       - key: API_URL
         sync: false
+      # High limits so the whole staging suite never gets 429; the limits are proven on the test-profile gateway.
+      - key: RATELIMIT_REQUESTS_PER_MINUTE
+        value: "10000"
+      - key: RATELIMIT_SIGN_IN_REQUESTS_PER_MINUTE
+        value: "10000"
       - fromGroup: hubx-stg-secrets
 
   - type: web

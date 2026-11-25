@@ -138,6 +138,11 @@ One-time setup (never paste a secret in a chat or the repo):
 5. **First deploy:** Actions → deploy → Run workflow → `staging`, ref `main`. Expected: migrations applied, three
    deploys `live`, warm-up, Cucumber green (all scenarios except `@needs-secret`).
 
+**Gateway limits (story 011).** `deploy/render.staging.yaml` sets `RATELIMIT_REQUESTS_PER_MINUTE` and
+`RATELIMIT_SIGN_IN_REQUESTS_PER_MINUTE` to `10000` on `hubx-gw-stg`. Render does not apply Blueprint changes by itself:
+a human must sync the staging Blueprint (Render dashboard → the blueprint → sync) before the first staging smoke of this
+story, otherwise the gateway keeps its default of 120 per minute. Production (`deploy/render.yaml`) is unchanged.
+
 ### Clean database on every staging deployment
 
 `deploy.yml` resets the Neon `staging` branch from its parent (production) before the migrations, so every staging
