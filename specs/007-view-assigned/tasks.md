@@ -22,31 +22,43 @@ skipped at the human's request. Only hubx-lead marks `- [x]`, citing evidence.
 
 ## Phase 2: API (backend-go, `implement`) — TDD
 
-- [ ] T004 [API] Tests first in `internal/ledger/test/`: `PendingAssignments` query, parameters, scan and ordering.
-- [ ] T005 [API] `internal/ledger`: `Assignment` type, `LedgerRepository.PendingAssignments`, Postgres implementation.
-- [ ] T006 [API] Tests first in `internal/shipment/test/assigned_test.go`: role gate (`ErrNoPermission` for operator and
+- [x] T004 [API] Tests first in `internal/ledger/test/`: `PendingAssignments` query, parameters, scan and ordering.
+- [x] T005 [API] `internal/ledger`: `Assignment` type, `LedgerRepository.PendingAssignments`, Postgres implementation.
+- [x] T006 [API] Tests first in `internal/shipment/test/assigned_test.go`: role gate (`ErrNoPermission` for operator and
   customer), offset bounds (`ErrInvalidOffset`), limit 21 request, `NextOffset`, ledger order preserved, empty page.
-- [ ] T007 [API] `internal/shipment`: `ShipmentRepository.FindByIDs`, `AssignedLister`, `NewAssignedLister`, sentinels.
-- [ ] T008 [API] Tests first in `internal/handlers/shipment/test/assigned_handler_test.go`: 200 body, `message` only when
+- [x] T007 [API] `internal/shipment`: `ShipmentRepository.FindByIDs`, `AssignedLister`, `NewAssignedLister`, sentinels.
+- [x] T008 [API] Tests first in `internal/handlers/shipment/test/assigned_handler_test.go`: 200 body, `message` only when
   empty, 403/400/500 flat bodies, offset parsing, partner from claims only.
-- [ ] T009 [API] `internal/handlers/shipment/assigned_handler.go` with `RegisterAssigned`; wire it in `cmd/api/main.go`
+- [x] T009 [API] `internal/handlers/shipment/assigned_handler.go` with `RegisterAssigned`; wire it in `cmd/api/main.go`
   with `RequireAuth`.
-- [ ] T010 [API] `go -C hubx-api generate ./...`, `go -C hubx-api test ./...`, `go -C hubx-gw test ./...` green.
+- [x] T010 [API] `go -C hubx-api generate ./...`, `go -C hubx-api test ./...`, `go -C hubx-gw test ./...` green.
+
+T004-T010 evidence (commit 1afa4c9): backend-go ran `go -C hubx-api generate ./...` in its `fix` round (mocks carry
+the MockGen header); the lead reran `go -C hubx-api test -count=1 ./...` (every test package `ok`) and
+`go -C hubx-gw test -count=1 ./...` (`ok middleware/test`, `ok proxy/test`). The first delivery did not compile
+(missing `context` import, unused variable, stale mocks) and went back as `fix`.
 
 ## Phase 3: MFE (frontend-react, `implement`) — TDD, parallel with Phase 2
 
-- [ ] T011 [MFE] Tests first: `shipmentService.test.ts` (`listAssignedShipments`), feature component tests (ordered rows,
+- [x] T011 [MFE] Tests first: `shipmentService.test.ts` (`listAssignedShipments`), feature component tests (ordered rows,
   empty message, "Show next 20", 401 -> `onSessionExpired`, error alert), `Dashboard.test.tsx` (section only for
   `ground partner`).
-- [ ] T012 [MFE] `listAssignedShipments` in `src/services/shipmentService.ts`; `src/features/assigned-shipments/`
+- [x] T012 [MFE] `listAssignedShipments` in `src/services/shipmentService.ts`; `src/features/assigned-shipments/`
   component + container; render in `Dashboard.tsx` for ground partners.
-- [ ] T013 [MFE] `npm --prefix hubx-mfe run test`, `run lint`, `run build` green.
+- [x] T013 [MFE] `npm --prefix hubx-mfe run test`, `run lint`, `run build` green.
+
+T011-T013 evidence (commit 5f8816b), rerun by the lead: `Test Files  14 passed (14)`, `Tests  105 passed (105)`;
+lint exit 0 (4 pre-existing warnings, none in HU-07 files); `tsc -b && vite build` ok. The first delivery deleted
+7 HU-02 `createShipment` tests and went back as `fix`; they are restored.
 
 ## Phase 4: Verify (qa-seguridad, `verify`)
 
-- [ ] T014 [QA] `make test-integration`: every scenario green, HU-07 API and `@e2e` included.
+- [x] T014 [QA] `make test-integration`: every scenario green, HU-07 API and `@e2e` included. Evidence (run by the
+  lead at 5f8816b, QA shell denied): `65 scenarios (65 passed)`, `421 steps (421 passed)`, exit 0.
 - [ ] T015 [QA] `gosec ./...`, `govulncheck -C hubx-api ./...`, `govulncheck -C hubx-gw ./...`; OWASP API Top 10 review.
-- [ ] T016 [QA] `specs/007-view-assigned/qa-report.md` with the cited evidence.
+  OWASP review done (qa-report.md). **gosec and govulncheck NOT RUN**: qa-seguridad's shell was denied and the lead's
+  allowed commands do not include them. A human must run them before merge (constitution VI).
+- [x] T016 [QA] `specs/007-view-assigned/qa-report.md` with the cited evidence.
 
 ## Phase 5: Deploy validation — SKIPPED
 
@@ -55,6 +67,6 @@ skipped at the human's request. Only hubx-lead marks `- [x]`, citing evidence.
 
 ## Phase 6: Close (hubx-lead)
 
-- [ ] T018 analyze: contrast spec, plan, tasks and code; record deviations in `pr.md`.
-- [ ] T019 backlog Story Status, `memory.md` (decisions, lessons, Pending), README if affected.
-- [ ] T020 `pr.md`, push `007-view-assigned`, open the PR into `release/v0.6.0-demo-07`.
+- [x] T018 analyze: contrast spec, plan, tasks and code; record deviations in `pr.md`.
+- [x] T019 backlog Story Status, `memory.md` (decisions, lessons, Pending), README if affected.
+- [x] T020 `pr.md`, push `007-view-assigned`, open the PR into `release/v0.6.0-demo-07`.

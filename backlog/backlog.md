@@ -20,7 +20,7 @@ Reconciled with GitHub (merged PRs and release tags) by hubx-lead at the start o
 | HU-04 | View traceability | Released v0.4.0 | 004-view-traceability | #30 |
 | HU-05 | Verify integrity | Released v0.4.0 | 005-verify-integrity | #33 |
 | HU-06 | List by stage | Backlog | - | - |
-| HU-07 | View assigned | In progress (release/v0.6.0-demo-07) | 007-view-assigned | - |
+| HU-07 | View assigned | In review (release/v0.6.0-demo-07) | 007-view-assigned | see PR |
 | HU-08 | Report incident | Backlog | - | - |
 | HU-09 | View count | Backlog | - | - |
 | HU-10 | Download evidence | Backlog | - | - |
