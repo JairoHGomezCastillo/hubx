@@ -333,7 +333,9 @@ Then(/^they are asked to sign in$/, async function (this: EvidenceWorld) {
   expect(this.response?.status(), '401 without a session').toBe(401);
   const body = (await this.response!.json()) as { error?: string; message?: string };
   expect(body.error, 'error code').toBe('UNAUTHORIZED');
-  expect(body.message, 'error message').toBe('Authentication required');
+  // The gateway validates the JWT first on this route: the message comes from
+  // contracts/auth-sign-in.md, not from a HU-10-specific body.
+  expect(body.message, 'error message').toBe('Authorization header required');
   await assertNoPdf(this);
 });
 
