@@ -2,6 +2,7 @@
 package middleware
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -89,7 +90,8 @@ func JWTValidation(jwtSecret string, excludedPaths map[string]bool) func(http.Ha
 			token := parts[1]
 
 			// Validate token
-			if err := validateToken(token, jwtSecret); err != nil {
+			sub, err := validateToken(token, jwtSecret)
+			if err != nil {
 				if err == ErrExpiredToken {
 					rejectUnauthorized(w, sessionBody, "Session expired. Please sign in again.")
 					return
@@ -98,17 +100,34 @@ func JWTValidation(jwtSecret string, excludedPaths map[string]bool) func(http.Ha
 				rejectUnauthorized(w, sessionBody, "Invalid token")
 				return
 			}
+			// A valid signature with no subject identifies nobody: it cannot be limited.
+			if sub == "" {
+				rejectUnauthorized(w, sessionBody, "Invalid token")
+				return
+			}
 
-			// Token is valid; forward request to upstream with Authorization header intact
-			next.ServeHTTP(w, r)
+			// Token is valid; forward request to upstream with Authorization header intact.
+			// The validated subject travels in the context for the rate limiter.
+			next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), subjectKey{}, sub)))
 		})
 	}
 }
 
-// validateToken verifies the JWT signature and checks expiration.
-// Returns ErrExpiredToken if expired, ErrInvalidToken if invalid.
-func validateToken(tokenString, secret string) error {
-	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
+// subjectKey is the unexported context key of the validated subject.
+type subjectKey struct{}
+
+// SubjectFromContext returns the subject of a token validated by JWTValidation.
+// Requests on excluded paths have no subject.
+func SubjectFromContext(ctx context.Context) (string, bool) {
+	sub, ok := ctx.Value(subjectKey{}).(string)
+	return sub, ok
+}
+
+// validateToken verifies the JWT signature and checks expiration and returns
+// the subject. Returns ErrExpiredToken if expired, ErrInvalidToken if invalid.
+func validateToken(tokenString, secret string) (string, error) {
+	claims := &Claims{}
+	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
 		// Verify signing method is HS256
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, ErrInvalidToken
@@ -119,16 +138,16 @@ func validateToken(tokenString, secret string) error {
 	if err != nil {
 		// Check if the error is due to expiration
 		if errors.Is(err, jwt.ErrTokenExpired) {
-			return ErrExpiredToken
+			return "", ErrExpiredToken
 		}
-		return ErrInvalidToken
+		return "", ErrInvalidToken
 	}
 
 	if !token.Valid {
-		return ErrInvalidToken
+		return "", ErrInvalidToken
 	}
 
-	return nil
+	return claims.Sub, nil
 }
 
 // rejectUnauthorized writes a 401 in the shape required by the route's contract.
