@@ -13,7 +13,9 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 
 	"hubx-api/internal/config"
+	domaineEvidence "hubx-api/internal/evidence"
 	"hubx-api/internal/handlers/auth"
+	evidencehandler "hubx-api/internal/handlers/evidence"
 	"hubx-api/internal/handlers/health"
 	"hubx-api/internal/handlers/shipment"
 	"hubx-api/internal/ledger"
@@ -117,6 +119,11 @@ func main() {
 	stageCountRepo := domainshipment.NewPostgresStageCountRepository(domainshipment.NewDB(db))
 	stageCounter := domainshipment.NewStageCounter(stageCountRepo)
 	shipment.RegisterStageCounts(mux, authMiddleware.RequireAuth, stageCounter)
+
+	// HU-10: evidence is read-only, operator-only and uses the flat-body
+	// RequireAuth, so the gateway needs no change for this route.
+	evidenceReader := domaineEvidence.NewReader(shipmentRepo, ledgerRepo, shipmentRepo)
+	evidencehandler.Register(mux, authMiddleware.RequireAuth, evidenceReader, evidencehandler.NewClaimsPrincipalSource())
 
 	// The gateway shared secret guards every route: all legitimate traffic
 	// enters through the gateway, which injects X-Gateway-Secret.

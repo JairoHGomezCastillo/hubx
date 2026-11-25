@@ -209,7 +209,9 @@ export function emailForActor(world: UpdateWorld, actor: string): string {
 // the browser is already on /dashboard (a previous Given created a shipment),
 // check if the session is still the right role; if the user is already signed
 // in through /sign-in's redirect, skip re-sign-in.
-Given(/^(.+) has signed in$/, async function (this: UpdateWorld, actor: string) {
+// The negative lookahead keeps HU-10's "nobody has signed in" (no session) from
+// becoming an ambiguous step definition; it is not an actor with a demo role.
+Given(/^(?!nobody has signed in$)(.+) has signed in$/, async function (this: UpdateWorld, actor: string) {
   const role = roleForActor(actor);
   const email = emailForActor(this, actor);
   if (this.page) {
@@ -337,6 +339,22 @@ Then(/^they are told that no shipment exists with that code$/, async function (t
   } else if (url.includes('/traceability')) {
     // HU-04: nested body {error: {code: "SHIPMENT_NOT_FOUND", message: "No shipment exists with that code."}}
     await assertError(this.response!, 404, 'SHIPMENT_NOT_FOUND', 'No shipment exists with that code.');
+  } else if (url.includes('/evidence')) {
+    // HU-10: flat body {error: "SHIPMENT_NOT_FOUND", message: "No shipment exists with that code"}
+    // (no final period, same family as HU-05) and no PDF delivered.
+    expect(this.response!.status(), 'unknown/invisible shipment (HU-10)').toBe(404);
+    // A non-JSON 404 is the gateway's "route not found": the evidence endpoint is
+    // not implemented yet, which is the expected red reason at this phase.
+    const contentType = this.response!.headers()['content-type'] ?? '';
+    expect(contentType, 'HU-10 404 body must be JSON (a text 404 means the route is missing)').toContain(
+      'application/json',
+    );
+    const body = (await this.response!.json()) as { error?: string; message?: string };
+    expect(body.error, 'error code (HU-10 flat body)').toBe('SHIPMENT_NOT_FOUND');
+    expect(body.message, 'error message (HU-10 flat body, no period)').toBe('No shipment exists with that code');
+    expect(contentType, 'no PDF on a 404').not.toContain('application/pdf');
+    const raw = await this.response!.body();
+    expect(raw.subarray(0, 5).toString('latin1'), 'error body is not a PDF').not.toBe('%PDF-');
   } else {
     throw new Error(`Step "they are told that no shipment exists with that code" called on unexpected URL: ${url}`);
   }

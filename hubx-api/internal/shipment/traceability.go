@@ -59,7 +59,7 @@ func (r *traceabilityReader) Read(ctx context.Context, code string, principal Pr
 	if err != nil {
 		return nil, fmt.Errorf("find shipment: %w", err)
 	}
-	if current == nil || !canSee(current, principal) {
+	if current == nil || !CanSee(current, principal) {
 		return nil, ErrShipmentNotFound
 	}
 
