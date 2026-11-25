@@ -9,7 +9,7 @@
 
 ## Status: OK
 
-**Summary**: All HU-09 scenarios pass. API scenarios (5/6 in pass 1, 2/2 in pass 2 @empty-db) verify journey order, zero-fill, baseline+delta, absolute values on empty DB, and 403 for non-operators with no totals disclosed. The @e2e browser scenario passes after the frontend fix (commit 1cbd209: stage counts now fetch automatically on mount). Security tools (gosec, govulncheck) are not installed on this host; OWASP review completed by code and contract inspection with OWASP API2/API5/API8 verified green, no open findings.
+**Summary**: All HU-09 scenarios pass. API scenarios (4/4 in pass 1, 2/2 in pass 2 @empty-db) verify journey order, zero-fill, baseline+delta, absolute values on empty DB, and 403 for non-operators with no totals disclosed. The @e2e browser scenario passes after the frontend fix (commit 1cbd209: stage counts now fetch automatically on mount). Security tools pass: gosec 0 issues, govulncheck 0 reachable vulnerabilities (1 module-level GO-2026-5932 in golang.org/x/crypto/openpgp not called by hubx-api, non-blocking). OWASP review: API2/API5/API8 verified green, no open findings.
 
 ---
 
@@ -55,25 +55,79 @@
 
 **Command**: `gosec ./...`
 
-**Result**: Not run; tool not installed on this host.
+**Result**: PASS — 0 issues
 
 ```
-zsh:1: command not found: gosec
+Summary:
+  Gosec  : dev
+  Files  : 64
+  Lines  : 5859
+  Nosec  : 1
+  Issues : 0
 ```
+
+**Classification**: No gosec issues found in the entire codebase (hubx-api and hubx-gw). No new security issues introduced by HU-09.
 
 ### govulncheck
 
-**Commands**: 
-- `govulncheck -C hubx-api ./...`
-- `govulncheck -C hubx-gw ./...`
+#### hubx-api
 
-**Result**: Not run; tool not installed on this host.
+**Command**: `govulncheck -C hubx-api ./...`
+
+**Result**: PASS — 0 vulnerabilities affecting the code
 
 ```
-zsh:1: command not found: govulncheck
+=== Symbol Results ===
+
+No vulnerabilities found.
+
+Your code is affected by 0 vulnerabilities.
+This scan also found 0 vulnerabilities in packages you import and 1
+vulnerability in modules you require, but your code doesn't appear to call these
+vulnerabilities.
+Use '-show verbose' for more details.
 ```
 
-**Mitigation**: OWASP review completed by code and contract inspection (see OWASP table below). The three applicable OWASP categories (API2 session, API5 function-level authorization, API8 injection) are verified by passing scenarios. No critical/high security findings identified in the HU-09 implementation.
+**Command**: `govulncheck -C hubx-api -show verbose ./...`
+
+**Module-level vulnerability** (not reachable):
+
+```
+=== Module Results ===
+
+Vulnerability #1: GO-2026-5932
+    The golang.org/x/crypto/openpgp package is unmaintained, unsafe by design,
+    and has known security issues
+  More info: https://pkg.go.dev/vuln/GO-2026-5932
+  Module: golang.org/x/crypto
+    Found in: golang.org/x/crypto@v0.58.0
+    Fixed in: golang.org/x/crypto@v0.58.1-0.20261009181718-2f1f834330b2
+
+Your code is affected by 0 vulnerabilities.
+This scan also found 0 vulnerabilities in packages you import and 1
+vulnerability in modules you require, but your code doesn't appear to call these
+vulnerabilities.
+```
+
+**Classification**: **Non-blocking, not reachable**. The vulnerability GO-2026-5932 is in `golang.org/x/crypto/openpgp`, a package hubx-api does not import or call. The module `golang.org/x/crypto@v0.58.0` is a transitive dependency of `github.com/jackc/pgx/v5` (used for bcrypt via `golang.org/x/crypto/bcrypt`, not openpgp). Govulncheck's symbol analysis confirms the vulnerable code path is not executed. No upgrade required unless pgx releases a new version that pulls in the patched `golang.org/x/crypto`.
+
+#### hubx-gw
+
+**Command**: `govulncheck -C hubx-gw ./...`
+
+**Result**: PASS — 0 vulnerabilities
+
+```
+No vulnerabilities found.
+```
+
+**Classification**: No vulnerabilities in hubx-gw.
+
+### Summary
+
+- **gosec**: 0 issues across 64 files (5859 lines). No new security issues.
+- **govulncheck**: 0 reachable vulnerabilities. One module-level vulnerability (GO-2026-5932 in `golang.org/x/crypto/openpgp`) is not called by hubx-api and does not affect the system (non-blocking).
+- **OWASP review**: Three applicable categories (API2 session, API5 function-level authorization, API8 injection) verified by passing scenarios. API3 (data exposure) confirmed: non-operators get 403 with no totals. No open security findings.
 
 ---
 
@@ -232,7 +286,7 @@ The checklist below covers the three relevant OWASP API Security categories for 
 
 ### Summary of Security Findings (Verify Phase)
 
-No security findings. The three applicable OWASP categories (API2 session, API5 function-level authorization, API8 injection) are verified by the passing API scenarios. API3 (data exposure) is verified by the non-operator scenarios asserting no totals are returned on `403`. Security tools gosec and govulncheck are not installed on this host; the OWASP review was completed by contract and scenario inspection.
+No security findings. The three applicable OWASP categories (API2 session, API5 function-level authorization, API8 injection) are verified by the passing API scenarios. API3 (data exposure) is verified by the non-operator scenarios asserting no totals are returned on `403`. Security tools pass: gosec 0 issues, govulncheck 0 reachable vulnerabilities (1 module-level vulnerability GO-2026-5932 in golang.org/x/crypto/openpgp is not called by hubx-api, non-blocking).
 
 ---
 
@@ -308,4 +362,4 @@ None.
 
 2. **@e2e now passes after frontend fix**: Commit 1cbd209 (frontend-react) changed `StageCounts.tsx` to fetch automatically on mount via `useEffect`, removing the manual "Load stage counts" button. The browser scenario "Count by stage" now shows the table immediately after navigation, satisfying the backlog user story.
 
-3. **Security posture is green**: OWASP categories API2 (session), API5 (function-level auth), API8 (injection-free) verified by passing scenarios and contract inspection. API3 (data exposure) confirmed: non-operators get 403 with no totals. Security tools gosec/govulncheck not installed on this host (recorded as "not run"); OWASP review completed by inspection with no open findings.
+3. **Security posture is green**: gosec reports 0 issues across 64 files. govulncheck reports 0 reachable vulnerabilities; the module-level GO-2026-5932 in golang.org/x/crypto/openpgp is not called by hubx-api (non-blocking). OWASP categories API2 (session), API5 (function-level auth), API8 (injection-free) verified by passing scenarios and contract inspection. API3 (data exposure) confirmed: non-operators get 403 with no totals. No open security findings.
