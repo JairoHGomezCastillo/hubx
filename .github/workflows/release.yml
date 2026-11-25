@@ -2,7 +2,8 @@ name: release
 
 # Every release/vX.Y.Z[-name] or hotfix/vX.Y.Z branch merged into main is tagged vX.Y.Z on its merge commit and gets a
 # GitHub Release with notes generated from its PRs. After a hotfix, a PR syncs main into the open release branch so
-# the next version does not lose the fix. Humans still merge; this only records what was merged.
+# the next version does not lose the fix, and the job `deploy` promotes the release tip to production. Humans still
+# merge; this only records and deploys what was merged.
 on:
   pull_request:
     types: [closed]
@@ -71,3 +72,19 @@ jobs:
               --title "chore(release): 🔀 sync hotfix $VERSION into $base" \
               --body "Hotfix $VERSION was merged into main (PR #$PR_NUMBER). This PR brings it into $base so the next version keeps the fix."
           done
+
+  # Production (constitution 1.5.0, build once): deploys the images of the release tip, the commit staging deployed
+  # and smoke-tested, after the tag exists. The merge commit has the same tree (release-source requires the release to
+  # contain main). Switched on by the repository variable DEPLOY_PRODUCTION=true once the environment `production`
+  # and its image-backed services exist (deploy/README.md); production runs only the read-only @smoke scenarios.
+  deploy:
+    needs: tag
+    if: vars.DEPLOY_PRODUCTION == 'true'
+    permissions:
+      contents: read
+      packages: read
+    uses: ./.github/workflows/deploy.yml
+    with:
+      environment: production
+      ref: ${{ github.event.pull_request.head.sha }}
+    secrets: inherit

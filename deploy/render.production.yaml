@@ -1,0 +1,48 @@
+# Production on Render (free): image-backed services. They never build or follow a branch: .github/workflows/deploy.yml
+# points them at the images of any commit (ghcr.io/<owner>/hubx-<service>:<sha>) through the Render API.
+# release.yml deploys the images tested in staging (the release tip) after tagging. `:main` is only the first image.
+services:
+  - type: web
+    name: hubx-api-prod
+    runtime: image
+    plan: free
+    image:
+      url: ghcr.io/jairohgomezcastillo/hubx-api:main
+    # The API returns 401 without the gateway secret, so it has no healthCheckPath.
+    envVars:
+      # Neon DIRECT connection string of the production (root) branch of the database (sslmode=require).
+      - key: DB_URL
+        sync: false
+      - fromGroup: hubx-prod-secrets
+
+  - type: web
+    name: hubx-gw-prod
+    runtime: image
+    plan: free
+    image:
+      url: ghcr.io/jairohgomezcastillo/hubx-gw:main
+    healthCheckPath: /health
+    envVars:
+      # Public HTTPS URL of hubx-api-prod (a Blueprint cannot resolve it): https://hubx-api-prod.onrender.com
+      - key: API_URL
+        sync: false
+      - fromGroup: hubx-prod-secrets
+
+  - type: web
+    name: hubx-mfe-prod
+    runtime: image
+    plan: free
+    image:
+      url: ghcr.io/jairohgomezcastillo/hubx-mfe:main
+    envVars:
+      # Public HTTPS URL of hubx-gw-prod: https://hubx-gw-prod.onrender.com
+      - key: GATEWAY_URL
+        sync: false
+
+envVarGroups:
+  - name: hubx-prod-secrets
+    envVars:
+      - key: JWT_SECRET
+        generateValue: true
+      - key: GATEWAY_SECRET
+        generateValue: true

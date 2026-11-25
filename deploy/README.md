@@ -154,5 +154,35 @@ gh variable set RESET_DB_FROM_PARENT --env staging --body true
 Production never has `RESET_DB_FROM_PARENT`, and `scripts/deploy/neon-reset.sh` refuses a branch without a parent.
 Data created by hand in staging is lost on the next deployment: create demo data after the last deploy.
 
-Production keeps Render's repo-built services for now; it moves to the same image model (environment `production`,
-called from `release.yml` after tagging) once staging has been proven.
+## Production (image-backed, promoted by release.yml)
+
+Every `release/*` or `hotfix/*` merged into `main` is tagged, then `release.yml` (job `deploy`) calls `deploy.yml` with
+environment `production` and the **release tip**: the same commit and images that staging deployed and smoke-tested
+(build once). Migrations run against the production database; the smoke runs only `@smoke` (health and sign-in, no
+data written). The database is never reset (`RESET_DB_FROM_PARENT` exists only in `staging`). The job only runs when
+the repository variable `DEPLOY_PRODUCTION` is `true`, which is also the switch to turn it off.
+
+One-time setup (your own browser and terminal; never paste a secret in a chat or the repo):
+
+1. **Render.** New → Blueprint → this repo, branch `main`, path `deploy/render.production.yaml`. Values asked:
+   `DB_URL` = the Neon **production** (root branch) direct URL; `API_URL` = `https://hubx-api-prod.onrender.com`;
+   `GATEWAY_URL` = `https://hubx-gw-prod.onrender.com` (fix them if Render assigns other URLs). Note each service ID.
+2. **GitHub environment `production`:**
+   ```bash
+   gh api -X PUT repos/JairoHGomezCastillo/hubx/environments/production >/dev/null
+   gh secret set DB_URL --env production          # paste the Neon production direct URL, Enter
+   gh secret set RENDER_API_KEY --env production  # the Render API key, Enter
+   gh variable set RENDER_SERVICE_API --env production --body srv-...
+   gh variable set RENDER_SERVICE_GW  --env production --body srv-...
+   gh variable set RENDER_SERVICE_MFE --env production --body srv-...
+   gh variable set GATEWAY_URL --env production --body https://hubx-gw-prod.onrender.com
+   gh variable set UI_URL      --env production --body https://hubx-mfe-prod.onrender.com
+   ```
+3. **First deploy:** Actions → deploy → Run workflow → `production`, ref = the latest tag (for example `v0.6.1`).
+   Expected: migrations up to date, three deploys `live`, `@smoke` green.
+4. **Switch on the promotion:** `gh variable set DEPLOY_PRODUCTION --body true`.
+5. **Retire the repo-built services** (`hubx-api`, `hubx-gw`, `hubx-mfe`, Blueprint `deploy/render.yaml`): turn off
+   their auto-deploy first, and delete them once the `-prod` URLs are the ones shared.
+
+Agents never deploy to production: the devops guard denies `gh workflow run deploy.yml*production*`; only the release
+merge (a human decision) or a human from Actions does.
