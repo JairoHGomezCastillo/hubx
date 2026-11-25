@@ -32,12 +32,18 @@ API, MFE or database change; no migration; no new dependency.
 - Acceptance: limits are proven against `gw-limited` (compose profile `test`, `BENDER_LIMITED_BASE_URL`, default
   `http://localhost:8090`; 5 user / 3 sign-in), a real gateway in front of the same API. Everything else uses the main
   gateway with 10000. `@needs-limited-gateway` never runs on deployed environments.
-- The one-minute recovery and the 120 default are proven by unit tests with an injected clock and the real properties file.
+- 2026-11-25 (human): sign-in default 10, CORS default empty. Only `gw-limited` sets `CORS_ALLOWED_ORIGINS`
+  (`http://localhost:5173`), so the main test gateway behaves like production. Vite proxies `/api` (`vite.config.ts`).
+- The one-minute recovery and the defaults (120 and 10) are proven by unit tests with an injected clock and the real properties file.
 
 ## Constitution check
 II: gateway only, JWT still validated twice. III: stdlib, own reader, no new dependency. IV: constructors, `test/` and
 `mocks/` sub-packages (gomock). V: red before implementation, one `@e2e`. VI: closes headers, CORS, rate limiting. VII: ok.
 
 ## Risks
-Staging needs its Blueprint synced by a human to receive the higher limits before the smoke. Deploy validation is pending
-until the human confirms the release.
+The staging Blueprint reads `main`, so before the first smoke a human sets the two `RATELIMIT_*` variables to 10000 by
+hand on `hubx-gw-stg`. Deploy validation is pending.
+
+## Extra scope (human, 2026-11-25)
+HU-10: `hubx-api/internal/evidence` states that names are outside the fingerprint (`contracts/hu10-download-evidence.md`).
+`docs/diagramas` is brought to the current state (hubx-lead).

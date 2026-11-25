@@ -4,7 +4,7 @@ Source: user description
 
 **Feature branch**: `011-gateway-hardening` | **Created**: 2026-11-25 | **Status**: In progress
 **Kind**: foundation story; it is not in the backlog and has no HU number.
-**Intended release**: `release/v0.8.0-gateway-hardening` (NOT confirmed by the human and not created)
+**Release branch**: `release/v0.8.0-gateway-hardening` (confirmed by the human, created from `main` 551773b)
 
 ## Why
 
@@ -77,12 +77,17 @@ Feature: Gateway perimeter hardening
     When answers are requested with success, without a session and for health
     Then every answer carries the browser protections
 
+  @needs-limited-gateway
   Scenario: An approved origin may read the answers
     When a browser on an approved origin asks for permission to call HUBX without a session
     Then the permission is granted for that origin only, without credentials
 
   Scenario: An origin that is not approved may not read the answers
     When a browser on an origin that is not approved asks for permission to call HUBX
+    Then no permission is granted
+
+  Scenario: No origin is approved unless it is configured
+    When a browser on the local development origin asks for permission to call HUBX without that origin being configured
     Then no permission is granted
 
   @e2e
@@ -97,13 +102,14 @@ Feature: Gateway perimeter hardening
 
 - **FR-001** Requests of a signed-in user are limited per user, identified only after the session was validated.
 - **FR-002** The per-user limit is 120 requests per minute, configurable.
-- **FR-003** Sign-in is limited per submitted email, normalised as HU-01 does (capital letters and outer spaces ignored).
+- **FR-003** Sign-in is limited to 10 attempts per minute per submitted email, configurable, normalised as HU-01 does
+  (capital letters and outer spaces ignored).
 - **FR-004** No limit uses the network address or any address header.
 - **FR-005** A refused request says so, says when to retry, is not forwarded, and is identical whether or not the account exists.
 - **FR-006** What sign-in reads before forwarding is bounded, and the forwarded request is unchanged.
 - **FR-007** Limiter memory is bounded; forgotten identities are evicted; sign-in floods cannot evict signed-in users.
 - **FR-008** Every answer, including refusals, carries the browser protections.
-- **FR-009** Cross-origin reading is granted only to configured origins, never to any origin, never with credentials.
+- **FR-009** Cross-origin reading is granted only to configured origins (none by default), never to any origin, never with credentials.
 - **FR-010** A cross-origin permission request needs no session; every other non-public request still does.
 - **FR-011** Health answers are never limited.
 - **FR-012** Limits and origins are configuration, with no secrets; invalid values stop the start.
@@ -133,16 +139,18 @@ Feature: Gateway perimeter hardening
 - Q: How do the tests avoid being throttled? A: Through a higher limit set by configuration (environment) for
   `make test-integration` and the staging smoke; the limit itself is proven by tests.
 
-### Assumptions pending human confirmation
+### Assumptions resolved by the human (2026-11-25)
 
-Not human decisions. Each is the proposed value and can be changed without redesign.
+Proposed by hubx-lead as A1-A9 (first version of this file); the human changed A1 and A3 and accepted the rest as they
+are. None is pending.
 
-- **A1** Sign-in limit: 120 attempts/minute per email, the only existing repository value. It is weak against password
-  guessing; a lower value protects more but makes locking a victim out cheaper.
+- **A1 (changed)** Sign-in limit: 10 attempts/minute per email by default (was proposed as 120). The per-user 120/minute
+  stays. The residual risk of locking a victim's email out for up to a minute is accepted.
 - **A2** Refusal: `429`, `Retry-After` in seconds, flat body `{"error":"RATE_LIMITED","message":"Too many requests. Please try again later."}`
   on every route, including the HU-03 routes whose other errors are nested.
-- **A3** Production/staging origins: not set. They keep the file default `http://localhost:5173`; the MFE is same-origin
-  through its server, so none is needed for HUBX to work.
+- **A3 (changed)** The allow-list is empty by default (code and file), so production and staging allow no cross origin.
+  The MFE is same-origin through its server, and local development through the Vite `/api` proxy, so neither needs one.
+  Tests that need an approved origin set it by environment.
 - **A4** Methods `GET, POST`, headers `Authorization, Content-Type`, no credentials, no preflight caching; a refused
   preflight is `403`; a non-preflight request from another origin is processed but gets no permission header (the MFE's
   own same-origin POSTs carry an `Origin`, so refusing them would break HUBX).
@@ -151,5 +159,12 @@ Not human decisions. Each is the proposed value and can be changed without redes
 - **A7** Sliding one-minute window; only accepted requests count. At most 10000 remembered identities per limiter, the
   least recently seen evicted first.
 - **A8** Test configuration: 10000/minute on the main test gateway and staging; a second gateway with 5 (users) and 3
-  (sign-in), only in the test stack, proves the limits.
+  (sign-in), only in the test stack, proves the limits and (after A3) is the one with an approved origin.
 - **A9** Sign-in attempts without an email, or with an unreadable body, are forwarded for HU-01's own 400 and not counted.
+- **Also accepted** A valid session with an empty `sub` is answered 401; an invalid port or a missing secret stops the
+  start.
+
+### Extra scope requested by the human (2026-11-25)
+
+Same branch, not part of the gateway story: the HU-09 correction (review of PR #41), the HU-10 statement about names
+(review of PR #43, `specs/010-download-evidence/spec.md`) and the update of `docs/diagramas`.

@@ -143,6 +143,12 @@ business rule:
    rest of the interface. Reason: Constitution VII requires the interface language to be fixed in the spec; no other
    audience language was specified.
 
+Decision confirmed by the human after release v0.7.0 (2026-11-25, review of PR #43, delivered with story 011):
+
+4. **Names are outside the fingerprint**: the document MUST state that the fingerprints cover the identifiers of the
+   responsible party and of the assigned partner and not the printed names, so a third party cannot verify the names
+   from the document alone (FR-014). The backlog Gherkin does not change.
+
 ## Assumptions
 
 - The evidence is generated from records HUBX already keeps; this story adds no new recorded business event.

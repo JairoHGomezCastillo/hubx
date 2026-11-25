@@ -1,7 +1,7 @@
 # HTTP Contract: gateway perimeter
 
-**Story**: 011 gateway hardening. Applies to every response of `hubx-gw`. Items marked (A#) are assumptions pending human
-confirmation in `specs/011-gateway-hardening/spec.md`.
+**Story**: 011 gateway hardening. Applies to every response of `hubx-gw`. Items marked (A#) were confirmed or
+changed by the human on 2026-11-25 (`specs/011-gateway-hardening/spec.md`).
 
 ## Security headers (every response, exactly once each) (A5)
 
@@ -18,7 +18,8 @@ Values from the API for these headers and any `Access-Control-*` are replaced: t
 
 ## CORS (A3, A4)
 
-- Allow-list: `cors.allowed-origins` (comma separated, exact match). `*` stops the start. `Vary: Origin` always.
+- Allow-list: `cors.allowed-origins` (comma separated, exact match), empty by default: no cross origin is
+  allowed. An empty environment value counts as unset. `*` stops the start. `Vary: Origin` always.
 - Preflight = `OPTIONS` + `Origin` + `Access-Control-Request-Method`; answered by the gateway, no JWT, never forwarded,
   never counted. Allowed origin: `204` with `Access-Control-Allow-Origin: <origin>`, `Access-Control-Allow-Methods: GET, POST`,
   `Access-Control-Allow-Headers: Authorization, Content-Type`. Other origin: `403`, no `Access-Control-*`.
@@ -30,7 +31,7 @@ Values from the API for these headers and any `Access-Control-*` are replaced: t
 | Traffic | Key | Configuration | Default |
 |---|---|---|---|
 | Validated JWT | `sub` | `ratelimit.requests-per-minute` | 120 |
-| `POST /api/auth/sign-in` | email, trimmed and lowercased | `ratelimit.sign-in-requests-per-minute` | 120 |
+| `POST /api/auth/sign-in` | email, trimmed and lowercased | `ratelimit.sign-in-requests-per-minute` | 10 |
 | `/health`, `/api/health`, preflight | none | - | unlimited |
 
 Refusal, not forwarded to the API:
