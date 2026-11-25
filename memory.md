@@ -97,6 +97,15 @@
   backlog Gherkin phrases that became ambiguous under strict mode after the base merge; qa-seguridad moved them to
   `common.steps.ts` and dispatched the 404 assertion on `response.url()` to honor both contracts. Ships in
   `release/v0.4.0-ledger`. Staging deploy validated before the PR (deploy.md, run 45493671765, 57/57 smoke).
+- HU-07 (2026-11-24): `GET /api/assigned-shipments?offset=N` (`contracts/hu07-view-assigned.md`), read-only, no
+  migration, no gateway change, flat 401 (`RequireAuth`). Pending = the caller's "Assigned to partner" update with no
+  "Delivered" update in the same shipment (`LedgerRepository.PendingAssignments`), ordered by that update's
+  `recorded_at` then id ascending (oldest assignment first, overriding cross-cutting rule 5's order only); 20 per page
+  with `nextOffset`; empty list carries `message` "You have no assigned shipments"; operator and customer get flat 403
+  `FORBIDDEN`; role is checked before `offset`. Partner always from JWT `sub`. Customer identity is not returned.
+  Ships in `release/v0.6.0-demo-07`, which the human cut at v0.3.4 and then re-based on v0.4.0. Deploy validation
+  skipped by human decision (demo mode). Bender fixtures drain the partner's pending list through the gateway before
+  each Given, because the test database keeps HU-03's assignments.
 ## Conventions
 - PR title (2026-11-21): `<type>(<scope>): <gitmoji> <short description> [agent:role]`, scope `HU-xx` or an area;
   mapping in hubx-lead step 10. Commits keep their own format below.
@@ -185,6 +194,20 @@
 - Backlog Story Status went stale (HU-01 still "In review" after v0.2.0): the lead wrote it before the PR and merges
   happen outside its flow. Fixed 2026-11-24: the lead reconciles every row with merged PRs and release tags at the start
   of each story (step 1) and commits it with that story's spec.
+- HU-07 (2026-11-24): in Kiro the sub-agents' shells were denied for most of the story (qa-seguridad for the whole
+  story; backend-go on its first round, then `go generate` worked). The lead ran `make test-integration` and the unit
+  tests for them and cited them as "run by hubx-lead"; gosec and govulncheck are in nobody's allowed commands in that
+  situation and stayed NOT RUN. Two sub-agent deliveries were wrong in ways only a rerun showed: Cucumber steps whose
+  regex capture groups did not match the function's parameters (`function has 0 arguments, should have 1`, red for the
+  wrong reason), and an MFE delivery that replaced 7 HU-02 tests with one weaker test. Diff every modified test file,
+  not only new ones.
+- A pre-rebase checkpoint commit (1ace486) put qa-seguridad's bender files under `[agent:hubx-lead]`; `make
+  agents-zones` will flag it. Never checkpoint another agent's paths under the lead's tag; stash or leave them
+  uncommitted for the owning agent.
+- Staging database reset (2026-11-24): HU-07's smoke timed out on staging because ~20+ shipments left by earlier runs
+  were assigned to rapido@hubx.co. deploy.yml now resets the Neon `staging` branch from its parent before migrating
+  (only when the environment sets RESET_DB_FROM_PARENT=true; production never). Scenarios that need an exact set
+  ("only their three") stay valid on staging; data created by hand there is lost on the next deploy.
 ## Pending
 - Move production to image-backed services and call deploy.yml (environment `production`) from release.yml after
   tagging; then delete deploy/render.yaml's repo-built services (owner A, after the 2026-11-24 delivery).
@@ -196,3 +219,8 @@
 - hubx-api `main.go` loads `internal/config` but still reads the port from `PORT` directly (works on Render).
 - hubx-gw has no config reader yet (reads `PORT`/`API_URL`).
 - 0002_seed_ledger: shipments in later stages with chained updates (owner C).
+- HU-07 PR: gosec and govulncheck were not run (no agent shell allowed them); a human runs them before merge. Commit
+  1ace486 (`[agent:hubx-lead]` touching `hubx-bender/`) needs a human decision: an exception line in
+  `scripts/agent-zones-exceptions.txt` or rewriting the unpublished history before merge.
+- `origin/release/v0.6.0-demo-07` was still at v0.3.4 when the HU-07 PR opened; the human fast-forwards it to `main`
+  (v0.4.0) so the PR diff shows only HU-07 (agents never push to an existing release branch).

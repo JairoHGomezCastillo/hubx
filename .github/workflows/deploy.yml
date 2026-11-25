@@ -71,6 +71,15 @@ jobs:
           go-version-file: go.work
           cache-dependency-path: hubx-api/go.sum
 
+      # Staging only: start every deployment from a known database (Neon "Reset from parent"), like
+      # make test-integration does locally, so the smoke never depends on what earlier runs left behind.
+      # Enabled per environment with the variable RESET_DB_FROM_PARENT=true; never for production.
+      - name: Reset the database from its parent (staging)
+        if: inputs.environment == 'staging' && vars.RESET_DB_FROM_PARENT == 'true'
+        env:
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+        run: bash scripts/deploy/neon-reset.sh "${{ vars.NEON_PROJECT_ID }}" "${{ vars.NEON_BRANCH }}"
+
       - name: Migrations
         env:
           DB_URL: ${{ secrets.DB_URL }}

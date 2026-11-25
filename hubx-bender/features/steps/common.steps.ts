@@ -175,7 +175,7 @@ export async function assertError(
 export function roleForActor(actor: string): Role {
   const text = actor.toLowerCase();
   if (text.includes('customer')) return 'customer';
-  if (text.includes('ground partner')) return 'ground partner';
+  if (text.includes('ground partner') || text.includes('the partner') || text.includes('first partner')) return 'ground partner';
   if (text.includes('operator')) return 'operator';
   throw new Error(`Cannot map actor "${actor}" to a demo role`);
 }
@@ -195,6 +195,10 @@ export function emailForActor(world: UpdateWorld, actor: string): string {
     return world.fixtureCustomerEmail === OTHER_CUSTOMER_EMAIL
       ? DEMO_CREDENTIALS.customer
       : OTHER_CUSTOMER_EMAIL;
+  }
+  // HU-07: "the first partner" and "the partner" map to rapido@hubx.co
+  if (text.includes('first partner') || text === 'the partner') {
+    return DEMO_CREDENTIALS['ground partner'];
   }
   return DEMO_CREDENTIALS[roleForActor(actor)];
 }
@@ -230,7 +234,13 @@ Given(/^(.+) has signed in$/, async function (this: UpdateWorld, actor: string) 
 // gateway: HU-02's creation endpoint for the shipment and HU-03's own endpoint
 // to advance it. No direct DB writes and no reuse of the four seed codes, which
 // would leave the same shipment out of sequence for later scenarios.
-export async function prepareShipment(world: UpdateWorld, stage: string): Promise<string> {
+// If partnerEmail is provided, the shipment will be assigned to that partner
+// instead of the default rapido@hubx.co.
+export async function prepareShipment(
+  world: UpdateWorld, 
+  stage: string,
+  partnerEmail: string = DEMO_CREDENTIALS['ground partner']
+): Promise<string> {
   const target = UPDATE_STAGES.indexOf(stage as (typeof UPDATE_STAGES)[number]);
   if (stage !== 'Created' && target < 0) throw new Error(`Unsupported fixture stage "${stage}"`);
 
@@ -264,20 +274,20 @@ export async function prepareShipment(world: UpdateWorld, stage: string): Promis
     const byPartner = next === 'Out for delivery' || next === 'Delivered';
     if (byPartner) {
       expect(world.assignedPartnerId, `partner assigned before "${next}"`).toBeTruthy();
-      await signInAs(world, 'ground partner', world.assignedPartnerEmail ?? DEMO_CREDENTIALS['ground partner']);
+      await signInAs(world, 'ground partner', world.assignedPartnerEmail ?? partnerEmail);
     } else {
       await signInAs(world, 'operator');
     }
 
     const partnerId = next === 'Assigned to partner'
-      ? await groundPartnerId(world, ASSIGNED_PARTNER_NAME)
+      ? await groundPartnerId(world, partnerEmail === DEMO_CREDENTIALS['ground partner'] ? ASSIGNED_PARTNER_NAME : 'Logística Express')
       : null;
     const response = await postUpdate(world, code, next, partnerId);
     expect(response.status(), `fixture advance ${code} to ${next} through the gateway`).toBe(201);
     world.previousFingerprint = world.lastUpdate?.fingerprint ?? null;
     if (next === 'Assigned to partner') {
       world.assignedPartnerId = partnerId;
-      world.assignedPartnerEmail = DEMO_CREDENTIALS['ground partner'];
+      world.assignedPartnerEmail = partnerEmail;
     }
   }
   return code;

@@ -27,9 +27,11 @@ type Repository interface {
 // ShipmentRepository resolves a shipment by its public code or internal id.
 // FindByCode returns (nil, nil) when no shipment matches, so an unknown code
 // can be handled exactly like one the caller cannot see (FR-012).
+// FindByIDs returns shipments for the given ids in a single parameterized query.
 type ShipmentRepository interface {
 	FindByCode(ctx context.Context, code string) (*Shipment, error)
 	FindByID(ctx context.Context, id string) (*Shipment, error)
+	FindByIDs(ctx context.Context, ids []string) ([]Shipment, error)
 }
 
 // GroundPartner is a registered partner that can be named for delivery.

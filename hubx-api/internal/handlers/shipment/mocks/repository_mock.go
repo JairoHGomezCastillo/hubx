@@ -124,6 +124,21 @@ func (mr *MockShipmentRepositoryMockRecorder) FindByID(ctx, id any) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByID", reflect.TypeOf((*MockShipmentRepository)(nil).FindByID), ctx, id)
 }
 
+// FindByIDs mocks base method.
+func (m *MockShipmentRepository) FindByIDs(ctx context.Context, ids []string) ([]shipment.Shipment, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindByIDs", ctx, ids)
+	ret0, _ := ret[0].([]shipment.Shipment)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindByIDs indicates an expected call of FindByIDs.
+func (mr *MockShipmentRepositoryMockRecorder) FindByIDs(ctx, ids any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByIDs", reflect.TypeOf((*MockShipmentRepository)(nil).FindByIDs), ctx, ids)
+}
+
 // MockGroundPartnerRepository is a mock of GroundPartnerRepository interface.
 type MockGroundPartnerRepository struct {
 	ctrl     *gomock.Controller

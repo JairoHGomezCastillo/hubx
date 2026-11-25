@@ -1,5 +1,6 @@
 /**
  * Dashboard: record updates and view the traceability of a shipment.
+ * Ground partners also see their assigned shipments (HU-07).
  */
 
 import { AppShell } from '../components/AppShell';
@@ -7,6 +8,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { navigateTo } from '../services/navigation';
 import { RecordUpdateContainer } from '../features/shipment-updates/RecordUpdateContainer';
 import { ViewTraceabilityContainer } from '../features/traceability/ViewTraceabilityContainer';
+import { AssignedShipmentsContainer } from '../features/assigned-shipments/AssignedShipmentsContainer';
 
 export function Dashboard() {
   const { user, signOut } = useAuth();
@@ -42,6 +44,9 @@ export function Dashboard() {
       <div className="workspace">
         <RecordUpdateContainer onSessionExpired={handleSessionExpired} />
         <ViewTraceabilityContainer onSessionExpired={handleSessionExpired} />
+        {user?.role === 'ground partner' && (
+          <AssignedShipmentsContainer onSessionExpired={handleSessionExpired} />
+        )}
       </div>
     </AppShell>
   );
