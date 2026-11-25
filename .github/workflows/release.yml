@@ -91,12 +91,37 @@ jobs:
           [ "${#targets[@]}" -gt 0 ] || echo "No open integration branch; nothing to sync." >> "$GITHUB_STEP_SUMMARY"
           exit 0
 
-  # Production (constitution 1.5.0, build once): deploys the images of the release tip, the commit staging deployed
-  # and smoke-tested, after the tag exists. The merge commit has the same tree (release-source requires the release to
-  # contain main). Switched on by the repository variable DEPLOY_PRODUCTION=true once the environment `production`
-  # exists and the services are image-backed (deploy/README.md); production runs only the read-only @smoke scenarios.
-  deploy:
+  # The deploy uses the images of the PR head, so the head must hold exactly what was merged: a branch that did not
+  # contain main would put older code in production. Fails (and production stays as it was) if the trees differ.
+  promotable:
     needs: tag
+    if: vars.DEPLOY_PRODUCTION == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
+          fetch-depth: 0
+
+      - name: The PR head holds exactly what was merged
+        env:
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          MERGE_SHA: ${{ github.event.pull_request.merge_commit_sha }}
+        run: |
+          git fetch -q origin "$HEAD_SHA"
+          head=$(git rev-parse "$HEAD_SHA^{tree}"); merged=$(git rev-parse "$MERGE_SHA^{tree}")
+          if [ "$head" != "$merged" ]; then
+            echo "::error::the PR head did not contain main: not promoted. Deploy the merge commit by hand (Actions -> deploy)"
+            exit 1
+          fi
+
+  # Production (constitution 1.5.0, build once): deploys the images of the PR head after the tag exists. A release tip
+  # was deployed and smoke-tested by deploy-staging.yml; a hotfix only if someone ran deploy.yml on staging for it
+  # before the merge (not enforced). Switched on by the repository variable DEPLOY_PRODUCTION=true (deploy/README.md);
+  # production runs only the read-only @smoke scenarios.
+  deploy:
+    needs: [tag, promotable]
     if: vars.DEPLOY_PRODUCTION == 'true'
     permissions:
       contents: read

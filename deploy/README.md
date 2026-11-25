@@ -157,8 +157,9 @@ Data created by hand in staging is lost on the next deployment: create demo data
 ## Production (image-backed, promoted by release.yml)
 
 Every `release/*` or `hotfix/*` merged into `main` is tagged, then `release.yml` (job `deploy`) calls `deploy.yml` with
-environment `production` and the **release tip**: the same commit and images that staging deployed and smoke-tested
-(build once). Migrations run against the production database; the smoke runs only `@smoke` (health and sign-in, no
+environment `production` and the images of the PR head (build once), after checking that the head holds exactly what
+was merged (job `promotable`). A release tip has been through staging (`deploy-staging.yml`); a **hotfix has not**: run
+Actions → deploy → `staging` on its branch before merging it. Migrations run against the production database; the smoke runs only `@smoke` (health and sign-in, no
 data written). The database is never reset (`RESET_DB_FROM_PARENT` exists only in `staging`). The job only runs when
 the repository variable `DEPLOY_PRODUCTION` is `true`, which is also the switch to turn it off.
 

@@ -20,10 +20,10 @@ Reconciled with GitHub (merged PRs and release tags) by hubx-lead at the start o
 | HU-04 | View traceability | Released v0.4.0 | 004-view-traceability | #30 |
 | HU-05 | Verify integrity | Released v0.4.0 | 005-verify-integrity | #33 |
 | HU-06 | List by stage | Backlog | - | - |
-| HU-07 | View assigned | In review (PR #39, release/v0.6.0-demo-07) | 007-view-assigned | #39 |
+| HU-07 | View assigned | Released v0.6.0 | 007-view-assigned | #39, #44 |
 | HU-08 | Report incident | Backlog | - | - |
-| HU-09 | View count | In review (release/v0.7.0-count-and-evidence) | 009-view-count-by-stage | #41 |
-| HU-10 | Download evidence | In review (release/v0.7.0-count-and-evidence) | 010-download-evidence | #40, #43 |
+| HU-09 | View count | Released v0.7.0 | 009-view-count-by-stage | #41, #53 |
+| HU-10 | Download evidence | Released v0.7.0 | 010-download-evidence | #40, #43 |
 
 ## Business language
 

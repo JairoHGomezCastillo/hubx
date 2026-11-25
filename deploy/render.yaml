@@ -1,6 +1,6 @@
 # Production on Render (free), Blueprint exs-dc2ijnui0phs73avl4l0 linked to main: image-backed services. They never
 # build or follow a branch: after tagging, release.yml (job deploy -> deploy.yml) points them at the images of the
-# release tip that staging tested (ghcr.io/<owner>/hubx-<service>:<sha>). `:main` is only the image a sync applies.
+# merged PR head (ghcr.io/<owner>/hubx-<service>:<sha>). `:main` is only the image a sync applies.
 services:
   - type: web
     name: hubx-api

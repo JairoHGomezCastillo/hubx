@@ -41,7 +41,7 @@ CI, deploy). Each edits only its own paths.
 - Local app: `make up`, then http://localhost:3000 (MFE; `/api` goes to the gateway)
 - Go mocks: `go -C hubx-api generate ./...` (gomock via `go tool mockgen`)
 - Releases: merge `release/vX.Y.Z[-name]` or `hotfix/vX.Y.Z` into `main`; CI tags `vX.Y.Z` and publishes the GitHub Release (never tag by hand)
-- Environments: every push builds images `ghcr.io/<owner>/hubx-<svc>:<sha>`; Actions → deploy deploys any ref to `staging` (also automatic for PRs merged into an integration branch); a release or hotfix merged into `main` promotes its tested tip to `production` (`release.yml`, switch `DEPLOY_PRODUCTION`); setup in `deploy/README.md`
+- Environments: every push builds images `ghcr.io/<owner>/hubx-<svc>:<sha>`; Actions → deploy deploys any ref to `staging` (also automatic for PRs merged into an integration branch); a release or hotfix merged into `main` promotes its tip to `production` (a hotfix is not staged automatically: deploy it to `staging` before merging) (`release.yml`, switch `DEPLOY_PRODUCTION`); setup in `deploy/README.md`
 - Review a story PR (human tool, not part of the agents' flow): `bash scripts/review-story.sh <PR> [--fast]`, or `/review-story <PR>` in Claude Code (posts the review on the PR: `scripts/review-comment.sh`)
 - Agent zones: `make agents-zones` (each `[agent:<role>]` commit only touches that role's paths; CI on PRs to release)
 - Security: `gosec ./...`, `govulncheck -C hubx-api ./...`, `govulncheck -C hubx-gw ./...`

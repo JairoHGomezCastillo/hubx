@@ -2,10 +2,9 @@
 
 **Story**: HU-09 View the shipment count by stage
 **Version**: 1.0
-**Status**: Draft (pending implementation)
+**Status**: Implemented (v0.7.0)
 
-The MFE calls `GET /api/shipments/stage-counts` on the gateway. The gateway validates the JWT, applies the perimeter
-controls (CORS, security headers, rate limit), strips `/api`, injects `X-Gateway-Secret` and forwards
+The MFE calls `GET /api/shipments/stage-counts` on the gateway. The gateway validates the JWT, strips `/api`, injects `X-Gateway-Secret` and forwards
 `GET /shipments/stage-counts` to the API. The API validates the JWT again on its own (constitution Principle II) and
 authorizes by the `role` claim.
 
@@ -93,7 +92,8 @@ curl -s -o /dev/null -w '%{http_code}\n' http://localhost:8080/api/shipments/sta
   request. A non-operator receives `403` with no totals, so the aggregate view is never disclosed.
 - No object-level authorization is needed: the count is a system-wide aggregate exposed only to operators; it returns
   no shipment identity, code or customer data (OWASP API1/API3).
-- Rate limiting, security headers and CORS are applied at the gateway (constitution Principle VI).
+- Rate limiting, security headers and CORS belong to the gateway (constitution Principle VI); it does not implement
+  them yet (open finding, `memory.md` Pending).
 
 ## Related stories
 

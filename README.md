@@ -182,6 +182,5 @@ Live on Render (free tier) with PostgreSQL on Neon; setup and smoke evidence in 
 
 Free services sleep after inactivity: open the three URLs a few minutes before a demo. Releases: `v0.1.0` baseline,
 `v0.2.0` HU-01 Sign in, `v0.3.0` HU-02 Create a shipment, `v0.3.3` HU-03 Record an update, `v0.4.0` HU-04 View
-traceability, HU-05 Verify integrity and the UI refresh, `v0.6.0` HU-07 View my assigned shipments (GitHub Releases,
-tagged by CI). HU-09 View the count by stage and HU-10 Download evidence ship together in
-`release/v0.7.0-count-and-evidence`.
+traceability, HU-05 Verify integrity and the UI refresh, `v0.6.0` HU-07 View my assigned shipments, `v0.7.0` HU-09
+View the count by stage and HU-10 Download evidence (GitHub Releases, tagged by CI).
