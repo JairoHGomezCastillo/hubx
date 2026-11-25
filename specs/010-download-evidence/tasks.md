@@ -158,8 +158,21 @@ session (401); assert no PDF body in each case.
   Evidence (hubx-lead): `node scripts/check-agent-zones.mjs origin/main` → `agent zones ok (origin/main..HEAD)` after
   commits `2f9c9ae`, `bdf93ec`, `573808c`, `f81a551` and `6a647de`; `git diff` against `origin/main` contains no CI,
   Dockerfile, compose or infrastructure change. Demo mode: no devops delegation, no `deploy.md`.
-- [ ] T028 Run `speckit.analyze` and record deviations in `specs/010-download-evidence/pr.md`
-- [ ] T029 Update `backlog/backlog.md` (HU-10 status in review), `memory.md` (decisions and lessons) and `README.md` (delivered story) for this story only
+- [x] T028 Run `speckit.analyze` and record deviations in `specs/010-download-evidence/pr.md`
+
+  Evidence (hubx-lead): `check-prerequisites.sh --json --require-spec --require-tasks --include-tasks` →
+  `FEATURE_DIR=specs/010-download-evidence`; no `.specify/extensions.yml` (no hooks). Analysis: 13/13 FR and 4/4
+  buildable SC have tasks; 30 tasks; 0 duplicates, 0 ambiguities, 0 critical issues introduced by HU-10. The two LOW
+  findings (spec status, contract path in the plan tree) were corrected in this closing commit; the pre-existing
+  gateway gap (Principle VI) and the demo-mode skip are recorded in `pr.md`.
+
+- [x] T029 Update `backlog/backlog.md` (HU-10 status in review), `memory.md` (decisions and lessons) and `README.md` (delivered story) for this story only
+
+  Evidence: `backlog/backlog.md` HU-10 row → `In review (PR pending) | 010-download-evidence`; `memory.md` gains the
+  HU-10 decision and four lessons (401 source, gosec structural fixes, step-limit resumptions, shell permission), with
+  no Pending item removed because none was resolved by HU-10; `README.md` gains the in-review paragraph, the v0.4.0
+  releases and the shell-access row; `docs/GUIA-EQUIPO-HUBX.md` and `docs/sdd-agent-blockers.md` record the demo
+  exception and the shell decision.
 - [ ] T030 Write `specs/010-download-evidence/pr.md` from `.github/pull_request_template.md`, including the demo-mode note, and push the story branch and open the PR to `release/v0.10.0-demo`
 
 ---

@@ -23,7 +23,7 @@ Reconciled with GitHub (merged PRs and release tags) by hubx-lead at the start o
 | HU-07 | View assigned | Backlog | - | - |
 | HU-08 | Report incident | Backlog | - | - |
 | HU-09 | View count | Backlog | - | - |
-| HU-10 | Download evidence | Backlog | - | - |
+| HU-10 | Download evidence | In review (PR pending) | 010-download-evidence | - |
 
 ## Business language
 

@@ -6,7 +6,7 @@
 
 **Created**: 2026-11-25
 
-**Status**: Draft
+**Status**: Implemented (verify green, PR pending)
 
 ## User Scenarios & Testing *(mandatory)*
 
