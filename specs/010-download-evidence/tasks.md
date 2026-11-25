@@ -173,7 +173,11 @@ session (401); assert no PDF body in each case.
   no Pending item removed because none was resolved by HU-10; `README.md` gains the in-review paragraph, the v0.4.0
   releases and the shell-access row; `docs/GUIA-EQUIPO-HUBX.md` and `docs/sdd-agent-blockers.md` record the demo
   exception and the shell decision.
-- [ ] T030 Write `specs/010-download-evidence/pr.md` from `.github/pull_request_template.md`, including the demo-mode note, and push the story branch and open the PR to `release/v0.10.0-demo`
+- [x] T030 Write `specs/010-download-evidence/pr.md` from `.github/pull_request_template.md`, including the demo-mode note, and push the story branch and open the PR to `release/v0.10.0-demo`
+
+  Evidence: commit `ee667db` wrote `pr.md`; `git push -u origin 010-download-evidence` created the remote branch;
+  `gh pr create --base release/v0.10.0-demo --title "feat(HU-10): ✨ download traceability evidence [agent:hubx-lead]" --body-file specs/010-download-evidence/pr.md`
+  → `https://github.com/JairoHGomezCastillo/hubx/pull/40`. The PR is open; a human reviews and merges.
 
 ---
 
