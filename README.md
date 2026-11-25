@@ -72,6 +72,11 @@ the token in memory only (never in `localStorage`). See [`docs/setup.md`](docs/s
 Continuous integration ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) builds and unit-tests all services,
 runs `gosec` and `govulncheck`, and then runs `make test-integration` on a clean stack.
 
+HU-10 (Download the traceability evidence) is in review on branch `010-download-evidence` against
+`release/v0.10.0-demo`: operators download a self-contained English PDF with the shipment data, every chained update
+and manual fingerprint-verification instructions. It was delivered in demo mode: no staging deploy validation by an
+agent; staging is deployed and smoke-tested automatically when the PR is merged.
+
 ## How we work
 
 | Document | What it holds |
@@ -161,6 +166,7 @@ Model per agent and tool (`default`: the model you pick in opencode; opencode mo
 | 2026-11-23 | Kiro delegation | Kiro applies the lead's denies to sub-agents; fixed by generating the lead's Kiro rules (PR #12). Retested: both sub-agents ran their own toolchains |
 | 2026-11-23 | HU-01 navigation bug | Every API test passed; only the browser `@e2e` caught it -> constitution 1.4.0 made one `@e2e` per story mandatory |
 | 2026-11-24 | Ownership | The lead had written `qa-report.md`; `make agents-zones` now fails any `[agent:<role>]` commit outside its zone (CI) |
+| 2026-11-25 | Agent shell access | Subagents were denied every shell command; the human authorized an explicit `shell "*" allow` in `.opencode/agents/*.md`, with the specific rules still winning (`make agents-check` green) |
 
 What went wrong and how it was fixed is documented in [`docs/sdd-agent-blockers.md`](docs/sdd-agent-blockers.md).
 
@@ -175,4 +181,5 @@ Live on Render (free tier) with PostgreSQL on Neon; setup and smoke evidence in 
 | API | https://hubx-api.onrender.com (rejects calls that do not come through the gateway) |
 
 Free services sleep after inactivity: open the three URLs a few minutes before a demo. Releases: `v0.1.0` baseline,
-`v0.2.0` HU-01 Sign in, `v0.3.0` HU-02 Create a shipment (GitHub Releases, tagged by CI).
+`v0.2.0` HU-01 Sign in, `v0.3.0` HU-02 Create a shipment, `v0.4.0` HU-04 View traceability and HU-05 Verify integrity
+(GitHub Releases, tagged by CI). `release/v0.10.0-demo` (HU-10) is in review, not released yet.

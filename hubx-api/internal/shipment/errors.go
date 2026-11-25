@@ -23,4 +23,8 @@ var (
 
 	// ErrDuplicateCode is returned after 3 attempts to generate a unique code.
 	ErrDuplicateCode = errors.New("failed to generate unique shipment code after retries")
+
+	// ErrShipmentNotFound is returned when a shipment code is unknown or the
+	// caller cannot see it (HU-04 traceability, HU-05 integrity).
+	ErrShipmentNotFound = errors.New("shipment not found")
 )

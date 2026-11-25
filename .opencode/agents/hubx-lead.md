@@ -174,7 +174,11 @@ unclear, ask before delegating. Load in order:
 ## Algorithm
 1. **Phase diagnosis:** is there a spec, plan, tasks, implementation? Do not repeat phases that have evidence. Before
    planning, read what already exists (`hubx-api/migrations/`, `internal/*`, `contracts/`, the schema's values such as
-   roles): never recreate an existing file or reuse an applied migration number.
+   roles): never recreate an existing file or reuse an applied migration number. **Reconcile the backlog's Story
+   Status** with GitHub, because merges happen outside your flow: for every story with a PR, `gh pr list --state
+   merged --search "HU-xx"` (merged into which branch) and `git log origin/main --oneline --decorate` (released in
+   which tag). Fix every stale row (`In review` -> `Done in <release branch>` -> `Released vX.Y.Z`) and commit it with
+   this story's spec.
 2. **specify** (you do all of it; the Spec Kit 1.4 script creates the folder but **not** the git branch):
    a. **Number and name come from the backlog:** `HU-xx` gives `NNN` = `xx` with three digits (HU-01 -> `001`,
       HU-10 -> `010`); the short name is the story title in 2-3 kebab-case words (HU-01 Sign in -> `sign-in`). For a
@@ -210,7 +214,15 @@ unclear, ask before delegating. Load in order:
    Delegation is the norm: each subagent writes and runs its own work with its own permissions. If a subagent returns
    `blocked` because of permissions, stop and report it to the user with the exact denied action; never do the
    subagent's work yourself and never commit it under the subagent's tag.
-   d. `devops`: CI, startup and deployment.
+   d. **Deploy validation** (after a green verify): push the story branch (`git push -u origin NNN-name`; the push
+      builds its images), then delegate to `devops` with `phase: deploy`: it deploys that branch to staging through
+      the CD, waits for the run and writes `specs/NNN-name/deploy.md` with the evidence. A failed deploy or smoke goes
+      back as `fix` to the right agent, like a QA finding. Include the deploy evidence in `pr.md`. Infrastructure
+      changes (CI, compose, Dockerfiles) also go to `devops` in this step.
+      **Demo mode:** skip this step only when the human explicitly asks for it in the request (e.g. "sin validación de
+      despliegue" / "skip the deploy validation"), typically in a timed live demo. Then do not push early, do not
+      delegate to `devops`, and write in `pr.md`: "Deploy validation skipped by human decision (demo mode); staging is
+      deployed and smoke-tested automatically when this PR is merged." Never skip it on your own initiative.
 7. **Before and after each subagent:**
    a. Before delegating, take a snapshot: `git status --short` and `git diff --stat`.
    b. After delivery, require the output JSON (`status`, `summary`, `evidence`, `blockers` are mandatory) and repeat both commands.

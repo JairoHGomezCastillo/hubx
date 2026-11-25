@@ -25,6 +25,8 @@ Sí, con tres condiciones:
 
 Lo que más puede salir mal: dos personas editando a la vez `cmd/api/main.go`, `go.mod` o `memory.md`. La sección 7 dice cómo evitarlo.
 
+**Nota (2026-11-25):** el equipo hizo una excepción a la regla anterior con HU-10: se implementó en modo demostración en la rama `010-download-evidence`, con destino `release/v0.10.0-demo` y sin validación de despliegue (decisión humana). Las otras historias de la demostración siguen sin implementarse y el sorteo se mantiene; las versiones publicadas siguen llegando solo hasta v0.4.0 (HU-04 y HU-05).
+
 ---
 
 ## 2. Puerta de entrada (reparto de la base)
@@ -169,7 +171,7 @@ El número sale siempre del backlog (HU-0X → `00X`). El lead ejecuta `.specify
 
 **3. Pruebas primero.** El lead delega en `qa-seguridad` (`red`): `hubx-bender/features/HU0X_<nombre>.feature` con los escenarios del backlog copiados tal cual (Cucumber), sus pasos en Playwright contra el gateway y al menos un escenario `@e2e` con el camino feliz en el navegador. Todo en rojo y por la razón correcta (constitución 1.4.0).
 
-**4. Implementación.** `backend-go` (dominio en `internal/<dominio>`, handlers en `internal/handlers/<dominio>`, pruebas en `test/` y mocks generados con gomock en `mocks/`) y `frontend-react` con TDD contra el contrato del plan. La historia no está terminada si su `@e2e` está en rojo, aunque la API esté en verde. Luego `qa-seguridad` (`verify`): suite, `gosec`, `govulncheck` y tabla OWASP en `qa-report.md`. Con hallazgos, vuelven como `fix`.
+**4. Implementación.** `backend-go` (dominio en `internal/<dominio>`, handlers en `internal/handlers/<dominio>`, pruebas en `test/` y mocks generados con gomock en `mocks/`) y `frontend-react` con TDD contra el contrato del plan. La historia no está terminada si su `@e2e` está en rojo, aunque la API esté en verde. Después del `verify`, el lead empuja la rama y `devops` la despliega en staging con el CD (`gh workflow run deploy.yml`), espera el smoke y deja la evidencia en `specs/0X-<nombre>/deploy.md`. En una demo cronometrada pídelo así: `Trabaja la historia HU-0X en release/vX.Y.Z-<nombre> sin validación de despliegue` (modo demo): el lead se salta ese paso, lo anota en `pr.md` y staging se valida solo al fusionar. Luego `qa-seguridad` (`verify`): suite, `gosec`, `govulncheck` y tabla OWASP en `qa-report.md`. Con hallazgos, vuelven como `fix`.
 
 **5. Analyze.** `/speckit.analyze` y corrige las desviaciones.
 

@@ -13,7 +13,9 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 
 	"hubx-api/internal/config"
+	domaineEvidence "hubx-api/internal/evidence"
 	"hubx-api/internal/handlers/auth"
+	evidencehandler "hubx-api/internal/handlers/evidence"
 	"hubx-api/internal/handlers/health"
 	"hubx-api/internal/handlers/shipment"
 	"hubx-api/internal/ledger"
@@ -97,6 +99,21 @@ func main() {
 	// every rejected JWT as SESSION_EXPIRED. HU-01/HU-02 keep RequireAuth.
 	shipment.RegisterUpdates(mux, authMiddleware.RequireSessionAuth, recorder,
 		shipment.NewClaimsPrincipalSource(), shipmentRepo, shipmentRepo)
+
+	// HU-04: traceability uses RequireAuth (flat 401 body), not RequireSessionAuth,
+	// so the gateway emits the same flat body for this GET route as for HU-01/HU-02.
+	traceabilityReader := domainshipment.NewTraceabilityReader(shipmentRepo, ledgerRepo, shipmentRepo)
+	shipment.RegisterTraceability(mux, authMiddleware.RequireAuth, traceabilityReader,
+		shipment.NewClaimsPrincipalSource())
+
+	// HU-05: integrity verification uses the flat-body RequireAuth (same as HU-01/HU-02).
+	verifier := domainshipment.NewVerifier(shipmentRepo, ledgerRepo)
+	shipment.RegisterIntegrity(mux, authMiddleware.RequireAuth, verifier)
+
+	// HU-10: evidence is read-only, operator-only and uses the flat-body
+	// RequireAuth, so the gateway needs no change for this route.
+	evidenceReader := domaineEvidence.NewReader(shipmentRepo, ledgerRepo, shipmentRepo)
+	evidencehandler.Register(mux, authMiddleware.RequireAuth, evidenceReader, evidencehandler.NewClaimsPrincipalSource())
 
 	// The gateway shared secret guards every route: all legitimate traffic
 	// enters through the gateway, which injects X-Gateway-Secret.

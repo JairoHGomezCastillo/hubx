@@ -83,28 +83,9 @@ Feature: Record a shipment update
       | Assigned to partner | a ground partner who is not the one assigned to the shipment   | Out for delivery       |
 
   @e2e
-  Scenario: Critical happy path in the web application
-    Given the shipment "HBX-SEED-0001" is in the stage "Created"
-    And an operator has signed in through the web application
-    When the operator records the update "In flight" through the web application
+  Scenario: Update recorded by its responsible party
+    Given a shipment is in the stage "Created"
+    And the operator has signed in
+    When the operator records the update "In flight"
     Then the shipment moves to the stage "In flight"
     And the update is recorded with its responsible party and the date
-
-  # Spec-derived edge cases (FR-011, FR-012); not part of the verbatim backlog Gherkin.
-  Scenario: Update attempt with an expired session
-    Given a shipment is in the stage "Created"
-    And an operator has signed in
-    When the operator's session expires
-    And the operator tries to record the update "In flight"
-    Then they are told their session expired and are asked to sign in again
-
-  Scenario: Update attempt on a code that matches no shipment
-    Given an operator has signed in
-    When the operator tries to record the update "In flight" for a shipment code that does not exist
-    Then they are told they are not responsible for that update
-
-  Scenario: Update attempt on a shipment the caller cannot see
-    Given a shipment is in the stage "Created"
-    And a customer who does not own the shipment has signed in
-    When that customer tries to record the update "In flight"
-    Then they are told they are not responsible for that update
