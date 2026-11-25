@@ -93,7 +93,7 @@
 - [x] T021 [QA] (bd9956c; `gosec ./...` `Files: 64, Lines: 5859, Nosec: 1, Issues: 0`; `govulncheck -C hubx-api ./...` 0 reachable, GO-2026-5932 module-level not called; `govulncheck -C hubx-gw ./...` `No vulnerabilities found.`; lead reran all three) Run `gosec ./...` in both Go services and `govulncheck -C hubx-api ./...`, `govulncheck -C hubx-gw ./...`; attach outputs to `specs/009-view-count-by-stage/qa-report.md` and close the OWASP checklist
 - [ ] T022 [OPS] (out of scope by human decision 2026-11-24: no deployment validation; devops instead delivered the `@empty-db` pass in 2cca4d5) Verify `make test-integration` and `make up` still work with the new route; confirm no CI, Dockerfile or compose change is required for HU-09; record evidence in `specs/009-view-count-by-stage/deploy.md` only if a change ever proves necessary
 - [x] T023 [LEAD] (analyze deviations in `pr.md`; backlog, memory.md and README updated in the closing commit) Run `speckit.analyze`, record deviations between spec, plan, tasks and code, update `backlog/backlog.md` (HU-09 status/branch/PR) and `memory.md`, and write `specs/009-view-count-by-stage/pr.md` with the literal evidence
-- [ ] T024 [LEAD] Commit each accepted delivery tagged `[agent:role] HU-09 ...`, push `009-view-count-by-stage` and open the PR to the story's release branch; never merge, force-push or push to `main`/`release/*`/`hotfix/*`
+- [x] T024 [LEAD] (branch pushed, PR #41 to `release/v0.5.0-view-count-by-stage`) Commit each accepted delivery tagged `[agent:role] HU-09 ...`, push `009-view-count-by-stage` and open the PR to the story's release branch; never merge, force-push or push to `main`/`release/*`/`hotfix/*`
 
 ---
 
