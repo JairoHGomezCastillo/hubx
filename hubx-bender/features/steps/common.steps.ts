@@ -5,15 +5,6 @@ import type { HubxWorld } from '../support/world.ts';
 
 // Reusable steps. Story steps go in features/steps/HUxx_<name>.steps.ts.
 
-declare module '../support/world.ts' {
-  interface HubxWorld {
-    // Set only by HU-03's spec-derived expired-session step; lets the shared
-    // HU-01 assertion distinguish the nested HU-03 error body without an
-    // ambiguous duplicate step definition.
-    hu03ExpiredSession?: boolean;
-  }
-}
-
 When('I request {string} from the gateway', async function (this: HubxWorld, path: string) {
   this.response = await this.api.get(path);
 });
@@ -74,7 +65,6 @@ export interface UpdateWorld extends HubxWorld {
   nonPartnerId?: string;
   previousFingerprint?: string | null;
   lastUpdate?: UpdateResponse;
-  uiShipmentCode?: string;
   // Customer that owns the shipment created by a fixture; used to choose a
   // genuinely different demo customer for the "cannot see" scenario.
   fixtureCustomerEmail?: string;
@@ -118,8 +108,8 @@ const NEXT_STAGE: Record<string, string> = {
 };
 
 // Every API fixture creates its own shipment through HU-02's endpoint on the
-// gateway. The API generates a fresh random code, so no fixture advances a seed
-// shipment: HBX-SEED-0001 must remain in Created for the @e2e scenario.
+// gateway. The API generates a fresh random code, so no fixture depends on seed
+// shipments.
 const FIXTURE_SHIPMENT = {
   origin: 'Bogotá',
   destination: 'Miami',
@@ -185,31 +175,50 @@ export async function assertError(
 export function roleForActor(actor: string): Role {
   const text = actor.toLowerCase();
   if (text.includes('customer')) return 'customer';
-  if (text.includes('ground partner')) return 'ground partner';
+  if (text.includes('ground partner') || text.includes('the partner') || text.includes('first partner')) return 'ground partner';
   if (text.includes('operator')) return 'operator';
   throw new Error(`Cannot map actor "${actor}" to a demo role`);
 }
 
 export function emailForActor(world: UpdateWorld, actor: string): string {
   const text = actor.toLowerCase();
-  if (text.includes('not the one assigned')) return OTHER_PARTNER_EMAIL;
+  // HU-03 and HU-04: "not the one assigned" or "was not assigned" -> the other partner.
+  if (text.includes('not the one assigned') || text.includes('was not assigned')) {
+    return OTHER_PARTNER_EMAIL;
+  }
+  // HU-04: "who owns the shipment" -> the fixture owner (OTHER_CUSTOMER_EMAIL by default).
+  if (text.includes('who owns')) {
+    return world.fixtureCustomerEmail ?? OTHER_CUSTOMER_EMAIL;
+  }
+  // HU-04: "does not own" -> the other customer (not the fixture owner).
   if (text.includes('does not own')) {
-    // The fixture shipment is owned by one demo customer: sign in as the other
-    // one so the caller really cannot see it (FR-012, NOT_RESPONSIBLE).
     return world.fixtureCustomerEmail === OTHER_CUSTOMER_EMAIL
       ? DEMO_CREDENTIALS.customer
       : OTHER_CUSTOMER_EMAIL;
+  }
+  // HU-07: "the first partner" and "the partner" map to rapido@hubx.co
+  if (text.includes('first partner') || text === 'the partner') {
+    return DEMO_CREDENTIALS['ground partner'];
   }
   return DEMO_CREDENTIALS[roleForActor(actor)];
 }
 
 // One definition for every "<actor> has signed in" phrasing used by HU-02 and
 // HU-03. API scenarios go through the gateway; the HU-02 @e2e scenario uses
-// only the browser (role/label locators, no world.api call).
+// only the browser (role/label locators, no world.api call). In @e2e mode: if
+// the browser is already on /dashboard (a previous Given created a shipment),
+// check if the session is still the right role; if the user is already signed
+// in through /sign-in's redirect, skip re-sign-in.
 Given(/^(.+) has signed in$/, async function (this: UpdateWorld, actor: string) {
   const role = roleForActor(actor);
   const email = emailForActor(this, actor);
   if (this.page) {
+    // If already on /dashboard and actorRole matches, the session is already valid; skip.
+    const currentUrl = this.ui.url();
+    if (currentUrl.includes('/dashboard') && this.actorRole === role) {
+      return;
+    }
+    // Otherwise sign in through the browser (SignIn.tsx redirects to /dashboard when authenticated).
     await this.ui.goto('/sign-in');
     await this.ui.getByLabel(/email/i).fill(email);
     await this.ui.getByLabel(/password/i).fill(DEMO_PASSWORD);
@@ -225,7 +234,13 @@ Given(/^(.+) has signed in$/, async function (this: UpdateWorld, actor: string) 
 // gateway: HU-02's creation endpoint for the shipment and HU-03's own endpoint
 // to advance it. No direct DB writes and no reuse of the four seed codes, which
 // would leave the same shipment out of sequence for later scenarios.
-export async function prepareShipment(world: UpdateWorld, stage: string): Promise<string> {
+// If partnerEmail is provided, the shipment will be assigned to that partner
+// instead of the default rapido@hubx.co.
+export async function prepareShipment(
+  world: UpdateWorld, 
+  stage: string,
+  partnerEmail: string = DEMO_CREDENTIALS['ground partner']
+): Promise<string> {
   const target = UPDATE_STAGES.indexOf(stage as (typeof UPDATE_STAGES)[number]);
   if (stage !== 'Created' && target < 0) throw new Error(`Unsupported fixture stage "${stage}"`);
 
@@ -259,20 +274,20 @@ export async function prepareShipment(world: UpdateWorld, stage: string): Promis
     const byPartner = next === 'Out for delivery' || next === 'Delivered';
     if (byPartner) {
       expect(world.assignedPartnerId, `partner assigned before "${next}"`).toBeTruthy();
-      await signInAs(world, 'ground partner', world.assignedPartnerEmail ?? DEMO_CREDENTIALS['ground partner']);
+      await signInAs(world, 'ground partner', world.assignedPartnerEmail ?? partnerEmail);
     } else {
       await signInAs(world, 'operator');
     }
 
     const partnerId = next === 'Assigned to partner'
-      ? await groundPartnerId(world, ASSIGNED_PARTNER_NAME)
+      ? await groundPartnerId(world, partnerEmail === DEMO_CREDENTIALS['ground partner'] ? ASSIGNED_PARTNER_NAME : 'Logística Express')
       : null;
     const response = await postUpdate(world, code, next, partnerId);
     expect(response.status(), `fixture advance ${code} to ${next} through the gateway`).toBe(201);
     world.previousFingerprint = world.lastUpdate?.fingerprint ?? null;
     if (next === 'Assigned to partner') {
       world.assignedPartnerId = partnerId;
-      world.assignedPartnerEmail = DEMO_CREDENTIALS['ground partner'];
+      world.assignedPartnerEmail = partnerEmail;
     }
   }
   return code;
@@ -299,3 +314,30 @@ export async function assertStageUnchanged(world: UpdateWorld): Promise<void> {
   const probe = await postUpdate(world, world.shipmentCode!, next!, partnerId);
   expect(probe.status(), `projection still at "${stage}": the next legitimate update must be accepted`).toBe(201);
 }
+
+// ---------------------------------------------------------------------------
+// Shared steps for HU-04 and HU-05
+// ---------------------------------------------------------------------------
+
+Given(/^a shipment has no updates recorded$/, async function (this: UpdateWorld) {
+  await prepareShipment(this, 'Created');
+});
+
+Then(/^they are told that no shipment exists with that code$/, async function (this: UpdateWorld) {
+  expect(this.response, 'HTTP response object').toBeDefined();
+  const url = this.response!.url();
+  
+  // Determine which contract applies based on the endpoint called.
+  if (url.includes('/integrity')) {
+    // HU-05: flat body {error: "SHIPMENT_NOT_FOUND", message: "No shipment exists with that code"}
+    expect(this.response!.status(), 'unknown/invisible shipment (HU-05)').toBe(404);
+    const body = (await this.response!.json()) as { error?: string; message?: string };
+    expect(body.error, 'error code (HU-05 flat body)').toBe('SHIPMENT_NOT_FOUND');
+    expect(body.message, 'error message (HU-05 flat body, no period)').toBe('No shipment exists with that code');
+  } else if (url.includes('/traceability')) {
+    // HU-04: nested body {error: {code: "SHIPMENT_NOT_FOUND", message: "No shipment exists with that code."}}
+    await assertError(this.response!, 404, 'SHIPMENT_NOT_FOUND', 'No shipment exists with that code.');
+  } else {
+    throw new Error(`Step "they are told that no shipment exists with that code" called on unexpected URL: ${url}`);
+  }
+});

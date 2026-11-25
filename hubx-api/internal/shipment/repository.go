@@ -27,9 +27,11 @@ type Repository interface {
 // ShipmentRepository resolves a shipment by its public code or internal id.
 // FindByCode returns (nil, nil) when no shipment matches, so an unknown code
 // can be handled exactly like one the caller cannot see (FR-012).
+// FindByIDs returns shipments for the given ids in a single parameterized query.
 type ShipmentRepository interface {
 	FindByCode(ctx context.Context, code string) (*Shipment, error)
 	FindByID(ctx context.Context, id string) (*Shipment, error)
+	FindByIDs(ctx context.Context, ids []string) ([]Shipment, error)
 }
 
 // GroundPartner is a registered partner that can be named for delivery.
@@ -42,6 +44,18 @@ type GroundPartner struct {
 type GroundPartnerRepository interface {
 	IsRegisteredPartner(ctx context.Context, userID string) (bool, error)
 	List(ctx context.Context) ([]GroundPartner, error)
+}
+
+// Party is a user resolved by ID, with their display name and role.
+type Party struct {
+	ID   string
+	Name string
+	Role string
+}
+
+// PartyRepository resolves parties by their identifiers in a single query.
+type PartyRepository interface {
+	Parties(ctx context.Context, ids []string) (map[string]Party, error)
 }
 
 // PgRepository implements Repository using PostgreSQL.

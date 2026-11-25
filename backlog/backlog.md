@@ -9,15 +9,18 @@ and the contract of each story.
 
 ## Story Status
 
+Reconciled with GitHub (merged PRs and release tags) by hubx-lead at the start of every story. Statuses: `Backlog`,
+`In progress`, `In review (PR #n)`, `Done in <release branch> (PR #n)`, `Released vX.Y.Z`.
+
 | ID | Story | Status | Branch | PR |
 |---|---|---|---|---|
-| HU-01 | Sign in | In Review (PR open) | 001-sign-in | #13 |
-| HU-02 | Create shipment | Implemented, PR pending (release v0.3.0 branch missing) | 002-create-shipment | - |
-| HU-03 | Record update | In Review (PR open) | 003-record-update-sync | #23 |
-| HU-04 | View traceability | Backlog | - | - |
-| HU-05 | Verify integrity | Backlog | - | - |
+| HU-01 | Sign in | Released v0.2.0 | 001-sign-in | #13 |
+| HU-02 | Create shipment | Released v0.3.0 | 002-create-shipment | #19 |
+| HU-03 | Record update | Released v0.3.3; scenario fixes released v0.4.0 | 003-record-update-sync, 003-record-update-fix | #23, #27 |
+| HU-04 | View traceability | Released v0.4.0 | 004-view-traceability | #30 |
+| HU-05 | Verify integrity | Released v0.4.0 | 005-verify-integrity | #33 |
 | HU-06 | List by stage | Backlog | - | - |
-| HU-07 | View assigned | Backlog | - | - |
+| HU-07 | View assigned | In review (PR #39, release/v0.6.0-demo-07) | 007-view-assigned | #39 |
 | HU-08 | Report incident | Backlog | - | - |
 | HU-09 | View count | Backlog | - | - |
 | HU-10 | Download evidence | Backlog | - | - |

@@ -19,6 +19,10 @@ const (
 		assigned_partner_id, recorded_at, previous_fingerprint, fingerprint
 		FROM updates WHERE shipment_id = $1 ORDER BY sequence DESC LIMIT 1`
 
+	listUpdatesSQL = `SELECT id, shipment_id, sequence, stage, responsible_party_id,
+		assigned_partner_id, recorded_at, previous_fingerprint, fingerprint
+		FROM updates WHERE shipment_id = $1 ORDER BY sequence ASC`
+
 	insertUpdateSQL = `INSERT INTO updates
 		(shipment_id, sequence, stage, responsible_party_id, assigned_partner_id,
 		 recorded_at, previous_fingerprint, fingerprint)
@@ -28,12 +32,20 @@ const (
 	// and COALESCE keeps the one stored by the assignment.
 	updateProjectionSQL = `UPDATE shipments SET stage = $1,
 		assigned_partner_id = COALESCE($2, assigned_partner_id) WHERE id = $3`
+
+	pendingAssignmentsSQL = `SELECT u.shipment_id, u.id, u.recorded_at
+		FROM updates u
+		WHERE u.stage = 'Assigned to partner' AND u.assigned_partner_id = $1
+		  AND NOT EXISTS (SELECT 1 FROM updates d WHERE d.shipment_id = u.shipment_id AND d.stage = 'Delivered')
+		ORDER BY u.recorded_at ASC, u.id ASC
+		LIMIT $2 OFFSET $3`
 )
 
 // DB is the injectable database handle used by the PostgreSQL repository.
 type DB interface {
 	BeginTx(ctx context.Context, opts *sql.TxOptions) (Tx, error)
 	QueryRowContext(ctx context.Context, query string, args ...any) Row
+	QueryContext(ctx context.Context, query string, args ...any) (Rows, error)
 }
 
 // Tx is the transactional handle needed to append an update atomically.
@@ -47,6 +59,14 @@ type Tx interface {
 // Row is the single-row result of QueryRowContext.
 type Row interface {
 	Scan(dest ...any) error
+}
+
+// Rows is the multi-row result of QueryContext.
+type Rows interface {
+	Next() bool
+	Scan(dest ...any) error
+	Err() error
+	Close() error
 }
 
 // Result is the outcome of the projection write.
@@ -74,6 +94,10 @@ func (d sqlDB) BeginTx(ctx context.Context, opts *sql.TxOptions) (Tx, error) {
 
 func (d sqlDB) QueryRowContext(ctx context.Context, query string, args ...any) Row {
 	return d.db.QueryRowContext(ctx, query, args...)
+}
+
+func (d sqlDB) QueryContext(ctx context.Context, query string, args ...any) (Rows, error) {
+	return d.db.QueryContext(ctx, query, args...)
 }
 
 type sqlTx struct {
@@ -113,7 +137,10 @@ func (r *postgresRepository) Append(ctx context.Context, in AppendInput) (*Updat
 	if err := ValidateAppendInput(in); err != nil {
 		return nil, err
 	}
-	recordedAt := in.RecordedAt.UTC()
+	// HU-05: Truncate to microseconds before computing the fingerprint, so the
+	// stored instant and the recomputed fingerprint match (PostgreSQL timestamptz
+	// keeps microseconds while Go clocks have nanoseconds).
+	recordedAt := in.RecordedAt.UTC().Truncate(time.Microsecond)
 
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -187,6 +214,88 @@ func (r *postgresRepository) Append(ctx context.Context, in AppendInput) (*Updat
 // Last returns the newest stored update, or nil when the chain is empty.
 func (r *postgresRepository) Last(ctx context.Context, shipmentID string) (*Update, error) {
 	return scanLastUpdate(r.db.QueryRowContext(ctx, lastUpdateSQL, shipmentID))
+}
+
+// List returns every update of the shipment ordered by sequence ascending (oldest first).
+// It returns an empty non-nil slice when no updates exist.
+func (r *postgresRepository) List(ctx context.Context, shipmentID string) ([]Update, error) {
+	rows, err := r.db.QueryContext(ctx, listUpdatesSQL, shipmentID)
+	if err != nil {
+		return nil, fmt.Errorf("query updates: %w", mapPgError(err))
+	}
+	defer rows.Close()
+
+	updates := make([]Update, 0)
+	for rows.Next() {
+		var id int64
+		var shipmentID string
+		var sequence int
+		var stage, responsiblePartyID, fingerprint string
+		var assignedPartnerID, previousFingerprint sql.NullString
+		var recordedAt time.Time
+
+		err := rows.Scan(&id, &shipmentID, &sequence, &stage, &responsiblePartyID,
+			&assignedPartnerID, &recordedAt, &previousFingerprint, &fingerprint)
+		if err != nil {
+			return nil, fmt.Errorf("scan update: %w", mapPgError(err))
+		}
+
+		update := Update{
+			ID:                 id,
+			ShipmentID:         shipmentID,
+			Sequence:           sequence,
+			Stage:              stage,
+			ResponsiblePartyID: responsiblePartyID,
+			RecordedAt:         recordedAt.UTC(),
+			Fingerprint:        fingerprint,
+		}
+		if assignedPartnerID.Valid {
+			value := assignedPartnerID.String
+			update.AssignedPartnerID = &value
+		}
+		if previousFingerprint.Valid {
+			value := previousFingerprint.String
+			update.PreviousFingerprint = &value
+		}
+		updates = append(updates, update)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate updates: %w", mapPgError(err))
+	}
+	return updates, nil
+}
+
+// PendingAssignments returns shipments assigned to the given partner that have no
+// Delivered update, ordered by assignment time (recordedAt) then update id ascending,
+// with parameterized LIMIT and OFFSET for pagination.
+func (r *postgresRepository) PendingAssignments(ctx context.Context, partnerID string, limit, offset int) ([]Assignment, error) {
+	rows, err := r.db.QueryContext(ctx, pendingAssignmentsSQL, partnerID, limit, offset)
+	if err != nil {
+		return nil, fmt.Errorf("query pending assignments: %w", mapPgError(err))
+	}
+	defer rows.Close()
+
+	assignments := make([]Assignment, 0)
+	for rows.Next() {
+		var shipmentID string
+		var updateID int64
+		var assignedAt time.Time
+
+		err := rows.Scan(&shipmentID, &updateID, &assignedAt)
+		if err != nil {
+			return nil, fmt.Errorf("scan assignment: %w", mapPgError(err))
+		}
+
+		assignments = append(assignments, Assignment{
+			ShipmentID: shipmentID,
+			UpdateID:   updateID,
+			AssignedAt: assignedAt.UTC(),
+		})
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate assignments: %w", mapPgError(err))
+	}
+	return assignments, nil
 }
 
 func scanLastUpdate(row Row) (*Update, error) {

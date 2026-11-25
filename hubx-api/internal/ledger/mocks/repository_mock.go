@@ -70,3 +70,33 @@ func (mr *MockLedgerRepositoryMockRecorder) Last(ctx, shipmentID any) *gomock.Ca
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Last", reflect.TypeOf((*MockLedgerRepository)(nil).Last), ctx, shipmentID)
 }
+
+// List mocks base method.
+func (m *MockLedgerRepository) List(ctx context.Context, shipmentID string) ([]ledger.Update, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "List", ctx, shipmentID)
+	ret0, _ := ret[0].([]ledger.Update)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// List indicates an expected call of List.
+func (mr *MockLedgerRepositoryMockRecorder) List(ctx, shipmentID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockLedgerRepository)(nil).List), ctx, shipmentID)
+}
+
+// PendingAssignments mocks base method.
+func (m *MockLedgerRepository) PendingAssignments(ctx context.Context, partnerID string, limit, offset int) ([]ledger.Assignment, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PendingAssignments", ctx, partnerID, limit, offset)
+	ret0, _ := ret[0].([]ledger.Assignment)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PendingAssignments indicates an expected call of PendingAssignments.
+func (mr *MockLedgerRepositoryMockRecorder) PendingAssignments(ctx, partnerID, limit, offset any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PendingAssignments", reflect.TypeOf((*MockLedgerRepository)(nil).PendingAssignments), ctx, partnerID, limit, offset)
+}

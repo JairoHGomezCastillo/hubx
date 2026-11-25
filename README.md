@@ -175,4 +175,6 @@ Live on Render (free tier) with PostgreSQL on Neon; setup and smoke evidence in 
 | API | https://hubx-api.onrender.com (rejects calls that do not come through the gateway) |
 
 Free services sleep after inactivity: open the three URLs a few minutes before a demo. Releases: `v0.1.0` baseline,
-`v0.2.0` HU-01 Sign in, `v0.3.0` HU-02 Create a shipment (GitHub Releases, tagged by CI).
+`v0.2.0` HU-01 Sign in, `v0.3.0` HU-02 Create a shipment, `v0.3.3` HU-03 Record an update, `v0.4.0` HU-04 View
+traceability, HU-05 Verify integrity and the UI refresh (GitHub Releases, tagged by CI). HU-07 View my assigned
+shipments is in review for `release/v0.6.0-demo-07`.
