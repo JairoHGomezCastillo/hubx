@@ -4,7 +4,9 @@ import {
   authHeader,
   DEMO_CREDENTIALS,
   DEMO_PASSWORD,
+  emailForActor,
   prepareShipment,
+  roleForActor,
   signInAs,
   type UpdateWorld,
 } from './common.steps.ts';
@@ -33,7 +35,6 @@ interface AssignedWorld extends UpdateWorld {
   createdCodes?: string[];
 }
 
-const FIRST_PARTNER_EMAIL = DEMO_CREDENTIALS['ground partner']; // rapido@hubx.co
 const ANOTHER_PARTNER_EMAIL = process.env.BENDER_OTHER_PARTNER_EMAIL ?? 'express@hubx.co';
 
 // Drains the partner's pending list by recording Out for delivery and Delivered
@@ -135,10 +136,10 @@ Given(
   'three shipments pending delivery were assigned to a ground partner',
   async function (this: AssignedWorld) {
     // Drain existing pending shipments first
-    await drainPendingShipments(this, FIRST_PARTNER_EMAIL);
+    await drainPendingShipments(this, DEMO_CREDENTIALS['ground partner']);
     
     // Create three fresh shipments assigned to the first partner
-    this.createdCodes = await createAssignedShipments(this, 3, FIRST_PARTNER_EMAIL, 'Assigned to partner');
+    this.createdCodes = await createAssignedShipments(this, 3, DEMO_CREDENTIALS['ground partner'], 'Assigned to partner');
   },
 );
 
@@ -157,11 +158,11 @@ Given(
   'a ground partner was assigned one shipment that is already delivered and another that is out for delivery',
   async function (this: AssignedWorld) {
     // Drain existing pending shipments first
-    await drainPendingShipments(this, FIRST_PARTNER_EMAIL);
+    await drainPendingShipments(this, DEMO_CREDENTIALS['ground partner']);
     
     // Create one delivered and one out for delivery
-    await createAssignedShipments(this, 1, FIRST_PARTNER_EMAIL, 'Delivered');
-    this.createdCodes = await createAssignedShipments(this, 1, FIRST_PARTNER_EMAIL, 'Out for delivery');
+    await createAssignedShipments(this, 1, DEMO_CREDENTIALS['ground partner'], 'Delivered');
+    this.createdCodes = await createAssignedShipments(this, 1, DEMO_CREDENTIALS['ground partner'], 'Out for delivery');
   },
 );
 
@@ -169,7 +170,7 @@ Given(
   'no shipment has been assigned to a ground partner',
   async function (this: AssignedWorld) {
     // Drain all existing pending shipments for the first partner
-    await drainPendingShipments(this, FIRST_PARTNER_EMAIL);
+    await drainPendingShipments(this, DEMO_CREDENTIALS['ground partner']);
     this.createdCodes = [];
   },
 );
@@ -178,7 +179,7 @@ Given(
 // Given step, so reuse this.token (do not re-sign-in).
 When(
   /^(.+) tries to view the shipments assigned to a ground partner$/,
-  async function (this: AssignedWorld) {
+  async function (this: AssignedWorld, _actor: string) {
     // F3: Reuse the token from the Given step, do not sign in again
     this.response = await this.api.get('/api/assigned-shipments', {
       headers: authHeader(this),
@@ -319,22 +320,21 @@ Given(
     // The "three shipments pending delivery were assigned to a ground partner" Given
     // already drained and created the fixtures.
     
-    // Sign in through the browser
-    const email = actor.toLowerCase().includes('first partner') || actor.toLowerCase() === 'the partner'
-      ? FIRST_PARTNER_EMAIL
-      : DEMO_CREDENTIALS['ground partner'];
+    // Reuse emailForActor from common.steps.ts (it now handles "the first partner" and "the partner")
+    const email = emailForActor(this, actor);
     
     await this.ui.goto('/sign-in');
     await this.ui.getByLabel(/email/i).fill(email);
     await this.ui.getByLabel(/password/i).fill(DEMO_PASSWORD);
     await this.ui.getByRole('button', { name: /sign in/i }).click();
     await expect(this.ui).toHaveURL(/\/dashboard$/);
+    this.actorRole = roleForActor(actor);
   },
 );
 
 When(
   /^(the partner|the first partner) views (?:their|the) assigned shipments through the web application$/,
-  async function (this: AssignedWorld) {
+  async function (this: AssignedWorld, _actor: string) {
     // The UI should already be on the dashboard and showing the assigned shipments section
     // Wait for the region to be visible
     const region = this.ui.getByRole('region', { name: /my assigned shipments/i });
