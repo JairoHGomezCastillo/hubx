@@ -10,7 +10,7 @@ import (
 var (
 	// ErrInvalidToken is returned when the JWT is malformed or signature is invalid.
 	ErrInvalidToken = errors.New("invalid token")
-	
+
 	// ErrExpiredToken is returned when the JWT exp claim is in the past.
 	ErrExpiredToken = errors.New("expired token")
 )
@@ -36,7 +36,7 @@ func GenerateToken(user *User, secret string, expirationHours int) (string, erro
 			ExpiresAt: jwt.NewNumericDate(now.Add(time.Duration(expirationHours) * time.Hour)),
 		},
 	}
-	
+
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString([]byte(secret))
 }
@@ -51,7 +51,7 @@ func ValidateToken(tokenString, secret string) (*Claims, error) {
 		}
 		return []byte(secret), nil
 	})
-	
+
 	if err != nil {
 		// Check if the error is due to expiration
 		if errors.Is(err, jwt.ErrTokenExpired) {
@@ -59,11 +59,11 @@ func ValidateToken(tokenString, secret string) (*Claims, error) {
 		}
 		return nil, ErrInvalidToken
 	}
-	
+
 	claims, ok := token.Claims.(*Claims)
 	if !ok || !token.Valid {
 		return nil, ErrInvalidToken
 	}
-	
+
 	return claims, nil
 }

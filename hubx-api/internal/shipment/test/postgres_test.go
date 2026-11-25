@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	"go.uber.org/mock/gomock"
 
@@ -60,7 +61,7 @@ func scanShipmentInto(stored *shipment.Shipment, scanErr error) func(...any) err
 		if scanErr != nil {
 			return scanErr
 		}
-		if len(dest) != 6 {
+		if len(dest) != 12 {
 			return errors.New("shipment scan has unexpected destinations")
 		}
 		id, okID := dest[0].(*string)
@@ -69,7 +70,14 @@ func scanShipmentInto(stored *shipment.Shipment, scanErr error) func(...any) err
 		customerID, okCustomer := dest[3].(*string)
 		assignedPartnerID, okPartner := dest[4].(*sql.NullString)
 		createdBy, okCreator := dest[5].(*string)
-		if !okID || !okCode || !okStage || !okCustomer || !okPartner || !okCreator {
+		origin, okOrigin := dest[6].(*string)
+		destination, okDestination := dest[7].(*string)
+		flight, okFlight := dest[8].(*string)
+		weight, okWeight := dest[9].(*string)
+		customerName, okCustomerName := dest[10].(*string)
+		createdAt, okCreatedAt := dest[11].(*time.Time)
+		if !okID || !okCode || !okStage || !okCustomer || !okPartner || !okCreator ||
+			!okOrigin || !okDestination || !okFlight || !okWeight || !okCustomerName || !okCreatedAt {
 			return errors.New("shipment scan destination has an unexpected type")
 		}
 
@@ -78,6 +86,12 @@ func scanShipmentInto(stored *shipment.Shipment, scanErr error) func(...any) err
 		*stage = string(stored.Stage)
 		*customerID = stored.CustomerID
 		*createdBy = stored.CreatedBy
+		*origin = stored.Origin
+		*destination = stored.Destination
+		*flight = stored.Flight
+		*weight = stored.WeightKg
+		*customerName = stored.CustomerName
+		*createdAt = stored.CreatedAt
 		if stored.AssignedPartnerID != nil {
 			assignedPartnerID.Valid = true
 			assignedPartnerID.String = *stored.AssignedPartnerID
@@ -217,6 +231,43 @@ func TestHU03_FindByCode(t *testing.T) {
 				[]any{postgresShipmentCode}, postgresShipmentCode)
 		})
 	}
+}
+
+func TestHU10_FindByCodeProjectionForEvidence(t *testing.T) {
+	createdAt := time.Date(2026, 11, 20, 10, 0, 0, 0, time.UTC)
+	stored := &shipment.Shipment{
+		ID: postgresShipmentID, Code: postgresShipmentCode,
+		Origin: "Bogotá", Destination: "Miami", Flight: "AV-204", WeightKg: "100.0",
+		CustomerID: postgresCustomerID, CustomerName: "Distribuciones Andina",
+		Stage: shipment.StageDelivered, AssignedPartnerID: postgresPtr(postgresPartnerID),
+		CreatedBy: postgresOperatorID, CreatedAt: createdAt,
+	}
+
+	ctrl := gomock.NewController(t)
+	db := shipmentmocks.NewMockDB(ctrl)
+	row := newPostgresRow(ctrl, scanShipmentInto(stored, nil))
+	var captured capturedQuery
+	db.EXPECT().QueryRowContext(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(
+		func(_ context.Context, query string, args ...any) shipment.Row {
+			captured = capturedQuery{text: query, args: append([]any(nil), args...)}
+			return row
+		},
+	)
+
+	got, err := shipment.NewPostgresRepository(db).FindByCode(context.Background(), postgresShipmentCode)
+	if err != nil {
+		t.Fatalf("FindByCode() unexpected error: %v", err)
+	}
+	if !reflect.DeepEqual(got, stored) {
+		t.Errorf("FindByCode() = %+v, want the complete evidence projection %+v", got, stored)
+	}
+	for _, clause := range []string{"ORIGIN", "DESTINATION", "FLIGHT", "WEIGHT_KG", "SELECT NAME FROM USERS", "CREATED_AT"} {
+		if !strings.Contains(strings.ToUpper(captured.text), clause) {
+			t.Errorf("query does not project %s: %q", clause, captured.text)
+		}
+	}
+	assertPostgresQuery(t, captured, "WHERE CODE = $1",
+		[]any{postgresShipmentCode}, postgresShipmentCode)
 }
 
 func TestHU03_FindByID(t *testing.T) {

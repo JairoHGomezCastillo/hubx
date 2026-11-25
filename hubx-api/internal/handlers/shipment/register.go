@@ -22,3 +22,14 @@ func Register(mux *http.ServeMux, db *sql.DB, requireAuth func(http.Handler) htt
 
 	return handler
 }
+
+// RegisterStageCounts mounts the HU-09 stage counts route on mux.
+// It goes through the HU-01 flat-body RequireAuth middleware.
+func RegisterStageCounts(
+	mux *http.ServeMux,
+	requireAuth func(http.Handler) http.Handler,
+	counter StageCounter,
+) {
+	h := NewStageCountsHandler(counter)
+	mux.Handle("GET /shipments/stage-counts", requireAuth(http.HandlerFunc(h.Handle)))
+}

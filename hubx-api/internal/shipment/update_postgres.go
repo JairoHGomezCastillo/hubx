@@ -5,15 +5,22 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"time"
 )
 
 //go:generate go tool mockgen -source=update_postgres.go -destination=mocks/postgres_mock.go -package=mocks
 
 const (
-	findShipmentByCodeSQL = `SELECT id, code, stage, customer_id, assigned_partner_id, created_by
+	// HU-10: the evidence document needs the creation data and the customer
+	// name. The scalar subquery keeps the parameterized WHERE clause unaliased.
+	findShipmentByCodeSQL = `SELECT id, code, stage, customer_id, assigned_partner_id, created_by,
+		origin, destination, flight, weight_kg,
+		(SELECT name FROM users WHERE id = customer_id), created_at
 		FROM shipments WHERE code = $1`
 
-	findShipmentByIDSQL = `SELECT id, code, stage, customer_id, assigned_partner_id, created_by
+	findShipmentByIDSQL = `SELECT id, code, stage, customer_id, assigned_partner_id, created_by,
+		origin, destination, flight, weight_kg,
+		(SELECT name FROM users WHERE id = customer_id), created_at
 		FROM shipments WHERE id = $1`
 
 	findShipmentsByIDsSQL = `SELECT id, code, origin, destination, flight, weight_kg, stage, assigned_partner_id
@@ -145,8 +152,11 @@ func (r *PostgresRepository) FindByIDs(ctx context.Context, ids []string) ([]Shi
 func scanShipment(row Row) (*Shipment, error) {
 	var id, code, stage, customerID, createdBy string
 	var assignedPartnerID sql.NullString
+	var origin, destination, flight, weightKg, customerName string
+	var createdAt time.Time
 
-	err := row.Scan(&id, &code, &stage, &customerID, &assignedPartnerID, &createdBy)
+	err := row.Scan(&id, &code, &stage, &customerID, &assignedPartnerID, &createdBy,
+		&origin, &destination, &flight, &weightKg, &customerName, &createdAt)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}
@@ -155,11 +165,17 @@ func scanShipment(row Row) (*Shipment, error) {
 	}
 
 	result := &Shipment{
-		ID:         id,
-		Code:       code,
-		Stage:      Stage(stage),
-		CustomerID: customerID,
-		CreatedBy:  createdBy,
+		ID:           id,
+		Code:         code,
+		Stage:        Stage(stage),
+		CustomerID:   customerID,
+		CreatedBy:    createdBy,
+		Origin:       origin,
+		Destination:  destination,
+		Flight:       flight,
+		WeightKg:     weightKg,
+		CustomerName: customerName,
+		CreatedAt:    createdAt,
 	}
 	if assignedPartnerID.Valid {
 		value := assignedPartnerID.String

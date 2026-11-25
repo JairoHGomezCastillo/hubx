@@ -16,14 +16,14 @@ import (
 )
 
 const (
-	baseFileName  = "application.properties"
-	profilePrefix = "application-"
-	profileSuffix = ".properties"
-	profileEnvKey = "APP_PROFILE"
-	portAliasKey  = "PORT"
-	serverPortKey = "server.port"
-	jwtExpirationHoursKey = "jwt.expiration.hours"
-	defaultPort   = "8081"
+	baseFileName              = "application.properties"
+	profilePrefix             = "application-"
+	profileSuffix             = ".properties"
+	profileEnvKey             = "APP_PROFILE"
+	portAliasKey              = "PORT"
+	serverPortKey             = "server.port"
+	jwtExpirationHoursKey     = "jwt.expiration.hours"
+	defaultPort               = "8081"
 	defaultJWTExpirationHours = "1"
 )
 

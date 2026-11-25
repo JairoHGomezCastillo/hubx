@@ -37,7 +37,7 @@ func (r *recorder) Record(
 	principal Principal,
 ) (*ledger.Update, error) {
 	current, err := r.shipments.FindByCode(ctx, code)
-	if err != nil || current == nil || !canSee(current, principal) {
+	if err != nil || current == nil || !CanSee(current, principal) {
 		// FR-012: unknown, invisible and failing lookups are indistinguishable.
 		return nil, ErrNotResponsible
 	}
@@ -100,9 +100,10 @@ func (r *recorder) Record(
 	return r.ledger.Append(ctx, input)
 }
 
-// canSee applies the visibility rules of the data model before any stage or
-// responsibility check, so a caller cannot probe another party's shipment.
-func canSee(current *Shipment, principal Principal) bool {
+// CanSee applies the single visibility rule shared by HU-03/HU-04/HU-05/HU-10
+// before any stage or responsibility check, so a caller cannot probe another
+// party's shipment.
+func CanSee(current *Shipment, principal Principal) bool {
 	switch principal.Role {
 	case RoleOperator:
 		return true

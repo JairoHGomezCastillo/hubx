@@ -331,7 +331,7 @@ func TestPostgresAppend(t *testing.T) {
 					AssignedPartnerID:   tt.in.AssignedPartnerID,
 					RecordedAt:          tt.in.RecordedAt.UTC().Truncate(time.Microsecond),
 					PreviousFingerprint: tt.in.PreviousFingerprint,
-					Fingerprint:         ledger.Fingerprint(ledger.AppendInput{
+					Fingerprint: ledger.Fingerprint(ledger.AppendInput{
 						ShipmentID:          tt.in.ShipmentID,
 						Sequence:            tt.in.Sequence,
 						Stage:               tt.in.Stage,
