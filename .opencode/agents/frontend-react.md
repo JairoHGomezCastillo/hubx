@@ -13,6 +13,11 @@ permissions:
   - action: shell
     resource: "*"
     effect: deny
+  # HU-10 (2026-11-25): the human enabled the shell layer so agents can run the commands their role requires.
+  # This broad allow comes before the specific rules below; last match wins, so every narrower allow/ask/deny still wins.
+  - action: shell
+    resource: "*"
+    effect: allow
   - action: shell
     resource: "npm --prefix hubx-mfe run*"
     effect: allow
