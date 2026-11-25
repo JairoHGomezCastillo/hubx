@@ -106,6 +106,12 @@
   Ships in `release/v0.6.0-demo-07`, which the human cut at v0.3.4 and then re-based on v0.4.0. Deploy validation
   skipped by human decision (demo mode). Bender fixtures drain the partner's pending list through the gateway before
   each Given, because the test database keeps HU-03's assignments.
+- HU-09 (2026-11-24): `GET /api/shipments/stage-counts` (`contracts/hu09-stage-counts.md`), operator-only (403 without
+  totals before the counter runs), six stages in journey order zero-filled in the domain, one `GROUP BY stage` over the
+  `shipments.stage` projection; `RequireAuth` (flat 401). No migration, no gateway change. Empty-state scenarios are
+  tagged `@empty-db`: `make test-integration` runs them in a second pass after `TRUNCATE updates, shipments` in the
+  isolated `hubx-it` database (human decision, option A); steps never write to the database. Ships in
+  `release/v0.5.0-view-count-by-stage`, without deployment validation (human decision).
 ## Conventions
 - PR title (2026-11-21): `<type>(<scope>): <gitmoji> <short description> [agent:role]`, scope `HU-xx` or an area;
   mapping in hubx-lead step 10. Commits keep their own format below.
@@ -178,6 +184,17 @@
 - Only `release/vX.Y.Z[-name]` and `hotfix/vX.Y.Z[-name]` may be merged into `main`: required check `release-source`
   (`.github/workflows/main-source.yml`) in `protect-main`, added after HU-03 (PR #23) reached `main` from a story
   branch (2026-11-24). The admin's pull-request bypass can still skip it: use it only for releases and hotfixes.
+- Kiro sub-agent shell rules match the literal command prefix (HU-09): `cd x && ...`, env-var prefixes or `npx` are
+  denied even when the bare command is allowed. Delegations must list the exact allowed forms ("one command per call,
+  nothing chained"); with that, QA, backend-go and frontend-react ran their own tests.
+- The agents' shell does not load the user's profile: it saw Node 20.10 (cucumber 13.3 fails with `ERR_REQUIRE_ESM`)
+  and no `gosec`/`govulncheck`. Node >= 22 (CI uses 22) and the Go tools must be on a system PATH
+  (`/opt/homebrew/bin`). After switching Node from x64 to arm64, `node_modules` needs a reinstall (rolldown native
+  binding); an older npm rewrote `package-lock.json` (dropped `libc`), so check `git status` and restore the lockfile.
+- `go fmt ./...` touches every unformatted file of the module, not only the story's; ask backend-go to format only the
+  files it changed.
+- Assertions on absolute counts cannot run on the shared seeded integration database; use baseline+delta read from the
+  real endpoint, or the `@empty-db` pass.
 - HU-04 (2026-11-24): a new form on the shared Dashboard broke an older story's `@e2e` (two "Shipment code" labels,
   Playwright strict mode). Scope `@e2e` locators to their `region` from the start. Fixture actor phrases are matched
   by substring in `emailForActor`: each new Gherkin phrasing ("who owns", "was not assigned") needs a mapping, or it
@@ -223,8 +240,6 @@
 - hubx-api `main.go` loads `internal/config` but still reads the port from `PORT` directly (works on Render).
 - hubx-gw has no config reader yet (reads `PORT`/`API_URL`).
 - 0002_seed_ledger: shipments in later stages with chained updates (owner C).
-- HU-07 PR: gosec and govulncheck were not run (no agent shell allowed them); a human runs them before merge. Commit
-  1ace486 (`[agent:hubx-lead]` touching `hubx-bender/`) needs a human decision: an exception line in
-  `scripts/agent-zones-exceptions.txt` or rewriting the unpublished history before merge.
-- `origin/release/v0.6.0-demo-07` was still at v0.3.4 when the HU-07 PR opened; the human fast-forwards it to `main`
-  (v0.4.0) so the PR diff shows only HU-07 (agents never push to an existing release branch).
+- HU-09 and HU-10 ship together in `release/v0.7.0-count-and-evidence` (their own release names, v0.5.0 and
+  v0.10.0, clashed with v0.6.x on main); both are validated on staging before the release PR.
+- Pre-existing MFE warnings: `act(...)` warnings in `Dashboard.test.tsx` (RecordUpdateContainer) and `StageCounts.test.tsx`.

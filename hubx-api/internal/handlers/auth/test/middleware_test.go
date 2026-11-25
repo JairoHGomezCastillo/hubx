@@ -47,7 +47,7 @@ func TestHU01_Middleware_RequireAuth_ValidToken(t *testing.T) {
 
 	req := httptest.NewRequest(http.MethodGet, "/protected", nil)
 	req.Header.Set("Authorization", "Bearer "+token)
-	
+
 	w := httptest.NewRecorder()
 	handler.ServeHTTP(w, req)
 
@@ -67,7 +67,7 @@ func TestHU01_Middleware_RequireAuth_MissingToken(t *testing.T) {
 
 	req := httptest.NewRequest(http.MethodGet, "/protected", nil)
 	// No Authorization header
-	
+
 	w := httptest.NewRecorder()
 	handler.ServeHTTP(w, req)
 
@@ -119,7 +119,7 @@ func TestHU01_Middleware_RequireAuth_InvalidFormat(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			req := httptest.NewRequest(http.MethodGet, "/protected", nil)
 			req.Header.Set("Authorization", tt.header)
-			
+
 			w := httptest.NewRecorder()
 			handler.ServeHTTP(w, req)
 
@@ -154,7 +154,7 @@ func TestHU01_Middleware_RequireAuth_ExpiredToken(t *testing.T) {
 			ExpiresAt: jwt.NewNumericDate(now.Add(-1 * time.Hour)), // Expired 1 hour ago
 		},
 	}
-	
+
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenString, err := token.SignedString([]byte(secret))
 	if err != nil {
@@ -168,7 +168,7 @@ func TestHU01_Middleware_RequireAuth_ExpiredToken(t *testing.T) {
 
 	req := httptest.NewRequest(http.MethodGet, "/protected", nil)
 	req.Header.Set("Authorization", "Bearer "+tokenString)
-	
+
 	w := httptest.NewRecorder()
 	handler.ServeHTTP(w, req)
 
@@ -212,7 +212,7 @@ func TestHU01_Middleware_RequireAuth_InvalidSignature(t *testing.T) {
 
 	req := httptest.NewRequest(http.MethodGet, "/protected", nil)
 	req.Header.Set("Authorization", "Bearer "+token)
-	
+
 	w := httptest.NewRecorder()
 	handler.ServeHTTP(w, req)
 
@@ -244,7 +244,7 @@ func TestHU01_Middleware_RequireAuth_MalformedToken(t *testing.T) {
 
 	req := httptest.NewRequest(http.MethodGet, "/protected", nil)
 	req.Header.Set("Authorization", "Bearer not-a-valid-jwt")
-	
+
 	w := httptest.NewRecorder()
 	handler.ServeHTTP(w, req)
 
@@ -299,7 +299,7 @@ func TestHU01_GetClaims(t *testing.T) {
 
 	req := httptest.NewRequest(http.MethodGet, "/protected", nil)
 	req.Header.Set("Authorization", "Bearer "+token)
-	
+
 	w := httptest.NewRecorder()
 	handler.ServeHTTP(w, req)
 

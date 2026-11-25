@@ -22,7 +22,7 @@ Reconciled with GitHub (merged PRs and release tags) by hubx-lead at the start o
 | HU-06 | List by stage | Backlog | - | - |
 | HU-07 | View assigned | In review (PR #39, release/v0.6.0-demo-07) | 007-view-assigned | #39 |
 | HU-08 | Report incident | Backlog | - | - |
-| HU-09 | View count | Backlog | - | - |
+| HU-09 | View count | In review (PR #41) | 009-view-count-by-stage | #41 |
 | HU-10 | Download evidence | Backlog | - | - |
 
 ## Business language

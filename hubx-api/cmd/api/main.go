@@ -113,6 +113,11 @@ func main() {
 	shipment.RegisterAssigned(mux, authMiddleware.RequireAuth, assignedLister,
 		shipment.NewClaimsPrincipalSource())
 
+	// HU-09: stage counts uses the flat-body RequireAuth (operator-only).
+	stageCountRepo := domainshipment.NewPostgresStageCountRepository(domainshipment.NewDB(db))
+	stageCounter := domainshipment.NewStageCounter(stageCountRepo)
+	shipment.RegisterStageCounts(mux, authMiddleware.RequireAuth, stageCounter)
+
 	// The gateway shared secret guards every route: all legitimate traffic
 	// enters through the gateway, which injects X-Gateway-Secret.
 	handler := auth.RequireGatewaySecret(gatewaySecret)(mux)
