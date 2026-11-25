@@ -27,6 +27,8 @@ const JOURNEY_ORDER = [
 
 Given(
   /^there are (\d+) shipments in flight, (\d+) out for delivery and (\d+) delivered$/,
+  // Ten shipments through the gateway (up to six updates each): over 30 s against Render on staging, as in HU-07.
+  { timeout: 180_000 },
   async function (this: StageCountWorld, inFlight: string, outForDelivery: string, delivered: string) {
     const inFlightCount = parseInt(inFlight, 10);
     const outForDeliveryCount = parseInt(outForDelivery, 10);
