@@ -3,3 +3,4 @@
 63e4726 HU-01: written by the orchestrator while Kiro blocked sub-agents (docs/sdd-agent-blockers.md); README and docs/setup.md are not devops paths.
 9b5b037 HU-01: hubx-lead rewrote qa-report.md (qa-seguridad's artifact); qa-seguridad redid the verify in its own commit.
 936abb1 HU-01: hubx-lead wrote qa-report.md during analyze (qa-seguridad's artifact); superseded by qa-seguridad's verify.
+1ace486 HU-07: pre-rebase checkpoint made by the orchestrator to preserve qa-seguridad's uncommitted bender files while rebasing 007-view-assigned onto the v0.4.0 base; qa-seguridad redid the red phase in its own commit (8e6275e).
