@@ -2,6 +2,7 @@ package test
 
 import (
 	"bytes"
+	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
@@ -238,4 +239,147 @@ func TestHU10_RenderHasValidXref(t *testing.T) {
 	if !bytes.Contains(data, []byte("trailer")) || !bytes.HasSuffix(bytes.TrimSpace(data), []byte("%%EOF")) {
 		t.Error("PDF has no valid trailer or final EOF marker")
 	}
+}
+
+// The MFE palette comes from hubx-mfe/src/index.css. The PDF must use the same
+// colors, expressed as normalized RGB PDF operators, and both standard fonts.
+func TestHU10_RenderUsesHubxVisualStyle(t *testing.T) {
+	data := evidence.Render(fullEvidence())
+	for _, want := range []string{
+		"0.910 0.929 0.933 rg", // --apron: page background
+		"1 1 1 rg",             // --surface: card and title
+		"0.776 0.816 0.824 RG", // --line: card border
+		"0.188 0.224 0.235 rg", // --asphalt: header and footer bands
+		"0.969 0.741 0.086 rg", // --yellow: accent rule
+		"0.110 0.310 0.769 rg", // --blue: labels and section rules
+		"/F1 3 0 R /F2 4 0 R",
+		"/BaseFont /Helvetica-Bold",
+		" re f",
+		" re S",
+		"Page 1 of ",
+	} {
+		if !bytes.Contains(data, []byte(want)) {
+			t.Errorf("PDF stream does not contain visual operator %q", want)
+		}
+	}
+	if got := len(pdfLiteral.FindAll(data, -1)); got < 20 {
+		t.Errorf("PDF has only %d literal strings, expected a laid-out document", got)
+	}
+}
+
+// runLength reports how many consecutive literal strings concatenate to want;
+// wrapped prose keeps its spaces at the end of each fragment, so the original
+// instruction line is recoverable without any separator.
+func runLength(lines []string, want string) int {
+	for start := range lines {
+		joined := ""
+		for end := start; end < len(lines) && len(joined) < len(want); end++ {
+			joined += lines[end]
+			if joined == want {
+				return end - start + 1
+			}
+		}
+	}
+	return 0
+}
+
+func TestHU10_RenderWrapsProseButNotCanonicalLines(t *testing.T) {
+	doc := fullEvidence()
+	lines := pdfLines(t, evidence.Render(doc))
+	wrapped := 0
+	for _, instruction := range strings.Split(doc.Instructions, "\n") {
+		parts := runLength(lines, instruction)
+		if parts == 0 {
+			t.Errorf("instruction line is lost or altered: %q", instruction)
+			continue
+		}
+		if parts > 1 {
+			wrapped++
+		}
+	}
+	if wrapped == 0 {
+		t.Error("no long instruction line was wrapped across PDF literal strings")
+	}
+	for _, line := range lines {
+		// Canonical key=value lines and fingerprints are intentionally long;
+		// human-readable prose must fit the page width.
+		if strings.Contains(line, "=") || strings.Contains(line, "Fingerprint:") || strings.Contains(line, "Previous:") {
+			continue
+		}
+		if len(line) > 95 {
+			t.Errorf("prose line is too long for the page (%d chars): %q", len(line), line)
+		}
+	}
+	text := strings.Join(lines, "\n")
+	for _, want := range []string{"consistent with itself", "did not rebuild the whole history"} {
+		if !strings.Contains(text, want) {
+			t.Errorf("PDF text does not keep scope phrase %q intact", want)
+		}
+	}
+}
+
+func assertCanonicalBlocks(t *testing.T, lines []string, updates []evidence.UpdateEvidence) {
+	t.Helper()
+	for _, update := range updates {
+		want := strings.Split(update.CanonicalInput, "\n")
+		// shipment_id repeats between updates; locate the block by its unique
+		// sequence line and step back to the first of the seven key=value lines.
+		start := -1
+		for i := range lines {
+			if i > 0 && lines[i] == want[1] {
+				start = i - 1
+				break
+			}
+		}
+		if start < 0 {
+			t.Fatalf("canonical block of update %d is missing", update.Sequence)
+		}
+		for offset, expected := range want {
+			if got := lines[start+offset]; got != expected {
+				t.Errorf("canonical block %d line %d = %q, want %q", update.Sequence, offset, got, expected)
+			}
+		}
+		if got := lines[start+len(want)]; got != "Fingerprint: "+update.Fingerprint {
+			t.Errorf("line after canonical block %d = %q, want its fingerprint", update.Sequence, got)
+		}
+		if got := lines[start+len(want)+1]; got != "Previous: "+update.PreviousFingerprint {
+			t.Errorf("second line after canonical block %d = %q, want its previous fingerprint", update.Sequence, got)
+		}
+	}
+}
+
+func TestHU10_RenderKeepsCanonicalBlocksAsConsecutiveStrings(t *testing.T) {
+	doc := fullEvidence()
+	assertCanonicalBlocks(t, pdfLines(t, evidence.Render(doc)), doc.Updates)
+}
+
+func TestHU10_RenderRepeatsChromeAndNeverSplitsBlocksAcrossPages(t *testing.T) {
+	doc := fullEvidence()
+	// Nine updates force several pages with the QA-shaped document.
+	for sequence := 3; sequence <= 10; sequence++ {
+		update := doc.Updates[1]
+		update.Sequence = sequence
+		update.CanonicalInput = strings.Replace(update.CanonicalInput, "sequence=2",
+			"sequence="+strconv.Itoa(sequence), 1)
+		update.Fingerprint = strings.Repeat(strconv.Itoa(sequence), 64)
+		doc.Updates = append(doc.Updates, update)
+	}
+	data := evidence.Render(doc)
+	pages := len(regexp.MustCompile(`/Type /Page\b`).FindAll(data, -1))
+	if pages < 2 {
+		t.Fatalf("document with nine updates has %d page(s), want several", pages)
+	}
+	text := strings.Join(pdfLines(t, data), "\n")
+	footers := len(regexp.MustCompile(`Page \d+ of \d+`).FindAllString(text, -1))
+	titles := strings.Count(text, "HUBX traceability evidence")
+	if footers != pages || titles != pages {
+		t.Errorf("chrome is not repeated: %d pages, %d footers, %d titles", pages, footers, titles)
+	}
+	for page := 1; page <= pages; page++ {
+		want := fmt.Sprintf("Page %d of %d", page, pages)
+		if !strings.Contains(text, want) {
+			t.Errorf("footer %q is missing", want)
+		}
+	}
+	assertCanonicalBlocks(t, pdfLines(t, data), doc.Updates)
 }
