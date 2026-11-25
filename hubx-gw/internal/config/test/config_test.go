@@ -50,14 +50,14 @@ func TestLoad_DefaultsWhenFileIsMissing(t *testing.T) {
 	if cfg.APIURL != "http://localhost:8081" {
 		t.Errorf("APIURL = %q", cfg.APIURL)
 	}
-	if want := []string{"http://localhost:5173"}; !reflect.DeepEqual(cfg.AllowedOrigins, want) {
-		t.Errorf("AllowedOrigins = %v, want %v", cfg.AllowedOrigins, want)
+	if len(cfg.AllowedOrigins) != 0 {
+		t.Errorf("AllowedOrigins = %v, want empty: no cross origin is allowed by default", cfg.AllowedOrigins)
 	}
 	if cfg.RequestsPerMinute != 120 {
 		t.Errorf("RequestsPerMinute = %d, want 120", cfg.RequestsPerMinute)
 	}
-	if cfg.SignInRequestsPerMinute != 120 {
-		t.Errorf("SignInRequestsPerMinute = %d, want 120", cfg.SignInRequestsPerMinute)
+	if cfg.SignInRequestsPerMinute != 10 {
+		t.Errorf("SignInRequestsPerMinute = %d, want 10", cfg.SignInRequestsPerMinute)
 	}
 	if cfg.JWTSecret != testJWTSecret || cfg.GatewaySecret != testGatewaySecret {
 		t.Errorf("secrets were not read from the environment")
@@ -121,7 +121,7 @@ func TestLoad_Precedence(t *testing.T) {
 		if cfg.Port != "1111" || cfg.APIURL != "http://file:1" || cfg.RequestsPerMinute != 11 {
 			t.Errorf("got %q %q %d", cfg.Port, cfg.APIURL, cfg.RequestsPerMinute)
 		}
-		if cfg.SignInRequestsPerMinute != 120 {
+		if cfg.SignInRequestsPerMinute != 10 {
 			t.Errorf("a key absent from the file must keep its default, got %d", cfg.SignInRequestsPerMinute)
 		}
 	})
@@ -350,10 +350,35 @@ func TestLoad_RealPropertiesFile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Load() error = %v", err)
 	}
-	if cfg.Port != "8080" || cfg.RequestsPerMinute != 120 || cfg.SignInRequestsPerMinute != 120 {
-		t.Errorf("real file values = %q %d %d", cfg.Port, cfg.RequestsPerMinute, cfg.SignInRequestsPerMinute)
+	if cfg.Port != "8080" || cfg.RequestsPerMinute != 120 || cfg.SignInRequestsPerMinute != 10 {
+		t.Errorf("real file values = %q %d %d, want 8080 120 10", cfg.Port, cfg.RequestsPerMinute, cfg.SignInRequestsPerMinute)
 	}
-	if want := []string{"http://localhost:5173"}; !reflect.DeepEqual(cfg.AllowedOrigins, want) {
-		t.Errorf("AllowedOrigins = %v", cfg.AllowedOrigins)
+	if len(cfg.AllowedOrigins) != 0 {
+		t.Errorf("AllowedOrigins = %v, want empty", cfg.AllowedOrigins)
+	}
+}
+
+func TestLoad_EmptyEnvironmentValueCountsAsUnset(t *testing.T) {
+	// env() drops empty values, so build the lookup by hand to return "" for the keys.
+	getenv := func(key string) string {
+		switch key {
+		case "JWT_SECRET":
+			return testJWTSecret
+		case "GATEWAY_SECRET":
+			return testGatewaySecret
+		}
+		return ""
+	}
+	dir := t.TempDir()
+	writeFile(t, dir, "application.properties", "cors.allowed-origins=https://file.example\nratelimit.sign-in-requests-per-minute=4\n")
+	cfg, err := config.Load(dir, getenv)
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+	if want := []string{"https://file.example"}; !reflect.DeepEqual(cfg.AllowedOrigins, want) {
+		t.Errorf("AllowedOrigins = %v, want %v", cfg.AllowedOrigins, want)
+	}
+	if cfg.SignInRequestsPerMinute != 4 {
+		t.Errorf("SignInRequestsPerMinute = %d, want 4", cfg.SignInRequestsPerMinute)
 	}
 }

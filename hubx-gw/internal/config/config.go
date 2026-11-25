@@ -42,9 +42,9 @@ const (
 var defaults = map[string]string{
 	serverPortKey:      "8080",
 	apiURLKey:          "http://localhost:8081",
-	allowedOriginsKey:  "http://localhost:5173",
+	allowedOriginsKey:  "",
 	requestsPerMinKey:  "120",
-	signInPerMinuteKey: "120",
+	signInPerMinuteKey: "10",
 }
 
 // Config holds the resolved, validated configuration of the gateway.

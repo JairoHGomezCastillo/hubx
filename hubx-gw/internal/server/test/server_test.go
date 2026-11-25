@@ -193,6 +193,76 @@ func TestChain_RealPropertiesFileRequest121Gets429AndRecoversAfterOneMinute(t *t
 	}
 }
 
+func TestChain_RealPropertiesFileSignIn11thOfOneEmailGets429AndRecoversAfterOneMinute(t *testing.T) {
+	e := newEnv(t, nil)
+	body := `{"email":"user@hubx.co","password":"x"}`
+
+	for i := 1; i <= 10; i++ {
+		if rec := e.signIn(body); rec.Code != http.StatusOK {
+			t.Fatalf("sign-in %d: status = %d, want 200", i, rec.Code)
+		}
+	}
+	rec := e.signIn(body)
+	if rec.Code != http.StatusTooManyRequests {
+		t.Fatalf("sign-in 11: status = %d, want 429", rec.Code)
+	}
+	if rec.Body.String() != refusalBody {
+		t.Errorf("body = %q", rec.Body.String())
+	}
+	if n := e.upstream.seen("/auth/sign-in"); n != 10 {
+		t.Errorf("upstream saw %d sign-ins, want 10", n)
+	}
+	if rec := e.signIn(`{"email":"other@hubx.co","password":"x"}`); rec.Code != http.StatusOK {
+		t.Errorf("another email: status = %d, want 200", rec.Code)
+	}
+
+	e.clock.Advance(time.Minute)
+	if rec := e.signIn(body); rec.Code != http.StatusOK {
+		t.Errorf("after one minute: status = %d, want 200", rec.Code)
+	}
+}
+
+func TestChain_DefaultsAllowNoCrossOrigin(t *testing.T) {
+	e := newEnv(t, nil)
+
+	req := httptest.NewRequest(http.MethodOptions, "/api/shipments", nil)
+	req.Header.Set("Origin", "http://localhost:5173")
+	req.Header.Set("Access-Control-Request-Method", "GET")
+	rec := httptest.NewRecorder()
+	e.handler.ServeHTTP(rec, req)
+	if rec.Code != http.StatusForbidden {
+		t.Errorf("preflight from http://localhost:5173: status = %d, want 403", rec.Code)
+	}
+	for name := range rec.Header() {
+		if strings.HasPrefix(name, "Access-Control-") {
+			t.Errorf("unexpected %s on a refused preflight", name)
+		}
+	}
+	assertSecurityHeaders(t, "refused preflight", rec.Header())
+	if e.upstream.count.Load() != 0 {
+		t.Error("a preflight must never be forwarded")
+	}
+}
+
+// The Vite dev proxy forwards /api same-origin and keeps the browser Origin
+// header: with no allowed origins that request must still be processed.
+func TestChain_SameOriginStylePostCarryingOriginIsStillProcessed(t *testing.T) {
+	e := newEnv(t, nil)
+	req := httptest.NewRequest(http.MethodPost, "/api/auth/sign-in", strings.NewReader(`{"email":"user@hubx.co","password":"x"}`))
+	req.Header.Set("Origin", "http://localhost:5173")
+	rec := httptest.NewRecorder()
+	e.handler.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", rec.Code)
+	}
+	if got := rec.Header().Values("Access-Control-Allow-Origin"); len(got) != 0 {
+		t.Errorf("Access-Control-Allow-Origin = %q, want none", got)
+	}
+	if n := e.upstream.seen("/auth/sign-in"); n != 1 {
+		t.Errorf("upstream saw %d sign-ins, want 1", n)
+	}
+}
+
 func TestChain_SpoofedAddressHeadersDoNotAvoidTheLimit(t *testing.T) {
 	e := newEnv(t, map[string]string{"RATELIMIT_REQUESTS_PER_MINUTE": "3"})
 	tok := token(t, "user-1")
@@ -357,7 +427,11 @@ func TestChain_OversizedSignInBodyIs413WithHeaders(t *testing.T) {
 }
 
 func TestChain_PreflightNeverReachesJWTLimiterOrAPI(t *testing.T) {
-	e := newEnv(t, map[string]string{"RATELIMIT_REQUESTS_PER_MINUTE": "1", "RATELIMIT_SIGN_IN_REQUESTS_PER_MINUTE": "1"})
+	e := newEnv(t, map[string]string{
+		"RATELIMIT_REQUESTS_PER_MINUTE":         "1",
+		"RATELIMIT_SIGN_IN_REQUESTS_PER_MINUTE": "1",
+		"CORS_ALLOWED_ORIGINS":                  "http://localhost:5173",
+	})
 	for i := 0; i < 20; i++ {
 		req := httptest.NewRequest(http.MethodOptions, "/api/shipments", nil)
 		req.Header.Set("Origin", "http://localhost:5173")
@@ -453,7 +527,7 @@ func TestChain_BadGatewayAnd429CarryTheHeaders(t *testing.T) {
 }
 
 func TestChain_CORSOnAnswersForAllowedAndOtherOrigins(t *testing.T) {
-	e := newEnv(t, map[string]string{"RATELIMIT_REQUESTS_PER_MINUTE": "1"})
+	e := newEnv(t, map[string]string{"RATELIMIT_REQUESTS_PER_MINUTE": "1", "CORS_ALLOWED_ORIGINS": "http://localhost:5173"})
 	tok := token(t, "u")
 
 	rec := e.get("/api/x", tok, map[string]string{"Origin": "http://localhost:5173"})
