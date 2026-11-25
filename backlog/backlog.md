@@ -17,8 +17,8 @@ Reconciled with GitHub (merged PRs and release tags) by hubx-lead at the start o
 | HU-01 | Sign in | Released v0.2.0 | 001-sign-in | #13 |
 | HU-02 | Create shipment | Released v0.3.0 | 002-create-shipment | #19 |
 | HU-03 | Record update | Released v0.3.3; scenarios fixed in release/v0.4.0-ledger | 003-record-update-sync, 003-record-update-fix | #23, #27 |
-| HU-04 | View traceability | Done in release/v0.4.0-ledger, ships with v0.4.0 (PR #36) | 004-view-traceability | #30 |
-| HU-05 | Verify integrity | Done in release/v0.4.0-ledger, ships with v0.4.0 (PR #36) | 005-verify-integrity | #33 |
+| HU-04 | View traceability | Released v0.4.0 | 004-view-traceability | #30 |
+| HU-05 | Verify integrity | Released v0.4.0 | 005-verify-integrity | #33 |
 | HU-06 | List by stage | Backlog | - | - |
 | HU-07 | View assigned | Backlog | - | - |
 | HU-08 | Report incident | Backlog | - | - |
